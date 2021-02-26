@@ -1,0 +1,8 @@
+Pmin=?[sp1<2 U (sp1=2 & x1=y1 & x1>0)]
+
+Pmax=?[sp1<2 U (sp1=2 & x1=y1 & x1>0)]
+
+Pmin=?[F sp1=2 & x1=y1]
+Pmax=?[F sp1=2 & x1=y1]
+Pmin=?[F sp2=2 & x2=y2]
+Pmax=?[F sp2=2 & x2=y2]

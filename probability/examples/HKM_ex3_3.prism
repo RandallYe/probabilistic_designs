@@ -1,0 +1,28 @@
+// Example 3.3 in He's paper "Probabilistic models for the Guarded Command Language 
+
+mdp
+
+module M1
+
+    x1 : [-1..1] init -1;
+    y1 : [-1..1] init -1;
+    sp1 : [0..2] init 0;
+
+    [] sp1=0 -> (x1'=0) & (sp1'=1);
+    [] sp1=0 -> (x1'=1) & (sp1'=1);
+    [] sp1=1 -> 0.5:(y1'=0)&(sp1'=2) + 0.5:(y1'=1)&(sp1'=2);
+    [] sp1=2 -> true;
+endmodule
+
+module M2
+
+    x2 : [-1..1] init -1;
+    y2 : [-1..1] init -1;
+    sp2 : [0..2] init 0;
+
+    [] sp2=0 -> 0.5:(y2'=0)&(sp2'=1) + 0.5:(y2'=1)&(sp2'=1);
+    [] sp2=1 -> (x2'=0) & (sp2'=2);
+    [] sp2=1 -> (x2'=1) & (sp2'=2);
+    [] sp2=2 -> true;
+endmodule
+
