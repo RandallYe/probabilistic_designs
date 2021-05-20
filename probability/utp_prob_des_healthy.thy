@@ -5,10 +5,14 @@ theory utp_prob_des_healthy
   utp_prob_des
 begin recall_syntax
 
+subsection \<open> Definition of Convex Closure \<close>
+
 definition Convex_Closed :: "'s hrel_pdes \<Rightarrow> 's hrel_pdes" ("\<^bold>C\<^bold>C") 
   where [upred_defs]: "Convex_Closed p \<equiv>  \<Sqinter> r \<in> {0..1} \<bullet> (p \<oplus>\<^bsub>r\<^esub> p)"
 
 (* declare [[show_types]] *)
+
+subsection \<open> Laws of Convex Closure \<close>
 
 lemma Convex_Closed_eq:
   "Convex_Closed p = ((\<Sqinter> r \<in> {0<..<1} \<bullet> (p \<parallel>\<^sup>D\<^bsub>\<^bold>P\<^bold>M\<^bsub>r\<^esub>\<^esub> p)) \<sqinter> p)"

@@ -1,10 +1,15 @@
-section \<open> pmf laws \<close>
+section \<open> (pmf) Laws \<close>
+
+text \<open> This section presents many proved laws regarding pmf to facilitate proof of algebraic laws of 
+probabilistic designs.\<close>
 
 theory utp_prob_pmf_laws
   imports "UTP-Designs.utp_designs" 
           "HOL-Probability.Probability_Mass_Function"
           utp_prob_des
 begin recall_syntax
+
+subsection \<open> Laws \<close>
 
 lemma sum_pmf_eq_1:
   fixes M::"'a pmf"
@@ -788,13 +793,15 @@ proof -
     by (metis measure_pmf.prob_le_1 measure_pmf_conv_infsetsum order_class.order.antisym)
 qed
 
+subsection \<open> Measures \<close>
+
 text \<open> Construct 0.prob and 1.prob from a supplied pmf P, and two sets A and B.
-We cannot modify the probability function in pmf since it has to satisfy a condition (prob_space M).
+We cannot modify the probability function in pmf since it has to satisfy a condition (@{text "prob_space M"}).
 But we can modify the function in the measure space by dropping P to a measure, then modifying 
 measure function, afterwards lifting back to the probability space. 
 
 But when lifting, we need to prove additional laws
-  "prob_space M \<and> sets M = UNIV \<and> (AE x in M. measure M {x} \<noteq> 0)"
+  @{text "prob_space M \<and> sets M = UNIV \<and> (AE x in M. measure M {x} \<noteq> 0)"}
 to ensure modified measure is a probability measure.
 \<close>
 
