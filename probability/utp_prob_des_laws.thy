@@ -6,7 +6,7 @@ theory utp_prob_des_laws
           "HOL-Probability.Probability_Mass_Function"
           (* "HOL-Probability.PMF_Impl" *)
           utp_prob_des
-          utp_prob_des_healthy
+          (* utp_prob_des_healthy *)
           utp_prob_pmf_laws
 begin recall_syntax
 
@@ -14,6 +14,11 @@ begin recall_syntax
 
 subsection \<open> Probability Embedding \<close>
 
+text \<open>
+  Inverse of @{text "\<K>"}~\cite[Corollary 3.7]{Jifeng2004}: 
+embedding a standard design (P) in the probabilistic world then forgetting its probability 
+distribution is equal to P itself.
+\<close>
 lemma pemp_inv:
   assumes "P is \<^bold>N"
   shows "\<K>(P) ;; \<^bold>f\<^bold>p = P"
@@ -185,8 +190,8 @@ next
       let ?b = "(\<Sum>\<^sub>ax::'a | \<not> \<lbrakk>P\<rbrakk>\<^sub>e (more, x) \<and> \<lbrakk>Q\<rbrakk>\<^sub>e (more, x). pmf prob\<^sub>v x)"
       let ?b1 = "(infsetsum (pmf prob\<^sub>v) ({s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} - {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)}))"
       let ?a1 = "infsetsum (pmf prob\<^sub>v) ({s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} - {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)})"
-      let ?prob\<^sub>0 = "Abs_pmf (prob_f {s. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)"
-      let ?prob\<^sub>1 = "Abs_pmf (prob_f {s. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)"
+      let ?prob\<^sub>0 = "Abs_pmf (\<F> {s. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)"
+      let ?prob\<^sub>1 = "Abs_pmf (\<F> {s. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)"
       assume a1: "(\<Sum>\<^sub>ax::'a | \<exists>v::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, x) \<and> v = x \<or> \<lbrakk>Q\<rbrakk>\<^sub>e (more, x) \<and> v = x. pmf prob\<^sub>v x) = (1::real)"
       assume a2: "(0::real) < ?a"
       assume a3: "?a < (1::real)"
@@ -226,13 +231,13 @@ next
         by (smt a4 f21' nonzero_mult_divide_mult_cancel_right2 times_divide_times_eq)
       
       have f22: "(\<Sum>\<^sub>a x::'a | x \<in> {x::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, x)} .
-        (pmf (Abs_pmf (prob_f {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v))) x) = (1::real)"
-        apply (rule prob_f_sum_eq_1[of prob\<^sub>v "{s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)}" "{s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)}"])
+        (pmf (Abs_pmf (\<F> {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v))) x) = (1::real)"
+        apply (rule proj_f_sum_eq_1[of prob\<^sub>v "{s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)}" "{s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)}"])
         using a1'' apply blast
         using a2' apply blast
         using a4' by blast
       
-      then have f23: "infsetsum (pmf (Abs_pmf (prob_f {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)))
+      then have f23: "infsetsum (pmf (Abs_pmf (\<F> {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)))
             {x::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, x)} = (1::real)"
         by simp
       have f24: "\<forall>i::'a. pmf prob\<^sub>v i = pmf (?prob\<^sub>0 +\<^bsub>?a/(?a+?b)\<^esub> ?prob\<^sub>1) i"
@@ -255,19 +260,19 @@ next
           let ?P_Q = "emeasure (measure_pmf prob\<^sub>v) ({i} \<inter> ({s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} - {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)}))"
           let ?Q_P = "emeasure (measure_pmf prob\<^sub>v) ({i} \<inter> ({s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} - {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)}))"
           let ?PQ = "emeasure (measure_pmf prob\<^sub>v) ({i} \<inter> ({s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} \<inter> {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)}))"
-          have f241: "pmf (Abs_pmf (prob_f {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) i \<cdot> ?a/(?a+?b) +
-            pmf (Abs_pmf (prob_f {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) i \<cdot>
+          have f241: "pmf (Abs_pmf (\<F> {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) i \<cdot> ?a/(?a+?b) +
+            pmf (Abs_pmf (\<F> {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) i \<cdot>
             ((1::real) - ?a/(?a+?b))
-            = measure (measure_pmf (Abs_pmf (prob_f {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v))) {i} 
+            = measure (measure_pmf (Abs_pmf (\<F> {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v))) {i} 
               \<cdot> ?a/(?a+?b) +
-            measure (measure_pmf (Abs_pmf (prob_f {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v))) {i} \<cdot>
+            measure (measure_pmf (Abs_pmf (\<F> {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v))) {i} \<cdot>
             ((1::real) - ?a/(?a+?b))"
             by (simp add: pmf.rep_eq)
-          also have f242: "... = measure ((prob_f {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) {i} 
+          also have f242: "... = measure ((\<F> {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) {i} 
               \<cdot> ?a/(?a+?b) +
-            measure ((prob_f {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) {i} \<cdot>
+            measure ((\<F> {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) {i} \<cdot>
             ((1::real) - ?a/(?a+?b))"
-            by (simp add: Un_commute a1'' a2' a4' prob_f_measure_pmf)
+            by (simp add: Un_commute a1'' a2' a4' proj_f_measure_pmf)
           also have f243: "... = enn2real
              (emeasure (measure_pmf prob\<^sub>v) ({i} \<inter> ({s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} - {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)})) \<cdot>
               ennreal ((?b1 + ?a1) / ?a1) +
@@ -279,7 +284,7 @@ next
               emeasure (measure_pmf prob\<^sub>v) ({i} \<inter> ({s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} \<inter> {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)}))) \<cdot>
             ((1::real) - (?a/(?a+?b)))"
             apply (simp only: measure_def)
-            by (simp add: prob_f_emeasure)
+            by (simp add: proj_f_emeasure)
           also have f244: "... = enn2real
              (emeasure (measure_pmf prob\<^sub>v) ({i} \<inter> ({s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} - {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)})) \<cdot>
               ennreal ((?b1 + ?a1) / ?a1) +
@@ -413,8 +418,8 @@ next
                 qed
             qed
           have f241: "pmf prob\<^sub>v i =
-              pmf (Abs_pmf (prob_f {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) i \<cdot> ?a/(?a+?b) +
-              pmf (Abs_pmf (prob_f {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) i \<cdot> ((1::real) - ?a/(?a+?b))"
+              pmf (Abs_pmf (\<F> {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) i \<cdot> ?a/(?a+?b) +
+              pmf (Abs_pmf (\<F> {s::'a. \<lbrakk>Q\<rbrakk>\<^sub>e (more, s)} {s::'a. \<lbrakk>P\<rbrakk>\<^sub>e (more, s)} prob\<^sub>v)) i \<cdot> ((1::real) - ?a/(?a+?b))"
             by (metis (no_types, lifting) P_and_Q P_notQ Q_notP Sigma_Algebra.measure_def calculation 
                ennreal_add_eq_top ennreal_enn2real f2413 measure_pmf.emeasure_subprob_space_less_top 
                order_top_class.less_top pmf.rep_eq)
@@ -440,7 +445,7 @@ next
         using f23 apply blast
         apply (rule_tac x = "?prob\<^sub>1" in exI)
         apply (rule_tac conjI)
-        apply (metis Collect_mem_eq Un_commute a1'' a2' a4' prob_f_sum_eq_1)
+        apply (metis Collect_mem_eq Un_commute a1'' a2' a4' proj_f_sum_eq_1)
         using f25 by blast
     qed
   then have f3: "(?B \<sqinter> ?RHS) \<sqsubseteq> (?B \<sqinter> ?LHS)"
@@ -1815,16 +1820,16 @@ declare [[show_types]]
 
 lemma cond_idem:
   fixes P::"'s hrel_pdes"
-  shows "P \<triangleleft> b \<triangleright> P = P"
+  shows "P \<triangleleft> b \<triangleright>\<^sub>D P = P"
   by auto
 
 lemma cond_inf_distr:
   fixes P::"'s hrel_pdes" and Q::"'s hrel_pdes" and R::"'s hrel_pdes"
-  shows "P \<sqinter> (Q \<triangleleft> b \<triangleright> R) = (P \<sqinter> Q) \<triangleleft> b \<triangleright> (P \<sqinter> R)"
+  shows "P \<sqinter> (Q \<triangleleft> b \<triangleright>\<^sub>D R) = (P \<sqinter> Q) \<triangleleft> b \<triangleright>\<^sub>D (P \<sqinter> R)"
   by (rel_auto)
   
 subsection \<open> Probabilistic Choice \<close>
-
+(*
 lemma prob_choice_idem':
   assumes "r \<in> {0..1}"
   shows "p \<turnstile>\<^sub>n R is \<^bold>C\<^bold>C \<Longrightarrow> ((p \<turnstile>\<^sub>n R) \<oplus>\<^bsub>r\<^esub> (p \<turnstile>\<^sub>n R) = p \<turnstile>\<^sub>n R)"
@@ -1978,8 +1983,8 @@ lemma prob_choice_idem:
     show ?thesis
       using "1" "3" by auto
   qed
-
-lemma prob_choice_inf_distl:
+*)
+lemma prob_choice_inf_distr:
   assumes "r \<in> {0..1}" "P is \<^bold>N"  "Q is \<^bold>N" "R is \<^bold>N" 
   shows "(P \<sqinter> Q) \<oplus>\<^bsub>r\<^esub> R = ((P \<oplus>\<^bsub>r\<^esub> R) \<sqinter> (Q \<oplus>\<^bsub>r\<^esub> R))" (is "?LHS = ?RHS")
 proof -
@@ -2000,7 +2005,7 @@ proof -
     by auto
 qed
   
-lemma prob_choice_inf_distr:
+lemma prob_choice_inf_distl:
   assumes "r \<in> {0..1}" "P is \<^bold>N" "Q is \<^bold>N" "R is \<^bold>N"
   shows "P \<oplus>\<^bsub>r\<^esub> (Q \<sqinter> R)  = ((P \<oplus>\<^bsub>r\<^esub> Q) \<sqinter> (P \<oplus>\<^bsub>r\<^esub> R))" (is "?LHS = ?RHS")
 proof -
@@ -2139,7 +2144,7 @@ qed
 
 (* declare [[show_types]] *)
 
-lemma prob_choice_cond_distr:
+lemma prob_choice_cond_distl:
   assumes "r \<in> {0..1}" "P is \<^bold>N" "Q is \<^bold>N" "R is \<^bold>N"
   shows "P \<oplus>\<^bsub>r\<^esub> (Q \<triangleleft> b \<triangleright>\<^sub>D R)  = ((P \<oplus>\<^bsub>r\<^esub> Q) \<triangleleft> b \<triangleright>\<^sub>D (P \<oplus>\<^bsub>r\<^esub> R))" (is "?LHS = ?RHS")
 proof -

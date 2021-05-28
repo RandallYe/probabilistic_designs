@@ -1,17 +1,20 @@
 section \<open> Healthiness conditions \<close>
 
 theory utp_prob_des_healthy
-  imports "UTP-Calculi.utp_wprespec" "UTP-Designs.utp_designs" "HOL-Probability.Probability_Mass_Function"
-  utp_prob_des
+  imports "UTP-Calculi.utp_wprespec" 
+    "UTP-Designs.utp_designs" 
+    "HOL-Probability.Probability_Mass_Function"
+    utp_prob_des
+    utp_prob_pmf_laws
 begin recall_syntax
 
 subsection \<open> Definition of Convex Closure \<close>
-
+(*
 definition Convex_Closed :: "'s hrel_pdes \<Rightarrow> 's hrel_pdes" ("\<^bold>C\<^bold>C") 
   where [upred_defs]: "Convex_Closed p \<equiv>  \<Sqinter> r \<in> {0..1} \<bullet> (p \<oplus>\<^bsub>r\<^esub> p)"
-
+*)
 (* declare [[show_types]] *)
-
+(*
 subsection \<open> Laws of Convex Closure \<close>
 
 lemma Convex_Closed_eq:
@@ -50,7 +53,35 @@ proof -
     apply (simp add: f2 f3)
     using semilattice_sup_class.sup_commute by blast
 qed
+*)
+(*
+lemma 
+  assumes "r \<in> {0<..<1}"
+  assumes "P is \<^bold>N"  
+  shows "((pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p) \<parallel>\<^sup>D\<^bsub>\<^bold>P\<^bold>M\<^bsub>r\<^esub>\<^esub> (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)) = (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)"
+  apply (simp add: ndes_simp)
+  apply (rule ndesign_eq_intro)
+  apply simp
+  apply (rel_auto)
 
+lemma
+  assumes "r \<in> {0<..<1}"
+  assumes "P is \<^bold>N"
+  shows "(P \<parallel>\<^sup>D\<^bsub>\<^bold>P\<^bold>M\<^bsub>r\<^esub>\<^esub> P) = P"
+proof -
+  obtain pre\<^sub>p post\<^sub>p
+    where p:"P = (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)"
+    using assms by (metis ndesign_form)
+  have "((pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p) \<parallel>\<^sup>D\<^bsub>\<^bold>P\<^bold>M\<^bsub>r\<^esub>\<^esub> (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)) = (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)"
+    apply (simp add: ndes_simp)
+    apply (rule ndesign_eq_intro)
+    apply simp
+    apply (simp add: upred_defs)
+    apply (rel_auto)
+    sledgehammer
+  show ?thesis
+end
+*)
 declare [[show_types]]
 
 lemma K_skip_idem:
@@ -102,6 +133,7 @@ proof -
       by (simp add: f2)
   qed
 
+(*
 lemma CC_skip: "\<K>(II\<^sub>D) is \<^bold>C\<^bold>C"
   apply (simp add: Healthy_def Convex_Closed_def)
   apply (simp add: UINF_as_Sup_collect image_def)
@@ -130,5 +162,6 @@ lemma CC_skip: "\<K>(II\<^sub>D) is \<^bold>C\<^bold>C"
         \<K> II\<^sub>D"
       by (simp add: f1 f2)
   qed
+*)
 
 end

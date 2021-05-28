@@ -103,6 +103,7 @@ proof -
     by (simp add: "1" "2")
 qed
 
+(*
 text \<open>
   Inverse of @{text "\<K>"}~\cite[Corollary 3.7]{Jifeng2004}: 
 embedding a standard design (P) in the probabilistic world then forgetting its probability 
@@ -185,7 +186,7 @@ proof -
     show ?thesis
       using f1 by (simp add: p)
 qed
-
+*)
 no_utp_lift usubst (0) subst (1)
 
 subsection \<open> wplus \<close>
@@ -357,7 +358,12 @@ next
       by (metis (no_types, hide_lams) add.commute add.left_commute mult.assoc mult.commute)
   qed
 qed
-  
+
+(*
+typedef 'a ccpmf = "{p :: 'a pmf. \<forall>r \<in> {0..1}. p +\<^bsub>r\<^esub> p = p}"
+  by (simp add: wplus_idem)
+*)
+
 (*
 definition spmf_to_pmf:: "'a pmf \<Rightarrow> 'a set \<Rightarrow> 'a set \<Rightarrow> 'a pmf" where
 "spmf_to_pmf p A B = join_pmf (pmf_of_list [((pdres_spmf (A-B) P), 1), ((pdres_spmf (B-A) P), 1)])"

@@ -805,28 +805,34 @@ But when lifting, we need to prove additional laws
 to ensure modified measure is a probability measure.
 \<close>
 
-definition prob_f :: "'a set \<Rightarrow> 'a set \<Rightarrow> 'a pmf \<Rightarrow> 'a measure" where
-"prob_f A B P = measure_of (space P) (sets P)
-  (\<lambda>AA. emeasure P (AA \<inter> (A-B))*(((\<Sum>\<^sub>a i\<in>B-A. pmf P i) + (\<Sum>\<^sub>a i\<in>A-B. pmf P i))/(\<Sum>\<^sub>a i\<in>A-B. pmf P i))
-  + emeasure P (AA \<inter> (A \<inter> B)))
+definition proj_f :: "'a set \<Rightarrow> 'a set \<Rightarrow> 'a pmf \<Rightarrow> 'a measure" ("\<F>") where
+"proj_f A B P = measure_of (space P) (sets P)
+  (\<lambda>AA. 
+    (   emeasure P (AA \<inter> (A-B))*(((\<Sum>\<^sub>a i\<in>B-A. pmf P i) + (\<Sum>\<^sub>a i\<in>A-B. pmf P i))/(\<Sum>\<^sub>a i\<in>A-B. pmf P i))
+      + emeasure P (AA \<inter> (A \<inter> B))
+    )
+  )
 "
 
-lemma prob_f_sets: "sets (prob_f A B P) = UNIV"
-   apply (simp add: prob_f_def)
+lemma emeasure_infsum_eq: "emeasure (P::'a pmf) A = (\<Sum>\<^sub>a i\<in>A. pmf P i)"
+  by (simp add: measure_pmf.emeasure_eq_measure measure_pmf_conv_infsetsum)
+
+lemma proj_f_sets: "sets (\<F> A B P) = UNIV"
+   apply (simp add: proj_f_def)
   by auto
 
-lemma prob_f_space: "space (prob_f A B P) = UNIV"
-  by (simp add: prob_f_def)
+lemma proj_f_space: "space (\<F> A B P) = UNIV"
+  by (simp add: proj_f_def)
 
 lemma pmf_measure_zero:
   assumes "\<forall>i \<in> A. emeasure (measure_pmf P) {i} = (0::ennreal)" 
   shows "emeasure (measure_pmf P) A = (0::ennreal)"
   by (metis assms disjoint_iff_not_equal emeasure_Int_set_pmf emeasure_empty emeasure_pmf_single_eq_zero_iff)
 
-lemma prob_f_emeasure: "emeasure (prob_f A B P) C = 
+lemma proj_f_emeasure: "emeasure (\<F> A B P) C = 
    (\<lambda>AA. emeasure P (AA \<inter> (A-B)) * (((\<Sum>\<^sub>a i\<in>B-A . pmf P i) + (\<Sum>\<^sub>a i\<in>A-B . pmf P i))/(\<Sum>\<^sub>a i\<in>A-B . pmf P i))
   + emeasure P (AA \<inter> (A \<inter> B))) C"
-  apply (simp add: prob_f_def)
+  apply (simp add: proj_f_def)
   apply (intro emeasure_measure_of_sigma)
   apply (metis sets.sigma_algebra_axioms sets_measure_pmf space_measure_pmf)
   apply (simp add: positive_def)
@@ -891,14 +897,14 @@ lemma prob_f_emeasure: "emeasure (prob_f A B P) C =
       using f6 by simp
   qed
 
-lemma prob_space_prob_f:
+lemma prob_space_proj_f:
   fixes P::"'a pmf" and A::"'a set" and B::"'a set"
   assumes "(\<Sum>\<^sub>a i\<in>A \<union> B . pmf P i) = (1::real)"
   assumes "(\<Sum>\<^sub>a i\<in>A-B . pmf P i) > (0::real)"
   assumes "(\<Sum>\<^sub>a i\<in>B-A . pmf P i) > (0::real)"
-  shows "prob_space (prob_f A B P)"
+  shows "prob_space (\<F> A B P)"
   apply (intro prob_spaceI)
-  apply (simp add: prob_space_def prob_f_def)
+  apply (simp add: prob_space_def proj_f_def)
   proof -
     let ?A_B = "infsetsum (pmf P) (A-B)"
     let ?B_A = "infsetsum (pmf P) (B-A)"
@@ -928,7 +934,7 @@ lemma prob_space_prob_f:
                 emeasure (measure_pmf P) (AA \<inter> (A - B)) \<cdot>
                 ennreal ((?B_A + ?A_B) / ?A_B) +
                 emeasure (measure_pmf P) (AA \<inter> (A \<inter> B))) UNIV"
-      using prob_f_emeasure by (metis prob_f_def sets_measure_pmf space_measure_pmf)
+      using proj_f_emeasure by (metis proj_f_def sets_measure_pmf space_measure_pmf)
     have f3: "?em_A_B = ?A_B"
       by (simp add: measure_pmf.emeasure_eq_measure measure_pmf_conv_infsetsum)
     have f4: "?em_A_B > 0"
@@ -975,30 +981,30 @@ lemma prob_space_prob_f:
       by (simp add: f10 f2 f7 f8 f9)
   qed
 
-lemma prob_f_AE:
+lemma proj_f_AE:
   fixes P::"'a pmf" and A::"'a set" and B::"'a set"
   assumes "(\<Sum>\<^sub>a i\<in>A \<union> B . pmf P i) = (1::real)"
   assumes "(\<Sum>\<^sub>a i\<in>A-B . pmf P i) > (0::real)"
   assumes "(\<Sum>\<^sub>a i\<in>B-A . pmf P i) > (0::real)"
-  shows "AE x::'a in prob_f A B P. \<not> Sigma_Algebra.measure (prob_f A B P) {x} = (0::real)"
+  shows "AE x::'a in \<F> A B P. \<not> Sigma_Algebra.measure (\<F> A B P) {x} = (0::real)"
   apply (rule AE_I[where N="{x::'a. ((
          emeasure (measure_pmf P) ({x} \<inter> (A-B)) = 0) \<and>
         (emeasure (measure_pmf P) ({x} \<inter> A \<inter> B) = 0))}"])
 proof -
-  have "{x::'a. x \<in> space (prob_f A B P) \<and> \<not> \<not> Sigma_Algebra.measure (prob_f A B P) {x} = (0::real)}
-    = {x::'a. Sigma_Algebra.measure (prob_f A B P) {x} = (0::real)}"
-    by (simp add: prob_f_space)
+  have "{x::'a. x \<in> space (\<F> A B P) \<and> \<not> \<not> Sigma_Algebra.measure (\<F> A B P) {x} = (0::real)}
+    = {x::'a. Sigma_Algebra.measure (\<F> A B P) {x} = (0::real)}"
+    by (simp add: proj_f_space)
   also have "... = 
     {x::'a. Sigma_Algebra.measure (measure_of UNIV UNIV
       (\<lambda>AA. emeasure P (AA \<inter> (A-B)) * (((\<Sum>\<^sub>a i\<in>B-A . pmf P i) + (\<Sum>\<^sub>a i\<in>A-B . pmf P i))/(\<Sum>\<^sub>a i\<in>A-B . pmf P i))
       + emeasure P (AA \<inter> (A \<inter> B)))) {x} = (0::real)}"
-    by (simp add: prob_f_def)
+    by (simp add: proj_f_def)
   also have "... = {x::'a. enn2real ((\<lambda>AA::'a set.
          emeasure (measure_pmf P) (AA \<inter> (A-B)) \<cdot>
          ennreal ((infsetsum (pmf P) (A-B) + infsetsum (pmf P) (B-A)) / infsetsum (pmf P) (A-B)) +
          emeasure (measure_pmf P) (AA \<inter> (A \<inter> B))) {x}) = (0::real)}"
     apply (simp add: measure_def)
-    by (smt Collect_cong Sigma_Algebra.measure_def UNIV_I calculation prob_f_emeasure prob_f_space)
+    by (smt Collect_cong Sigma_Algebra.measure_def UNIV_I calculation proj_f_emeasure proj_f_space)
   also have "... = {x::'a. ((\<lambda>AA::'a set.
          emeasure (measure_pmf P) (AA \<inter> (A-B)) \<cdot>
          ennreal ((infsetsum (pmf P) (A-B) + infsetsum (pmf P) (B-A)) / infsetsum (pmf P) (A-B)) +
@@ -1018,12 +1024,12 @@ proof -
          emeasure (measure_pmf P) ( {x} \<inter> (A-B)) = 0) \<and>
          (emeasure (measure_pmf P) ({x} \<inter> (A \<inter> B)) = 0)}"
     by blast
-  then show "{x::'a. x \<in> space (prob_f A B P) \<and> \<not> \<not> Sigma_Algebra.measure (prob_f A B P) {x} = (0::real)}
+  then show "{x::'a. x \<in> space (\<F> A B P) \<and> \<not> \<not> Sigma_Algebra.measure (\<F> A B P) {x} = (0::real)}
     \<subseteq> {x::'a. emeasure (measure_pmf P) ({x} \<inter> (A - B)) = (0::ennreal) \<and> 
              emeasure (measure_pmf P) ({x} \<inter> A \<inter> B) = (0::ennreal)}"
     by (metis (no_types, lifting) Collect_mono_iff Int_assoc calculation)
 next
-  have f1: "emeasure (prob_f A B P)
+  have f1: "emeasure (\<F> A B P)
      {x::'a. emeasure (measure_pmf P) ({x} \<inter> (A - B)) = (0::ennreal) \<and> 
             emeasure (measure_pmf P) ({x} \<inter> A \<inter> B) = (0::ennreal)}
       = (\<lambda>AA. emeasure P (AA \<inter> (A-B)) * 
@@ -1031,7 +1037,7 @@ next
         + emeasure P (AA \<inter> (A \<inter> B)))
         {x::'a. emeasure (measure_pmf P) ({x} \<inter> (A - B)) = (0::ennreal) \<and> 
             emeasure (measure_pmf P) ({x} \<inter> A \<inter> B) = (0::ennreal)}"
-    by (rule prob_f_emeasure)
+    by (rule proj_f_emeasure)
   have f2: "\<forall>i \<in> {x::'a. emeasure (measure_pmf P) ({x} \<inter> (A - B)) = (0::ennreal) \<and> 
             emeasure (measure_pmf P) ({x} \<inter> A \<inter> B) = (0::ennreal)} . 
         emeasure (measure_pmf P) ({i} \<inter> (A - B)) = (0::ennreal)"
@@ -1048,7 +1054,7 @@ next
             emeasure (measure_pmf P) ({x} \<inter> A \<inter> B) = (0::ennreal)} \<inter> (A \<inter> B)) = 0"
     apply (rule pmf_measure_zero)
     by (simp add: Int_insert_right lattice_class.inf_sup_aci(1))
-  show "emeasure (prob_f A B P)
+  show "emeasure (\<F> A B P)
      {x::'a. emeasure (measure_pmf P) ({x} \<inter> (A - B)) = (0::ennreal) \<and> 
             emeasure (measure_pmf P) ({x} \<inter> A \<inter> B) = (0::ennreal)} = (0::ennreal)"
     using f1 f4 f5 by simp
@@ -1056,48 +1062,48 @@ next
   show "{x::'a.
      emeasure (measure_pmf P) ({x} \<inter> (A - B)) = (0::ennreal) \<and>
      emeasure (measure_pmf P) ({x} \<inter> A \<inter> B) = (0::ennreal)}
-    \<in> sets (prob_f A B P)"
-    by (simp add: prob_f_sets)
+    \<in> sets (\<F> A B P)"
+    by (simp add: proj_f_sets)
 qed
 
 (* declare [[ smt_timeout = 600 ]] *)
 
-lemma prob_f_measure_pmf:
+lemma proj_f_measure_pmf:
   fixes P::"'a pmf" and A::"'a set" and B::"'a set"
   assumes "(\<Sum>\<^sub>a i\<in>A \<union> B . pmf P i) = (1::real)"
   assumes "(\<Sum>\<^sub>a i\<in>A-B . pmf P i) > (0::real)"
   assumes "(\<Sum>\<^sub>a i\<in>B-A . pmf P i) > (0::real)"
-  shows "(measure_pmf (Abs_pmf (prob_f A B P))) = prob_f A B P"
+  shows "(measure_pmf (Abs_pmf (\<F> A B P))) = \<F> A B P"
   apply (rule pmf.Abs_pmf_inverse)
   apply (auto)
-  using assms(1) assms(2) assms(3) prob_space_prob_f apply blast
-  apply (simp add: prob_f_sets)
-  using assms(1) assms(2) assms(3) prob_f_AE by blast
+  using assms(1) assms(2) assms(3) prob_space_proj_f apply blast
+  apply (simp add: proj_f_sets)
+  using assms(1) assms(2) assms(3) proj_f_AE by blast
 
 lemma enn2real_distrib: "enn2real (A*c + A*d) = enn2real (A*(c+d))"
   by (simp add: distrib_left)
 
-lemma prob_f_sum_eq_1:
+lemma proj_f_sum_eq_1:
   fixes P::"'a pmf" and A::"'a set" and B::"'a set"
   assumes "(\<Sum>\<^sub>a i\<in>A \<union> B . pmf P i) = (1::real)"
   assumes "(\<Sum>\<^sub>a i\<in>A-B . pmf P i) > (0::real)"
   assumes "(\<Sum>\<^sub>a i\<in>B-A . pmf P i) > (0::real)"
-  shows "(\<Sum>\<^sub>a x::'a | x \<in> A . pmf (Abs_pmf (prob_f A B P)) x) = (1::real)"
+  shows "(\<Sum>\<^sub>a x::'a | x \<in> A . pmf (Abs_pmf (\<F> A B P)) x) = (1::real)"
 proof -
-  have f1: "(\<Sum>\<^sub>a x::'a | x \<in> A . pmf (Abs_pmf (prob_f A B P)) x) 
-            = measure (measure_pmf (Abs_pmf (prob_f A B P))) A"
+  have f1: "(\<Sum>\<^sub>a x::'a | x \<in> A . pmf (Abs_pmf (\<F> A B P)) x) 
+            = measure (measure_pmf (Abs_pmf (\<F> A B P))) A"
     by (simp add: measure_pmf_conv_infsetsum)
-  then have f2: "... = measure (prob_f A B P) A"
-    using assms by (simp add: prob_f_measure_pmf)
+  then have f2: "... = measure (\<F> A B P) A"
+    using assms by (simp add: proj_f_measure_pmf)
   then have f3: "... = enn2real (emeasure (measure_of (space P) (sets P)
     (\<lambda>AA. emeasure P (AA \<inter> (A-B)) * (
       ((\<Sum>\<^sub>a i\<in>B-A . pmf P i) + (\<Sum>\<^sub>a i\<in>A-B . pmf P i))/(\<Sum>\<^sub>a i\<in>A-B . pmf P i))
     + emeasure P (AA \<inter> (A \<inter> B)))) A)"
-    by (simp add: prob_f_def measure_def)
+    by (simp add: proj_f_def measure_def)
   then have f4: "... = enn2real ((\<lambda>AA. emeasure P (AA \<inter> (A-B)) * 
       (((\<Sum>\<^sub>a i\<in>B-A . pmf P i) + (\<Sum>\<^sub>a i\<in>A-B . pmf P i))/(\<Sum>\<^sub>a i\<in>A-B . pmf P i))
     + emeasure P (AA \<inter> (A \<inter> B))) A)"
-    by (simp add: Sigma_Algebra.measure_def prob_f_emeasure)
+    by (simp add: Sigma_Algebra.measure_def proj_f_emeasure)
   then have f5: "... = enn2real (emeasure P ((A-B)) * 
       (((\<Sum>\<^sub>a i\<in>B-A . pmf P i) + (\<Sum>\<^sub>a i\<in>A-B . pmf P i))/(\<Sum>\<^sub>a i\<in>A-B . pmf P i))
     + emeasure P ((A \<inter> B)))"
@@ -1106,7 +1112,7 @@ proof -
   then show ?thesis
     by (metis Int_commute Sigma_Algebra.measure_def assms(1) assms(2) assms(3) 
         bounded_semilattice_inf_top_class.inf_top.right_neutral emeasure_pmf_UNIV 
-        enn2real_eq_1_iff f1 prob_f_emeasure prob_f_measure_pmf)
+        enn2real_eq_1_iff f1 proj_f_emeasure proj_f_measure_pmf)
 qed
 
 end
