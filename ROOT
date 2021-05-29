@@ -344,7 +344,6 @@ session "UTP-Prob-Designs" in "probability" = "UTP-Hybrid-Imports" +
   theories
     utp_prob_des 
     utp_prob_pmf_laws 
-    utp_prob_des_healthy
     utp_prob_des_laws
   document_files
     "root.bib"

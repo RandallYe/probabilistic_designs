@@ -2090,7 +2090,8 @@ next
 qed
 
 lemma QP'_prob_xy_equal:
-  "(Q ;; \<up> P')  \<sqsubseteq>  U(true \<turnstile>\<^sub>n ($prob\<acute>($\<^bold>v\<lbrakk>0,0/$x,$y\<rbrakk>) = 0.5 \<and> $prob\<acute>($\<^bold>v\<lbrakk>0,1/$x,$y\<rbrakk>) = 0.5 \<and> 
+  "(Q ;; \<up> P')  \<sqsubseteq>  
+  U(true \<turnstile>\<^sub>n ($prob\<acute>($\<^bold>v\<lbrakk>0,0/$x,$y\<rbrakk>) = 0.5 \<and> $prob\<acute>($\<^bold>v\<lbrakk>0,1/$x,$y\<rbrakk>) = 0.5 \<and> 
      $prob\<acute>($\<^bold>v\<lbrakk>1,0/$x,$y\<rbrakk>) = 0 \<and> $prob\<acute>($\<^bold>v\<lbrakk>1,1/$x,$y\<rbrakk>) = 0))"
   apply (subst QP'_simp)
   by (rel_auto)

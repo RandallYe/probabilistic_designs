@@ -9,13 +9,7 @@ theory utp_prob_des
 begin recall_syntax
 
 purge_notation inner (infix "\<bullet>" 70)
-(* Coercive: see section 12.4 in isar_ref 
 
-  Register a new coercion function pmf:: "'a pmf \<Rightarrow> 'a \<Rightarrow> real", which allows 
-  the user to omit explicit type conversions. Type inference will add them as 
-  necessary when parsing a term.
-  For example, users can write "$prob s" instead of explicit conversion "pmf $prob s" 
-*)
 declare [[coercion pmf]]
 
 alphabet 's prss = 
@@ -63,16 +57,6 @@ lemma pemb_mono: "P \<sqsubseteq> Q \<Longrightarrow> \<K>(P) \<sqsubseteq> \<K>
 lemma wdprespec: "(true \<turnstile>\<^sub>n R) \\ (p \<turnstile>\<^sub>n Q) = (p \<turnstile>\<^sub>n (R \\ Q))"
   by (rel_auto)
 
-(*
-lemma "R wp (&\<^bold>v =\<^sub>u \<guillemotleft>s'\<guillemotright>) = Pre(R\<lbrakk>\<guillemotleft>s'\<guillemotright>/$\<^bold>v\<acute>\<rbrakk>)"
-  apply (simp add: wp_upred_def)
-  by (rel_auto)
-*)
-declare [[show_types]]
-(*
-term "U((\<Sum>\<^sub>a i\<in>\<lbrakk>p\<rbrakk>\<^sub>p. $prob i) = 1)"
-term "\<^U>((\<Sum>\<^sub>a i\<in>{s'.(R wp (&\<^bold>v = s'))\<^sup><}. $prob\<acute> i) = 1)"
-*)
 lemma pemb_form:
   fixes R :: "('a, 'b) urel"
   shows "\<^U>(($prob($\<^bold>v\<acute>) > 0) \\ R) = \<^U>((\<Sum>\<^sub>a i\<in>{s'.(R wp (&\<^bold>v = s'))\<^sup><}. $prob\<acute> i) = 1)" (is "?lhs = ?rhs")
@@ -103,90 +87,6 @@ proof -
     by (simp add: "1" "2")
 qed
 
-(*
-text \<open>
-  Inverse of @{text "\<K>"}~\cite[Corollary 3.7]{Jifeng2004}: 
-embedding a standard design (P) in the probabilistic world then forgetting its probability 
-distribution is equal to P itself.
-\<close>
-lemma pemb_inv:
-  assumes "P is \<^bold>N"
-  shows "\<K>(P) ;; \<^bold>f\<^bold>p = P"
-proof -
-  obtain pre\<^sub>p post\<^sub>p
-    where p:"P = (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)"
-    using assms by (metis ndesign_form)
-  have f1: "\<K>(pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p) ;; \<^bold>f\<^bold>p = (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)"
-    apply (simp add: prob_lift forget_prob_def)
-    apply (ndes_simp)
-    apply (rel_auto)
-    proof -
-      fix ok\<^sub>v::"bool" and more::"'a" and ok\<^sub>v'::"bool" and morea::"'b" and prob\<^sub>v::"'b pmf"
-      assume a1: "(\<Sum>\<^sub>ax::'b | \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, x). pmf prob\<^sub>v x) = (1::real)"
-      assume a2: "(0::real) < pmf prob\<^sub>v morea"
-      show "\<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, morea)"
-      proof (rule ccontr)
-        assume aa1: "\<not> \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, morea)"
-        have f1: "(\<Sum>\<^sub>ax::'b \<in> {x. \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, x)} \<union> {morea}. pmf prob\<^sub>v x) = 
-          (\<Sum>\<^sub>ax::'b \<in> {x. \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, x)}. pmf prob\<^sub>v x) + 
-          (\<Sum>\<^sub>ax::'b \<in> {morea}. pmf prob\<^sub>v x)"
-          unfolding infsetsum_altdef abs_summable_on_altdef
-          apply (subst set_integral_Un, auto)
-          using aa1 apply (simp)
-          using abs_summable_on_altdef assms apply fastforce
-          using abs_summable_on_altdef by blast
-        then have f2: "... = 1 + pmf prob\<^sub>v morea"
-          using a1 by auto
-        then have f3: "... > 1"
-          using a2 by linarith
-        show "False"
-          using f1 f2 f3
-          by (metis f1 f2 measure_pmf.prob_le_1 measure_pmf_conv_infsetsum not_le)
-      qed
-    next
-      fix ok\<^sub>v::"bool" and more::"'a" and ok\<^sub>v'::"bool" and morea::"'b"
-      assume a1: "\<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, morea)"
-      have f1: "\<forall>x. (pmf (pmf_of_list [(morea, 1::real)]) x) = (if x = morea then (1::real) else 0)"
-        by (simp add: pmf_of_list_wf_def pmf_pmf_of_list)
-      have f2: "(\<Sum>\<^sub>ax::'b | \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, x). pmf (pmf_of_list [(morea, 1::real)]) x) = 
-        (\<Sum>\<^sub>ax::'b | \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, x). (if x = morea then (1::real) else 0))"
-        using f1 by simp
-      have f3: "... = (1::real)"
-        proof -
-          have "(\<Sum>\<^sub>ax::'b | \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, x). if x = morea then 1::real else (0::real)) =
-            (\<Sum>\<^sub>ax::'b \<in> {morea} \<union> {t. \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, t) \<and> t \<noteq> morea}. 
-              if x = morea then 1::real else (0::real))"
-            proof -
-              have "{t. \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, t)} = {morea} \<union> {t. \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, t) \<and> t \<noteq> morea}"
-                using a1 by blast
-              then show ?thesis
-                by presburger
-            qed
-          also have "... = (\<Sum>\<^sub>ax::'b \<in> {morea}. if x = morea then 1::real else (0::real)) +
-             (\<Sum>\<^sub>ax::'b \<in> {t. \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, t) \<and> t \<noteq> morea}. if x = morea then 1::real else (0::real))"
-            unfolding infsetsum_altdef abs_summable_on_altdef
-            apply (subst set_integral_Un, auto)
-            using abs_summable_on_altdef apply fastforce
-            using abs_summable_on_altdef by (smt abs_summable_on_0 abs_summable_on_cong mem_Collect_eq)
-          also have "... = (1::real) + 
-            (\<Sum>\<^sub>ax::'b \<in> {t. \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, t) \<and> t \<noteq> morea}. if x = morea then 1::real else (0::real))"
-            by simp
-          also have "... = (1::real)"
-            by (smt add_cancel_left_right infsetsum_all_0 mem_Collect_eq)
-          then show ?thesis
-            by (simp add: calculation)
-        qed
-      show "\<exists>prob\<^sub>v::'b pmf.
-            (\<Sum>\<^sub>ax::'b | \<lbrakk>post\<^sub>p\<rbrakk>\<^sub>e (more, x). pmf prob\<^sub>v x) = (1::real) \<and> (0::real) < pmf prob\<^sub>v morea"
-        apply (rule_tac x = "pmf_of_list [(morea, 1.0)]" in exI)
-        apply (auto)
-        apply (simp add: f1 f2 f3)
-        by (simp add: pmf_of_list_wf_def pmf_pmf_of_list)
-    qed
-    show ?thesis
-      using f1 by (simp add: p)
-qed
-*)
 no_utp_lift usubst (0) subst (1)
 
 subsection \<open> wplus \<close>
@@ -359,61 +259,6 @@ next
   qed
 qed
 
-(*
-typedef 'a ccpmf = "{p :: 'a pmf. \<forall>r \<in> {0..1}. p +\<^bsub>r\<^esub> p = p}"
-  by (simp add: wplus_idem)
-*)
-
-(*
-definition spmf_to_pmf:: "'a pmf \<Rightarrow> 'a set \<Rightarrow> 'a set \<Rightarrow> 'a pmf" where
-"spmf_to_pmf p A B = join_pmf (pmf_of_list [((pdres_spmf (A-B) P), 1), ((pdres_spmf (B-A) P), 1)])"
-
-definition pdres1' :: "'a set \<Rightarrow> 'a set \<Rightarrow> 'a pmf \<Rightarrow> 'a pmf" where
-"pdres1' A B P = (pdres_spmf (A-B) P) (pdres_spmf (B-A) P)"
-
-term "nn_integral"
-term "(SUP g \<in> {g. simple_function M g \<and> g \<le> f}. integral\<^sup>S M g)"
-
-lemma 
-  fixes P::"'a pmf"
-  assumes "(\<Sum>\<^sub>a i\<in>A \<union> B . pmf P i) = (1::real)"
-  assumes "(\<Sum>\<^sub>a i\<in>A . pmf P i) > (0::real)"
-  assumes "(\<Sum>\<^sub>a i\<in>B . pmf P i) > (0::real)"
-  shows "(\<Sum>\<^sub>a i\<in>A. pmf (pdres1 A B P) i) = (1::real)"
-  apply (simp add: pdres1_def)
-  apply (rule infsetsum_pmf_eq_1)
-proof -
-  from assms(2) have f1: "A \<noteq> {}"
-    by auto
-  have "pmf (embed_pmf (\<lambda>x. if x \<in> A \<and> x \<notin> B then pmf P x * 
-          (1/((\<Sum>\<^sub>a i\<in>A . pmf P i) + (\<Sum>\<^sub>a i\<in>B . pmf P i)))
-        else (0::real))) i = 
-        (\<lambda>x. if x \<in> A \<and> x \<notin> B then pmf P x * 
-          (1/((\<Sum>\<^sub>a i\<in>A . pmf P i) + (\<Sum>\<^sub>a i\<in>B . pmf P i)))
-        else (0::real)) i"
-    apply (rule pmf_embed_pmf)
-    using assms(2) assms(3) apply auto[1]
-    apply (simp add: nn_integral_def)
-    sledgehammer
-  proof -
-    let ?f = "\<lambda>x. ennreal
-          (if x \<in> A \<and> \<not> x \<in> B then pmf P x \<cdot> ((1::real) / (infsetsum (pmf P) A + infsetsum (pmf P) B))
-           else (0::real))"
-
-    show "\<integral>\<^sup>+ (x::'a).
-         ennreal
-          (if x \<in> A \<and> \<not> x \<in> B then pmf P x \<cdot> ((1::real) / (infsetsum (pmf P) A + infsetsum (pmf P) B))
-           else (0::real))
-       \<partial>count_space UNIV =
-    (1::ennreal)"
-      apply (simp add: nn_integral_count_space)
-    sorry
-  have "pmf (pdres1 A B P) i = 
-      pmf (embed_pmf (\<lambda>x. if x \<in> A \<and> x \<notin> B then pmf P x * (1/((\<Sum>\<^sub>a i\<in>A . pmf P i) + (\<Sum>\<^sub>a i\<in>B . pmf P i)))
-        else (0::real))) i"
-    apply (simp add: pdres1_def)
-*)
-
 subsection \<open> Probabilistic Choice \<close>
 text \<open> We use parallel-by-merge in UTP to define the probabilistic choice operator. 
 The merge predicate is the join of two distributions by their weights.
@@ -580,8 +425,6 @@ text \<open> Then the lifting operator @{text "\<up>"} is defined upon @{text "k
 definition kleisli_lift ("\<up>") where
   "kleisli_lift P = kleisli_lift2 (\<lfloor>pre\<^sub>D(P)\<rfloor>\<^sub><) (pre\<^sub>D(P) \<and> post\<^sub>D(P))"
 
-(* thm "kleisli_lift_def" *)
-
 text \<open> The alternative definition of the lifting operator @{text "\<up>"} is based on 
 @{text "kleisli_lift2'"}.
 \<close>
@@ -593,8 +436,8 @@ text \<open>
 Sequential composition of two probabilistic designs (P and Q) is composition of P with the lifted Q 
 through the Kleisli lifting operator.
 \<close>
-abbreviation pseqr :: "('b, 'b) rel_pdes \<Rightarrow> ('b, 'b) rel_pdes \<Rightarrow> ('b, 'b) rel_pdes" (infix ";;\<^sub>p" 60) where
-  "pseqr P Q \<equiv> (P ;; (\<up> Q))"
+abbreviation pseqr :: "('b, 'b) rel_pdes \<Rightarrow> ('b, 'b) rel_pdes \<Rightarrow> ('b, 'b) rel_pdes" (infix ";;\<^sub>p" 60) 
+  where  "pseqr P Q \<equiv> (P ;; (\<up> Q))"
 
 text \<open>
 @{text "II\<^sub>p"} is the identity of sequence of probabilistic designs.
