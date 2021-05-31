@@ -115,33 +115,33 @@ term "$x\<acute>"
 term "U(&x > 5)"
 
 subsection \<open> Section 6 \<close>
-abbreviation p13 :: "(state, state) rel_pdes" where
-  "p13 \<equiv> (pif 1/3 pthen \<K>(x :=\<^sub>D 0) pelse \<K>(x :=\<^sub>D 1) pfi)"
+abbreviation P1 :: "(state, state) rel_pdes" where
+  "P1 \<equiv> (pif 1/3 pthen \<K>(x :=\<^sub>D 0) pelse \<K>(x :=\<^sub>D 1) pfi)"
 
-abbreviation p12 :: "(state, state) rel_pdes" where
-  "p12 \<equiv> (pif 1/2 pthen \<K>(x :=\<^sub>D x + 2) pelse \<K>(x :=\<^sub>D x + 3) pfi)"
+abbreviation P2 :: "(state, state) rel_pdes" where
+  "P2 \<equiv> (pif 1/2 pthen \<K>(x :=\<^sub>D x + 2) pelse \<K>(x :=\<^sub>D x + 3) pfi)"
 
-abbreviation p14 :: "(state, state) rel_pdes" where
-  "p14 \<equiv> (pif 1/4 pthen \<K>(x :=\<^sub>D x + 4) pelse \<K>(x :=\<^sub>D x + 5) pfi)"
+abbreviation P3 :: "(state, state) rel_pdes" where
+  "P3 \<equiv> (pif 1/4 pthen \<K>(x :=\<^sub>D x + 4) pelse \<K>(x :=\<^sub>D x + 5) pfi)"
 
 term "(pif 1/3 pthen \<K>(x :=\<^sub>D 0) pelse \<K>(x :=\<^sub>D 1) pfi)"
 
-lemma p13_alt:
-  "p13 = (\<^U>(true) \<turnstile>\<^sub>n U($prob\<acute>($\<^bold>v\<lbrakk>0/$x\<rbrakk>) = 1/3 \<and> $prob\<acute>($\<^bold>v\<lbrakk>1/$x\<rbrakk>) = 2/3))"
+lemma P1_alt:
+  "P1 = (\<^U>(true) \<turnstile>\<^sub>n U($prob\<acute>($\<^bold>v\<lbrakk>0/$x\<rbrakk>) = 1/3 \<and> $prob\<acute>($\<^bold>v\<lbrakk>1/$x\<rbrakk>) = 2/3))"
   apply (subgoal_tac "pchoice_assign (1/3) 0 1 
     = (\<^U>(true) \<turnstile>\<^sub>n U($prob\<acute>($\<^bold>v\<lbrakk>0/$x\<rbrakk>) = 1/3 \<and> $prob\<acute>($\<^bold>v\<lbrakk>1/$x\<rbrakk>) = 2/3))")
-  apply (subgoal_tac "p13 = pchoice_assign (1/3) 0 1")
+  apply (subgoal_tac "P1 = pchoice_assign (1/3) 0 1")
   apply auto[1] 
   apply (simp add: one_uexpr_def zero_uexpr_def)
   apply (subst pchoice_assign_simp[where r="1/3"])
   apply simp+
   by (rel_auto)
 
-lemma p12_alt:
-  "p12 = (\<^U>(true) \<turnstile>\<^sub>n U($prob\<acute>($\<^bold>v\<lbrakk>$x+2/$x\<rbrakk>) = 1/2 \<and> $prob\<acute>($\<^bold>v\<lbrakk>$x+3/$x\<rbrakk>) = 1/2))"
+lemma P2_alt:
+  "P2 = (\<^U>(true) \<turnstile>\<^sub>n U($prob\<acute>($\<^bold>v\<lbrakk>$x+2/$x\<rbrakk>) = 1/2 \<and> $prob\<acute>($\<^bold>v\<lbrakk>$x+3/$x\<rbrakk>) = 1/2))"
   apply (subgoal_tac "pchoice_assign' (1/2) (&x+2) (&x+3) 
     = (\<^U>(true) \<turnstile>\<^sub>n U($prob\<acute>($\<^bold>v\<lbrakk>$x+2/$x\<rbrakk>) = 1/2 \<and> $prob\<acute>($\<^bold>v\<lbrakk>$x+3/$x\<rbrakk>) = 1/2))")
-  apply (subgoal_tac "p12 = pchoice_assign' (1/2) (&x+2) (&x+3)")
+  apply (subgoal_tac "P2 = pchoice_assign' (1/2) (&x+2) (&x+3)")
   apply auto[1] 
   apply (simp)
   apply (simp add: pemp_assign prob_choice_r)
@@ -181,11 +181,11 @@ lemma p12_alt:
       by (simp add: a3 a4)
   qed
 
-lemma p14_alt:
-  "p14 = (\<^U>(true) \<turnstile>\<^sub>n U($prob\<acute>($\<^bold>v\<lbrakk>$x+4/$x\<rbrakk>) = 1/4 \<and> $prob\<acute>($\<^bold>v\<lbrakk>$x+5/$x\<rbrakk>) = 3/4))"
+lemma P3_alt:
+  "P3 = (\<^U>(true) \<turnstile>\<^sub>n U($prob\<acute>($\<^bold>v\<lbrakk>$x+4/$x\<rbrakk>) = 1/4 \<and> $prob\<acute>($\<^bold>v\<lbrakk>$x+5/$x\<rbrakk>) = 3/4))"
   apply (subgoal_tac "pchoice_assign' (1/4) (&x+4) (&x+5) 
     = (\<^U>(true) \<turnstile>\<^sub>n U($prob\<acute>($\<^bold>v\<lbrakk>$x+4/$x\<rbrakk>) = 1/4 \<and> $prob\<acute>($\<^bold>v\<lbrakk>$x+5/$x\<rbrakk>) = 3/4))")
-  apply (subgoal_tac "p14 = pchoice_assign' (1/4) (&x+4) (&x+5)")
+  apply (subgoal_tac "P3 = pchoice_assign' (1/4) (&x+4) (&x+5)")
   apply auto[1] 
   apply (simp)
   apply (simp add: pemp_assign prob_choice_r)
@@ -226,13 +226,13 @@ lemma p14_alt:
   qed
 
 lemma ex6_1: "
-  (p13 ;;\<^sub>p (p12 \<triangleleft> U(x = 0) \<triangleright>\<^sub>D p14))
+  (P1 ;;\<^sub>p (P2 \<triangleleft> U(x = 0) \<triangleright>\<^sub>D P3))
   = U(true \<turnstile>\<^sub>n ( 
     ($prob\<acute>($\<^bold>v\<lbrakk>2/$x\<rbrakk>) = 1/6 \<and> 
      $prob\<acute>($\<^bold>v\<lbrakk>3/$x\<rbrakk>) = 1/6 \<and>
      $prob\<acute>($\<^bold>v\<lbrakk>5/$x\<rbrakk>) = 1/6 \<and> 
      $prob\<acute>($\<^bold>v\<lbrakk>6/$x\<rbrakk>) = 1/2)))"
-  apply (simp add: p13_alt p12_alt p14_alt)
+  apply (simp add: P1_alt P2_alt P3_alt)
   apply (simp add: kleisli_lift_alt_def kleisli_lift2'_def)
   apply (ndes_simp)
   apply (rule ndesign_eq_intro)
