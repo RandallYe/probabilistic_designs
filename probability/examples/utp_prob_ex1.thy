@@ -896,7 +896,7 @@ next
 qed
 
 subsubsection \<open> Contract \<close>
-lemma unisel'_contract:
+lemma unisel_contract:
   assumes "N \<ge> 1"
   shows "U(true \<turnstile>\<^sub>n 
     (
