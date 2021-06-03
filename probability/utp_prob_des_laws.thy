@@ -2146,6 +2146,27 @@ proof -
     by (rel_auto)
 qed
 
+lemma prob_choice_cond_distr:
+  assumes "r \<in> {0..1}" "P is \<^bold>N" "Q is \<^bold>N" "R is \<^bold>N"
+  shows "(Q \<triangleleft> b \<triangleright>\<^sub>D R) \<oplus>\<^bsub>r\<^esub> P  = ((Q \<oplus>\<^bsub>r\<^esub> P) \<triangleleft> b \<triangleright>\<^sub>D (R \<oplus>\<^bsub>r\<^esub> P))" (is "?LHS = ?RHS")
+proof -
+  obtain pre\<^sub>p post\<^sub>p pre\<^sub>q post\<^sub>q pre\<^sub>r post\<^sub>r
+    where p:"P = (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)" and 
+          q:"Q = (pre\<^sub>q \<turnstile>\<^sub>n post\<^sub>q)" and 
+          r:"R = (pre\<^sub>r \<turnstile>\<^sub>n post\<^sub>r)"
+    using assms by (metis ndesign_form)
+  hence lhs: "?LHS = (( (pre\<^sub>q \<turnstile>\<^sub>n post\<^sub>q) \<triangleleft> b \<triangleright>\<^sub>D (pre\<^sub>r \<turnstile>\<^sub>n post\<^sub>r)) \<oplus>\<^bsub>r\<^esub> (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)) "
+    by auto
+  also have lhs': "... = (((pre\<^sub>q \<triangleleft> b \<triangleright> pre\<^sub>r) \<turnstile>\<^sub>n (post\<^sub>q \<triangleleft> b \<triangleright>\<^sub>r post\<^sub>r))) \<oplus>\<^bsub>r\<^esub> (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p) "
+    by (ndes_simp)
+  have rhs: "?RHS = (( (pre\<^sub>q \<turnstile>\<^sub>n post\<^sub>q) \<oplus>\<^bsub>r\<^esub> (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)) \<triangleleft> b \<triangleright>\<^sub>D ((pre\<^sub>r \<turnstile>\<^sub>n post\<^sub>r) \<oplus>\<^bsub>r\<^esub> (pre\<^sub>p \<turnstile>\<^sub>n post\<^sub>p)))"
+    by (simp add: p q r)
+  show ?thesis
+    apply (simp add: p q r lhs' rhs)
+    apply (ndes_simp cls: assms)
+    by (rel_auto)
+qed
+
 subsubsection \<open> UTP expression as weight \<close>
 lemma log_const_metasubt_eq:
   assumes "\<forall>x. P x is \<^bold>N"
