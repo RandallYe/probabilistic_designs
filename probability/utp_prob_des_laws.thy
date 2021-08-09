@@ -481,6 +481,40 @@ proof -
     using p q by auto
 qed
 
+lemma UINF_greaterThanLessThan_1:
+  "PP(1) \<sqinter> (\<Sqinter> r::real \<in> {0<..<1} \<bullet> PP(r)) = (\<Sqinter> r::real \<in> {0<..1} \<bullet> PP r)"
+proof -
+  have "insert 1 {0::real<..<1} = {0<..1}"
+    by (auto)
+  thus ?thesis
+    by (metis UINF_insert)
+qed 
+
+lemma UINF_greaterThanAtMost_0: 
+  "PP(0) \<sqinter> (\<Sqinter> r::real \<in> {0<..1} \<bullet> PP r) = (\<Sqinter> r::real \<in> {0..1} \<bullet> PP r)"
+proof -
+  have "insert 0 {0::real<..1} = {0..1}"
+    by (auto)
+  thus ?thesis
+    by (metis UINF_insert)
+qed
+
+(* Special cases can be combined. *)
+lemma pemb_intchoice'':
+  assumes "P is \<^bold>N" "Q is \<^bold>N"
+  shows "\<K>(P \<sqinter> Q) = (\<Sqinter> r \<in> {0..1} \<bullet> (\<K>(P) \<oplus>\<^bsub>r\<^esub> \<K>(Q)))" (is "?LHS = ?RHS")
+proof -
+  have f1: "?RHS = 
+    (\<K>(P) \<oplus>\<^bsub>0\<^esub> \<K>(Q)) \<sqinter> (\<K>(P) \<oplus>\<^bsub>1\<^esub> \<K>(Q)) \<sqinter> (\<Sqinter> r \<in> {0<..<1} \<bullet> (\<K>(P) \<oplus>\<^bsub>r\<^esub> \<K>(Q))) "
+    by (metis (mono_tags, lifting) UINF_greaterThanAtMost_0 UINF_greaterThanLessThan_1 
+        semilattice_sup_class.sup.assoc)
+  have f2: "... = \<K>(P) \<sqinter> \<K>(Q) \<sqinter> (\<Sqinter> r \<in> {0<..<1} \<bullet> (\<K>(P) \<oplus>\<^bsub>r\<^esub> \<K>(Q)))"
+    by (simp add: prob_choice_one prob_choice_zero semilattice_sup_class.sup.commute)
+  show ?thesis
+    using assms apply (simp add: pemb_intchoice')
+    by (simp add: f2 f1)
+qed
+
 lemma pemb_dem_choice_refinedby_prochoice:
   assumes "r \<in> {0..1}" "P is \<^bold>N" "Q is \<^bold>N"
   shows "\<K>(P \<sqinter> Q) \<sqsubseteq> (\<K>(P) \<oplus>\<^bsub>r\<^esub> \<K>(Q))"
