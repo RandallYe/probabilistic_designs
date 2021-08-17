@@ -111,9 +111,6 @@ lemma "U((x := x + 1) ;; ($x > 5)) = U($x > 4)"
 lemma "U((x := x + 1) wp (&x > 5)) = U(&x > 4)"
   by (rel_auto)
 
-term "$x\<acute>"
-term "U(&x > 5)"
-
 subsection \<open> Section 6 \<close>
 abbreviation P1 :: "(state, state) rel_pdes" where
   "P1 \<equiv> (pif 1/3 pthen \<K>(x :=\<^sub>D 0) pelse \<K>(x :=\<^sub>D 1) pfi)"

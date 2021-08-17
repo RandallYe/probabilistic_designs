@@ -2096,28 +2096,4 @@ lemma QP'_prob_xy_equal:
   apply (subst QP'_simp)
   by (rel_auto)
 
-(*
-lemma QP_simp: "(Q ;; \<up> P) = 
-  U(true \<turnstile>\<^sub>n (
-    ($prob\<acute>($\<^bold>v\<lbrakk>0,0/$x,$y\<rbrakk>) = 0.5 \<and> $prob\<acute>($\<^bold>v\<lbrakk>0,1/$x,$y\<rbrakk>) = 0.5 \<and> 
-     $prob\<acute>($\<^bold>v\<lbrakk>1,0/$x,$y\<rbrakk>) = 0 \<and> $prob\<acute>($\<^bold>v\<lbrakk>1,1/$x,$y\<rbrakk>) = 0)
- 
-\<or>   ($prob\<acute>($\<^bold>v\<lbrakk>0,0/$x,$y\<rbrakk>) = 0 \<and> $prob\<acute>($\<^bold>v\<lbrakk>0,1/$x,$y\<rbrakk>) = 0.5 \<and> 
-     $prob\<acute>($\<^bold>v\<lbrakk>1,0/$x,$y\<rbrakk>) = 0.5 \<and> $prob\<acute>($\<^bold>v\<lbrakk>1,1/$x,$y\<rbrakk>) = 0)
-
-\<or>   ($prob\<acute>($\<^bold>v\<lbrakk>0,0/$x,$y\<rbrakk>) = 0.5 \<and> $prob\<acute>($\<^bold>v\<lbrakk>0,1/$x,$y\<rbrakk>) = 0 \<and> 
-     $prob\<acute>($\<^bold>v\<lbrakk>1,0/$x,$y\<rbrakk>) = 0 \<and> $prob\<acute>($\<^bold>v\<lbrakk>1,1/$x,$y\<rbrakk>) = 0.5) 
-
-\<or>   ($prob\<acute>($\<^bold>v\<lbrakk>0,0/$x,$y\<rbrakk>) = 0 \<and> $prob\<acute>($\<^bold>v\<lbrakk>0,1/$x,$y\<rbrakk>) = 0 \<and> 
-     $prob\<acute>($\<^bold>v\<lbrakk>1,0/$x,$y\<rbrakk>) = 0.5 \<and> $prob\<acute>($\<^bold>v\<lbrakk>1,1/$x,$y\<rbrakk>) = 0.5)
-\<or>
-(\<exists>r\<in>{0..1}. 
-    ($prob\<acute>($\<^bold>v\<lbrakk>0,0/$x,$y\<rbrakk>) = 0.5*\<guillemotleft>r\<guillemotright> \<and> 
-     $prob\<acute>($\<^bold>v\<lbrakk>0,1/$x,$y\<rbrakk>) = 0.5*\<guillemotleft>r\<guillemotright> \<and>
-     $prob\<acute>($\<^bold>v\<lbrakk>1,0/$x,$y\<rbrakk>) = 0.5*\<guillemotleft>1-r\<guillemotright> \<and> 
-     $prob\<acute>($\<^bold>v\<lbrakk>1,1/$x,$y\<rbrakk>) = 0.5*\<guillemotleft>1-r\<guillemotright>))
-  ))"
-  apply (subst Q_alt)
-  apply (simp add: P_alt')
-*)
 end

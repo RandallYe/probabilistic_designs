@@ -539,25 +539,6 @@ lemma pmf_utp_comp_not1:
   shows "\<not> (\<Sum>\<^sub>ax::'a | \<lbrakk>\<not>P\<rbrakk>\<^sub>e (more, x). pmf prob\<^sub>v x) = (1::real)"
   using pmf_utp_univ pmf_utp_comp0 assms pmf_utp_comp1 by fastforce
 
-(*
-lemma pmf_utp_univ':
-  fixes prob\<^sub>v::"'a pmf" and P::"'a \<Rightarrow> bool" and Q::"'a \<Rightarrow> bool"
-  assumes "P(x) \<longrightarrow> Q(x)"
-  shows "(\<Sum>\<^sub>ax::'a | P(x). pmf prob\<^sub>v x) \<le>
-        (\<Sum>\<^sub>ax::'a | Q(x). pmf prob\<^sub>v x)"
-  apply (simp add: infsetsum_def)
-  apply (simp add: lebesgue_integral_def count_space_def)
-  using assms sledgehammer
-*)                     
-
-term "count_space"
-term "measure_space"
-term "measure_of"
-term "Abs_measure"
-term "sigma_sets"
-term "lebesgue_integral"
-term "has_bochner_integral"
-
 lemma pmf_disj_leq:
   fixes prob\<^sub>v::"'a pmf" and more::"'a"
   shows "(\<Sum>\<^sub>ax::'a | P x. pmf prob\<^sub>v x) \<le>
