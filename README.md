@@ -9,7 +9,7 @@ This instruction is based on Ubuntu/Linux. It would be similar on other operatio
 1. Download **Isabelle2019_linux.tar.gz** from [here](https://isabelle.in.tum.de/website-Isabelle2019/index.html).
 2. Uncompress it inside a folder, such as "/path/to/ramics2021_prob":
   > `/path/to/ramics2021_prob $ tar zxvf Isabelle2019_linux.tar.gz`
-3. Download the Isabelle/UTP version (**utp-main.ramics2021.tar.gz**) for Isabelle2019 from [here](https://github.com/RandallYe/probabilistic_designs/releases/download/ramics2021r/utp-main.ramics2021.tar.gz)
+3. Download the Isabelle/UTP version (**utp-main.ramics2021.tar.gz**) for Isabelle2019 from [here](https://github.com/RandallYe/probabilistic_designs/releases/download/ramics2021f/utp-main.ramics2021.tar.gz)
 4. Uncompress it to the same folder
   > `/path/to/ramics2021_prob $ tar zxvf utp-main.ramics2021.tar.gz`
 5. Clone this repository inside the same folder, and then switch to the **ramics2021** branch
