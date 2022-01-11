@@ -20,6 +20,9 @@ term "(if P then 1 else 0)\<^sub>e"
 definition iverson_bracket :: "'s pred \<Rightarrow> ('s \<Rightarrow> real)" ("\<lbrakk>_\<rbrakk>\<^sub>\<I>") where 
 [expr_defs]: "\<lbrakk>P\<rbrakk>\<^sub>\<I> = (if P then 1 else 0)\<^sub>e"
 
+definition nat_of_real_1 :: "real \<Rightarrow> nat" where
+"nat_of_real_1 r = (if r = (1::\<real>) then (1) else 0)"
+
 (* Declare your Iverson brackets operator as an expression constructor, to stop it being lifted *)
 expr_ctr iverson_bracket
 
@@ -66,7 +69,7 @@ lemma infinite_prod_is_1:
   using assms by force
 
 (* Infinite sums give 0, no matter how P is defined. *)
-lemma infinite_sum_is_1:
+lemma infinite_sum_is_0:
   fixes P::"'b \<Rightarrow> real"
   assumes "\<not> finite (UNIV::'b set)"
   shows "(\<Sum> m|True. (P m)) = (0::real)"
@@ -106,6 +109,67 @@ lemma iverson_bracket_exist_sum_1:
   apply (expr_auto)
   using assms by auto
 
+(* The use of @{term card} implies (UNIV::'b set) is finite *)
+lemma iverson_bracket_card:
+  fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
+  assumes "finite (UNIV::'b set)"
+  shows "(card {m. P m})\<^sub>e = (\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
+  apply (expr_auto)
+proof -
+  fix x::"'a"
+  let ?P = "\<lambda>m. if P x m then 1::\<real> else (0::\<real>)"
+  have f1: "(\<Sum>m::'b\<in>UNIV. if P x m then 1::\<real> else (0::\<real>)) = 
+        (\<Sum>m::'b\<in>{m. \<not> P x m} \<union> {m. P x m}. ?P m)"
+    by (simp add: Un_def)
+  have f2: "... = sum ?P {m. P x m} + 
+      sum (\<lambda>m. if P x m then 1::\<real> else (0::\<real>)) {m. \<not>P x m}"
+    apply (subst sum_Un)
+    apply (metis assms boolean_algebra.disj_cancel_left finite_Un)
+    apply (metis assms finite_Un ref_lattice.inf_bot_right)
+    using sum.not_neutral_contains_not_neutral by auto
+    
+  show "(real (card (Collect (P x))) = (\<Sum>m::'b\<in>UNIV. ?P m))"
+    using f1 f2 by force
+qed
+
+lemma iverson_bracket_summation:
+  fixes P::"'s \<Rightarrow> bool"
+  assumes "finite (UNIV::'s set)"
+  shows "(\<Sum> m|True. (f * \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e m) = (\<Sum> m|P m. (f)\<^sub>e m)"
+proof -
+  let ?P = "\<lambda>m. (if P m then 1::\<real> else (0::\<real>))"
+  have f1: "(\<Sum>m::'s\<in>UNIV. f m * ?P m) = (\<Sum>m::'s\<in>{m. \<not> P m} \<union> {m. P m}. f m * ?P m)"
+    by (simp add: Un_def)
+  have f2: "... = (\<Sum>m::'s\<in>{m. \<not> P m}. f m * ?P m) + (\<Sum>m::'s\<in>{m. P m}. f m * ?P m)"
+    apply (subst sum_Un)
+    apply (meson assms rev_finite_subset subset_UNIV)
+    apply (meson assms rev_finite_subset subset_UNIV)
+    using sum.not_neutral_contains_not_neutral by auto
+  show ?thesis
+    apply (simp add: expr_defs)
+    by (simp add: f1 f2)
+qed
+
+lemma iverson_bracket_product:
+  fixes P::"'s \<Rightarrow> bool"
+  assumes "finite (UNIV::'s set)"
+  shows "(\<Prod> m|True. (f ^ (\<guillemotleft>nat_of_real_1\<guillemotright> \<lbrakk>P\<rbrakk>\<^sub>\<I>))\<^sub>e m) = (\<Prod> m|P m. (f)\<^sub>e m)"
+proof -
+  let ?P = "\<lambda>m. (if P m then 1::\<real> else (0::\<real>))"
+  let ?Q = "\<lambda>r. (if r = (1::\<real>) then 1::\<nat> else (0::\<nat>))"
+  have f1: "(\<Prod>m::'s\<in>UNIV. f m ^ (?Q (?P m))) = (\<Prod>m::'s\<in>{m. \<not> P m} \<union> {m. P m}. f m ^ (?Q (?P m)))"
+    by (simp add: Un_def)
+  have f2: "... = (\<Prod>m::'s\<in>{m. \<not> P m}. f m ^ (?Q (?P m))) * (\<Prod>m::'s\<in>{m. P m}. f m ^ (?Q (?P m)))"
+    apply (subst prod.union_inter_neutral)
+    apply (meson assms rev_finite_subset subset_UNIV)
+    apply (meson assms rev_finite_subset subset_UNIV)
+    apply force
+    by auto
+  show ?thesis
+    apply (simp add: expr_defs)
+    apply (simp add: nat_of_real_1_def)
+    using f1 f2 by auto
+qed
 
 subsection \<open> Inverse Iverson Bracket \<close>
 axiomatization iverson_bracket_inv :: "real \<Rightarrow> 's pred" ("\<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I>") where 
