@@ -219,31 +219,46 @@ lemma ceiling_iverson_bracket:
   oops
 
 subsection \<open> Inverse Iverson Bracket \<close>
+term "`(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
 axiomatization iverson_bracket_inv :: "('s \<Rightarrow> real) \<Rightarrow> 's pred" ("\<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I>") where 
-iverson_bracket_inv_def: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = (\<forall>s. (N s \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I> s))"
+iverson_bracket_inv_def: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = `(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
+
+expr_ctr iverson_bracket_inv
 
 lemma false_0: "\<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I> = (0)\<^sub>e"
   by (simp add: iverson_bracket_def)
 
+term "(\<not> \<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u)"
+term "\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u = true"
+(* Here (1::\<real>) is a constant and (1)\<^sub>e inside `_` cannot automatically become "(1)\<^sub>e s". 
+ So `@((1)\<^sub>e) ... ` will be expanded to "\<forall>s. (\<lambda>ss. 1::\<real>) s ..."*)
+term "`(@((1)\<^sub>e) \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I>)`"
 lemma iverson_bracket_inv_1: "\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I> = (true)\<^sub>e"
 proof -
-  have 1: "(\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (false)\<^sub>u) = (\<forall>s. ((1)\<^sub>e s \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I> s))"
-    by (metis SEXP_def false_0 iverson_bracket_inv_def)
-  have 2: "(\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = (\<forall>s. (1 \<le> (0::real)))"
-    using 1 by (simp add: false_0)
+  (*have 1: "(\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (false)\<^sub>u) = `(@((1)\<^sub>e) \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I>)`"
+    by (smt (verit) SEXP_def false_0 iverson_bracket_inv_def taut_def)
+  then have 2: "(\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = (1 \<le> (0::real))"
+    by (simp add: false_0)
   then have 3: "(\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = false"
     by simp
-  then have 4: "\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u = true"
-    by (smt (verit, best) Collect_const Collect_eqI SEXP_def iverson_bracket_def 
-        iverson_bracket_inv_def pred_ba.top_greatest pred_set_def ref_order.order_refl true_pred_def)
+  (* A \<sqsupseteq> false \<longrightarrow> \<not> (A \<subseteq> {}) *)
+  then have 4: "\<not> ((\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false))"
+    by simp
+  then *)
+  have "\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u = true"
+    by (smt (verit, best) Collect_cong SEXP_def UNIV_def iverson_bracket_def iverson_bracket_inv_def 
+        pred_set_def ref_order.order_refl taut_def true_pred_def)
   then show ?thesis
     by (metis pred_UNIV pred_set true_pred_def)
 qed
 
 lemma iverson_bracket_inv_0: "\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I> = (false)\<^sub>e"
+  by (smt (verit, ccfv_SIG) SEXP_def false_0 iverson_bracket_inv_def pred_ba.bot.extremum 
+      pred_ba.order_eq_iff pred_set taut_def true_false_pred_expr(2))
+(*
 proof -
-  have 1: "(\<lbrakk>\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (false)\<^sub>u) = (\<forall>s. ((0)\<^sub>e s \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I> s))"
-    by (metis SEXP_def false_0 iverson_bracket_inv_def)
+  have 1: "(\<lbrakk>\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (false)\<^sub>u) = `(@((0)\<^sub>e) \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I>)`"
+    by (smt (verit, ccfv_threshold) SEXP_def false_0 iverson_bracket_inv_def taut_def)
   have 2: "(\<lbrakk>\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = (\<forall>s. 0 \<le> (0::real))"
     using 1 by (simp add: false_0)
   then have 3: "(\<lbrakk>\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = true"
@@ -251,47 +266,56 @@ proof -
   then show ?thesis
     by (metis false_pred_def pred_ba.bot.extremum_uniqueI pred_empty pred_set)
 qed
+*)
 
-lemma iverson_bracket_approximate_inverse: "\<forall>s. N s \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I> s"
+lemma iverson_bracket_approximate_inverse: "`N \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I>`"
+  by (metis SEXP_def iverson_bracket_inv_def ref_order.order_refl)
+(*
 proof -
-  have 1: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u) = (\<forall>s. N s \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I> s)"
+  have 1: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u) = `N \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I>`"
     using iverson_bracket_inv_def
     by (metis SEXP_def ref_order.order_refl)
   then show ?thesis
     by auto
 qed
+*)
 
 lemma iverson_bracket_inv_approximate_inverse: "(\<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u)"
+  using iverson_bracket_inv_def by fastforce
+(*
 proof -
-  have 1: "((\<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = (\<forall>s. (\<lbrakk>P\<rbrakk>\<^sub>\<I> s \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I> s)))"
+  have 1: "(\<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = `(\<lbrakk>P\<rbrakk>\<^sub>\<I> \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
     using iverson_bracket_inv_def
-    by auto
+    by blast
   then show ?thesis
     by auto
 qed
+*)
 
-
+term "(\<forall>s. \<not>(\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I> s))"
+term "`\<not>(\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>)`"
 lemma iverson_bracket_inv_N_0:
-  assumes "\<forall>s. N s \<ge> 0"
-  shows "(\<forall>s. \<not>(\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I> s)) = (\<forall>s. (N s = 0))"
+  assumes "`N \<ge> 0`"
+  shows "`\<not>(\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>)` = `N = 0`"
 proof -
-  have 1: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (false)\<^sub>u) = (\<forall>s. N s \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I> s)"
+  have 1: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (false)\<^sub>u) = `N \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I>`"
     using iverson_bracket_inv_def
-    by (metis SEXP_def false_0)
-  have 2: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = (\<forall>s. N s \<le> (0::real))"
+    by force
+  have 2: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = `N \<le> 0`"
     using 1 by (simp add: false_0)
-  then have 3: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = (\<forall>s. N s = (0::real))"
-    using assms nle_le by auto
-  then have 4: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u = false) = (\<forall>s. N s = (0::real))"
+  then have 3: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = `N = 0`"
+    using assms nle_le by (smt (verit) SEXP_def taut_def)
+  then have 4: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u = false) = `N = 0`"
     by (simp add: pred_ba.bot.extremum_unique)
   then show ?thesis
-    by (simp add: false_pred_def pred_set_def)
+    by (simp add: false_pred_def pred_set_def taut_def)
 qed
 
 term "`(M \<le> N)`"
 lemma iverson_bracket_inv_mono: "\<lbrakk> `(M \<le> N)` \<rbrakk> \<Longrightarrow> \<lbrakk>\<^bold>\<langle>M\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u"
   apply (expr_auto)
-  by (metis SEXP_def dual_order.trans iverson_bracket_approximate_inverse iverson_bracket_inv_def pred_set_def)
+  by (metis (no_types, lifting) SEXP_def dual_order.trans iverson_bracket_approximate_inverse 
+      iverson_bracket_inv_def pred_set_def taut_def)
   
 
 end
