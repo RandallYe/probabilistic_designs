@@ -31,6 +31,7 @@ lemma iverson_bracket_mono: "\<lbrakk> (P)\<^sub>u \<sqsupseteq> (Q)\<^sub>u \<r
   by (simp add: Collect_mono_iff le_funI ref_by_def)
 
 term "\<lbrakk>P\<rbrakk>\<^sub>\<I>"
+term "(0.5*\<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
 term "[\<lbrakk>P\<rbrakk>\<^sub>\<I>]\<^sub>e"
 term "[\<lambda>s. \<lbrakk>P\<rbrakk>\<^sub>\<I> s * \<lbrakk>Q\<rbrakk>\<^sub>\<I> s]\<^sub>e"
 term "(\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>)\<^sub>e"
@@ -67,6 +68,32 @@ lemma infinite_prod_is_1:
   assumes "\<not> finite (UNIV::'b set)"
   shows "(\<Prod> m|True. (P m)) = (1::real)"
   using assms by force
+
+
+(* There are three theories in Isabelle regarding summation 
+  1. Group_Big, where infinite sum is 0 and infinite product is 1
+*)
+term "c" 
+term "sum"
+term "(sum (\<lambda>s. (\<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e s) A)"
+term "(\<Sum>x\<in>\<guillemotleft>A\<guillemotright>. \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
+(*
+  2. Series, where n in "\<Sum>n" is over natural numbers.
+*)
+term "sums"
+term "suminf"
+(*
+  3. Inf_Sum, where sums over possibly infinite sets
+*)
+term "\<Sum>\<^sub>\<infinity>"
+term "infsum"
+term "has_sum"
+term "summable_on"
+(*
+  4. Inf_Set_Sum
+*)
+term "infsetsum"
+term "\<Sum>\<^sub>a"
 
 (* Infinite sums give 0, no matter how P is defined. *)
 lemma infinite_sum_is_0:
@@ -171,6 +198,26 @@ proof -
     using f1 f2 by auto
 qed
 
+lemma max_iverson_bracket:
+  "(\<guillemotleft>max\<guillemotright> \<guillemotleft>(x)\<guillemotright> \<guillemotleft>y\<guillemotright>)\<^sub>e = (\<guillemotleft>x\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> > \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>) + \<guillemotleft>y\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> \<le> \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
+  (*"(\<guillemotleft>max\<guillemotright> \<guillemotleft>(x)\<guillemotright> \<guillemotleft>y\<guillemotright>) = (\<forall>s. (\<guillemotleft>x\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> > \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I> s) + \<guillemotleft>y\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> \<le> \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I> s)))"*)
+  by (expr_auto)
+
+lemma min_iverson_bracket:
+  "(\<guillemotleft>min\<guillemotright> \<guillemotleft>(x)\<guillemotright> \<guillemotleft>y\<guillemotright>)\<^sub>e = (\<guillemotleft>x\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> \<le> \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>) + \<guillemotleft>y\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> > \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
+  by (expr_auto)
+
+(* Floor and ceiling functions *)
+lemma floor_iverson_bracket:
+  "(\<lfloor>\<guillemotleft>x\<guillemotright>\<rfloor>)\<^sub>e = (\<Sum>n|True. n*\<lbrakk>((real_of_int) \<guillemotleft>n\<guillemotright> \<le> \<guillemotleft>x\<guillemotright> \<and> \<guillemotleft>x\<guillemotright> < (real_of_int) (\<guillemotleft>n\<guillemotright>+1))\<^sub>e\<rbrakk>\<^sub>\<I>)\<^sub>e"
+  apply (expr_auto)
+  oops
+
+lemma ceiling_iverson_bracket:
+  "(\<lceil>\<guillemotleft>x\<guillemotright>\<rceil>)\<^sub>e = (\<Sum>n|True. n*\<lbrakk>((real_of_int) \<guillemotleft>n-1\<guillemotright> < \<guillemotleft>x\<guillemotright> \<and> \<guillemotleft>x\<guillemotright> \<le> (real_of_int) (\<guillemotleft>n\<guillemotright>))\<^sub>e\<rbrakk>\<^sub>\<I>)\<^sub>e"
+  apply (expr_auto)
+  oops
+
 subsection \<open> Inverse Iverson Bracket \<close>
 axiomatization iverson_bracket_inv :: "real \<Rightarrow> 's pred" ("\<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I>") where 
 iverson_bracket_cov_def: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = (\<forall>s. (N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I> s))"
@@ -216,8 +263,8 @@ qed
 term " \<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I> "
 
 (*Term \<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I> isn't syntactically correct because \<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I> requires a real number, but \<lbrakk>P\<rbrakk>\<^sub>\<I> is a function. *)
-(*
-lemma iverson_bracket_inv_approximate_inverse: "\<forall>s. \<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I> s\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u"
+
+lemma iverson_bracket_inv_approximate_inverse: "\<forall>s. (\<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I> s\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u)"
 proof -
   have 1: "((\<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I> s\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = (\<forall>ss. (\<lbrakk>P\<rbrakk>\<^sub>\<I> s \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I> ss)))"
     using iverson_bracket_cov_def
@@ -225,7 +272,7 @@ proof -
   then show ?thesis
     sorry
 qed
-*)
+
 
 lemma iverson_bracket_inv_N_0:
   assumes "N \<ge> 0"
