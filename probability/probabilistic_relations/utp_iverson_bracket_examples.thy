@@ -116,4 +116,5 @@ definition "b1 = (\<Sum>\<^sub>\<infinity> r'. \<Sum>\<^sub>\<infinity> a'. ((r1
 expr_ctr b1
 
 definition "DWTA = ((3/5)*b0+(2/5)*b1)\<^sub>e"
+
 end

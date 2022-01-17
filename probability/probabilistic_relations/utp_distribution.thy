@@ -2,10 +2,14 @@ section \<open> Probabilistic Designs \<close>
 
 theory utp_distribution
   imports 
-    (* "HOL.Series" *)
+    "HOL.Series" 
+    "HOL-Analysis.Infinite_Sum"
     "/Users/rye/Isabelle/New_UTP/UTP/utp"
     "utp_iverson_bracket"
 begin 
+
+unbundle UTP_Syntax
+print_bundles   
 
 declare [[show_types]]
 
@@ -13,6 +17,7 @@ declare [[show_types]]
 term "(\<forall>s. ((0 \<le> (e s)) \<and> ((e s) \<le> 1)))"
 term "(\<forall>s. (0 \<le> e \<and> e \<le> 1))"
 term "(\<forall>s. (conj (0 \<le> (e s)) ((e s) \<le> 1)))"
+
 definition is_prob:: "(real, 's) expr \<Rightarrow> bool" where
 "is_prob e = (\<forall>s. ((0 \<le> (e s)) \<and> ((e s) \<le> 1)))"
 
