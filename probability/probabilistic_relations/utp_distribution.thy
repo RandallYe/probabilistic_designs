@@ -38,11 +38,28 @@ lemma "is_dist (\<lambda>(m::nat,n). (1/2)^(n+m))"
   sorry
 
 full_exprs
-term "(f/(\<Sum>s|True. f))\<^sub>e"
-definition normalisation::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>N _") where
-"normalisation e = (e/(\<Sum>s|True. \<guillemotleft>e\<guillemotright> s))\<^sub>e"
 
-thm "normalisation_def"
+subsection \<open> Normalisaiton \<close>
+text \<open> Normalisation of a real-valued expression. \<close>
+(* If e is not summable, the infinite summation will be equal to 0 based on the definition of infsum,
+then this definition here will have a problem (divide-by-zero). How to deal with it??
+*)
+
+definition dist_norm::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>\<N> _") where
+[dist_defs]: "dist_norm e = (e / (\<Sum>\<^sub>\<infinity> s. \<guillemotleft>e\<guillemotright> s))\<^sub>e"
+
+lemma sum_larger: "`e \<le> infsum \<guillemotleft>e\<guillemotright> UNIV`"
+  apply (simp add: infsum_def)
+  sorry
+
+lemma norm_is_prob: 
+  assumes "`e \<ge> 0`"
+  shows "is_prob (\<^bold>\<N> e)"
+  apply (simp add: dist_defs)
+  using assms 
+  sorry
+
+thm "dist_norm_def"
 thm "is_sum_1_def"
 
 alphabet state = 

@@ -65,6 +65,8 @@ alphabet StColor =
 term "{s. P s}"
 term "{s. P s = (1::\<real>)}"
 term "c\<^sub>v"
+term "$\<^bold>v\<^sup>>"
+term "$\<^bold>v\<^sup><"
 term "get\<^bsub>c\<^esub>"
 term "($c\<^sup>> = Red)\<^sub>e"
 term "(($c\<^sup>> = Red) \<and> ($c\<^sup>< = Green))\<^sub>e"
