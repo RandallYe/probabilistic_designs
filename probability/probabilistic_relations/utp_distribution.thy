@@ -13,28 +13,29 @@ print_bundles
 
 declare [[show_types]]
 
-(* Incorrect syntax if HOL.Series is imported. *)
-term "(\<forall>s. ((0 \<le> (e s)) \<and> ((e s) \<le> 1)))"
-term "(\<forall>s. (0 \<le> e \<and> e \<le> 1))"
-term "(\<forall>s. (conj (0 \<le> (e s)) ((e s) \<le> 1)))"
+named_theorems dist_defs
 
 definition is_prob:: "(real, 's) expr \<Rightarrow> bool" where
-"is_prob e = (\<forall>s. ((0 \<le> (e s)) \<and> ((e s) \<le> 1)))"
+[dist_defs]: "is_prob e = (\<forall>s. ((0 \<le> (e s)) \<and> ((e s) \<le> 1)))"
 
 definition is_sum_1:: "(real, 's) expr \<Rightarrow> bool" where
-"is_sum_1 e = ((\<Sum>s|True. e s) = 1)"
+[dist_defs]: "is_sum_1 e = ((\<Sum>\<^sub>\<infinity> s. e s) = 1)"
 (*
 "is_sum_1 e = ((\<Sum>s|True. e s) = 1)"
 *)
 
 definition is_dist:: "(real, 's) expr \<Rightarrow> bool" where
-"is_dist e = (is_prob e \<and> is_sum_1 e)"
+[dist_defs]: "is_dist e = (is_prob e \<and> is_sum_1 e)"
 
-definition prob_prog::"(q's\<^sub>1 \<leftrightarrow> 's\<^sub>2) \<Rightarrow> real" where
+definition prob_prog::"('s\<^sub>1 \<leftrightarrow> 's\<^sub>2) \<Rightarrow> real" where
 "prob_prog s = 1"
 
-lemma "is_dist (\<lambda>n. 2^(n+m))"
-  oops
+term "{1::nat..}"
+lemma "is_dist (\<lambda>(m::nat,n). (1/2)^(n+m))"
+  apply (simp add: dist_defs)
+  apply (auto)
+   apply (simp add: power_le_one)
+  sorry
 
 full_exprs
 term "(f/(\<Sum>s|True. f))\<^sub>e"
