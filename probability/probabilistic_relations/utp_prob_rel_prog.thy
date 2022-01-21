@@ -14,6 +14,7 @@ declare [[show_types]]
 
 named_theorems prob_rel_defs
 
+(* suggestion: typedef 0 \<le> p \<le> 1*)
 type_synonym ('s\<^sub>1, 's\<^sub>2) prel = "('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>)"
 type_synonym 's phrel = "('s \<times> 's \<Rightarrow> \<real>)"
 
@@ -48,6 +49,7 @@ definition pzero :: "('s\<^sub>1, 's\<^sub>2) prel" ("0\<^sub>p") where
 lemma deadlock_always: "`@(deadlock_state pzero)`"
   by (simp add: prob_rel_defs)
 
+(* suggest by simon: bundle: notation here *)
 (* ok *)
 definition pskip :: "'s phrel" ("II\<^sub>p") where
 [prob_rel_defs]: "pskip = \<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
@@ -82,14 +84,20 @@ definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1
 subsection \<open> Distributions - Healthiness conditions \<close>
 term "`is_dist (@(curry P))`"
 
-text \<open> For any initial state @{text s}, its final  \<close>
-abbreviation PROB :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> \<bool>" where 
-"PROB P \<equiv> `is_dist (@(curry P))`"
+text \<open> Is the final states of P from an initial state s a distribution? \<close>
+abbreviation is_dist_final :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> 's\<^sub>1 \<Rightarrow> \<bool>" where 
+"is_dist_final P s \<equiv> is_dist ((curry P) s)"
 
+text \<open> Is the final states of P from any initial state a distribution? \<close>
+abbreviation is_dist_final_all :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> \<bool>" where 
+"is_dist_final_all P \<equiv> `is_dist (@(curry P))`"
+
+(*
 definition PROB1:: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
 "PROB1 P = (if PROB P then pzero else P)"
+*)
 
-lemma "\<not>PROB pzero"
+lemma "\<not>is_dist_final_all pzero"
   by (simp add: dist_defs prob_rel_defs)
 
 term "is_filter"
@@ -105,7 +113,7 @@ lemma "has_sum (\<lambda>sa. if sa = s then 1::\<real> else (0::\<real>)) (UNIV)
   apply (auto)
   sorry
 
-lemma "PROB II\<^sub>p"
+lemma "is_dist_final_all II\<^sub>p"
   apply (simp add: prob_rel_defs Id_def expr_defs dist_defs)
   apply (auto)
   sorry

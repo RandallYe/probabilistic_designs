@@ -17,6 +17,16 @@ term "(f + g)\<^sub>e::'s \<Rightarrow> real"
 term "(f+g)\<^sup>e"
 term "(if P then 1 else 0)\<^sub>e"
 
+syntax 
+  "_cond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(3_ \<lhd> _ \<rhd>/ _)" [52,0,53] 52)
+  "_rcond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(3_ \<^bold>\<lhd> _ \<^bold>\<rhd>/ _)" [52,0,53] 52)
+
+translations
+  "_cond P B Q" == "CONST cond P (B)\<^sub>e Q"
+  "_rcond P b Q" == "_cond P (b\<^sup><) Q"
+
+(* syntax translation: \<s>*)
+(* syntax _iversion_bracket :: "logic => logic" ("...") *)
 definition iverson_bracket :: "'s pred \<Rightarrow> ('s \<Rightarrow> real)" ("\<lbrakk>_\<rbrakk>\<^sub>\<I>") where 
 [expr_defs]: "\<lbrakk>P\<rbrakk>\<^sub>\<I> = (if P then 1 else 0)\<^sub>e"
 
@@ -27,8 +37,7 @@ definition nat_of_real_1 :: "real \<Rightarrow> nat" where
 expr_ctr iverson_bracket
 
 lemma iverson_bracket_mono: "\<lbrakk> (P)\<^sub>u \<sqsupseteq> (Q)\<^sub>u \<rbrakk> \<Longrightarrow> \<lbrakk>P\<rbrakk>\<^sub>\<I> \<le> \<lbrakk>Q\<rbrakk>\<^sub>\<I>"
-  apply (expr_auto)
-  by (simp add: Collect_mono_iff le_funI ref_by_def)
+  by (expr_auto add:  Collect_mono_iff le_funI ref_by_def)
 
 term "\<lbrakk>P\<rbrakk>\<^sub>\<I>"
 term "(0.5*\<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
@@ -39,7 +48,8 @@ term "(\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>)\<^sub>e"
 lemma iverson_bracket_conj: "\<lbrakk>(P \<and> Q)\<^sub>e\<rbrakk>\<^sub>\<I> = (\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>)\<^sub>e"
   by (expr_auto)
 
-lemma iverson_bracket_conj1 : "\<lbrakk>\<lambda>s. a \<le> s \<and> s \<le> b\<rbrakk>\<^sub>\<I> = (\<lbrakk>\<lambda>s. a \<le> s\<rbrakk>\<^sub>\<I> * \<lbrakk>\<lambda>s. s \<le> b\<rbrakk>\<^sub>\<I>)\<^sub>e"
+term "(a \<le> \<s> \<and> \<s> \<le> b)\<^sub>e"
+lemma iverson_bracket_conj1 : "\<lbrakk>(a \<le> \<s> \<and> \<s> \<le> b)\<^sub>e\<rbrakk>\<^sub>\<I> = (\<lbrakk>\<lambda>s. a \<le> s\<rbrakk>\<^sub>\<I> * \<lbrakk>\<lambda>s. s \<le> b\<rbrakk>\<^sub>\<I>)\<^sub>e"
   by (expr_auto)
 
 lemma iverson_bracket_disj: "\<lbrakk>(P \<or> Q)\<^sub>e\<rbrakk>\<^sub>\<I> = (\<lbrakk>P\<rbrakk>\<^sub>\<I> + \<lbrakk>Q\<rbrakk>\<^sub>\<I> - (\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>))\<^sub>e"
@@ -199,7 +209,7 @@ proof -
 qed
 
 lemma max_iverson_bracket:
-  "(\<guillemotleft>max\<guillemotright> \<guillemotleft>(x)\<guillemotright> \<guillemotleft>y\<guillemotright>)\<^sub>e = (\<guillemotleft>x\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> > \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>) + \<guillemotleft>y\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> \<le> \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
+  "(max x y)\<^sub>e = (x * (\<lbrakk>(x > y)\<^sub>e\<rbrakk>\<^sub>\<I>) + y * (\<lbrakk>(x \<le> y)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
   (*"(\<guillemotleft>max\<guillemotright> \<guillemotleft>(x)\<guillemotright> \<guillemotleft>y\<guillemotright>) = (\<forall>s. (\<guillemotleft>x\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> > \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I> s) + \<guillemotleft>y\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> \<le> \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I> s)))"*)
   by (expr_auto)
 
@@ -220,6 +230,7 @@ lemma ceiling_iverson_bracket:
 
 subsection \<open> Inverse Iverson Bracket \<close>
 term "`(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
+(* maybe we need definition using THE *)
 axiomatization iverson_bracket_inv :: "('s \<Rightarrow> real) \<Rightarrow> 's pred" ("\<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I>") where 
 iverson_bracket_inv_def: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = `(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
 
