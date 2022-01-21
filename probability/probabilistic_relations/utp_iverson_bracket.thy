@@ -17,18 +17,19 @@ term "(f + g)\<^sub>e::'s \<Rightarrow> real"
 term "(f+g)\<^sup>e"
 term "(if P then 1 else 0)\<^sub>e"
 
+(* syntax translation: \<s> *)
+(* syntax _iversion_bracket :: "logic => logic" ("...") *)
+definition iverson_bracket :: "'s pred \<Rightarrow> ('s \<Rightarrow> real)"  where 
+[expr_defs]: "iverson_bracket P = (if P then 1 else 0)\<^sub>e"
+
 syntax 
-  "_cond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(3_ \<lhd> _ \<rhd>/ _)" [52,0,53] 52)
-  "_rcond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(3_ \<^bold>\<lhd> _ \<^bold>\<rhd>/ _)" [52,0,53] 52)
+  "_e_iverson_bracket" :: "logic \<Rightarrow> logic" ("\<lbrakk>_\<rbrakk>\<^sub>\<I>\<^sub>e" 150)
+  "_iverson_bracket" :: "logic \<Rightarrow> logic" ("\<lbrakk>_\<rbrakk>\<^sub>\<I>" 150)
 
 translations
-  "_cond P B Q" == "CONST cond P (B)\<^sub>e Q"
-  "_rcond P b Q" == "_cond P (b\<^sup><) Q"
+  "_e_iverson_bracket P" == "CONST iverson_bracket (P)\<^sub>e"
+  "_iverson_bracket P" == "CONST iverson_bracket P"
 
-(* syntax translation: \<s>*)
-(* syntax _iversion_bracket :: "logic => logic" ("...") *)
-definition iverson_bracket :: "'s pred \<Rightarrow> ('s \<Rightarrow> real)" ("\<lbrakk>_\<rbrakk>\<^sub>\<I>") where 
-[expr_defs]: "\<lbrakk>P\<rbrakk>\<^sub>\<I> = (if P then 1 else 0)\<^sub>e"
 
 definition nat_of_real_1 :: "real \<Rightarrow> nat" where
 "nat_of_real_1 r = (if r = (1::\<real>) then (1) else 0)"
@@ -42,20 +43,20 @@ lemma iverson_bracket_mono: "\<lbrakk> (P)\<^sub>u \<sqsupseteq> (Q)\<^sub>u \<r
 term "\<lbrakk>P\<rbrakk>\<^sub>\<I>"
 term "(0.5*\<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
 term "[\<lbrakk>P\<rbrakk>\<^sub>\<I>]\<^sub>e"
-term "[\<lambda>s. \<lbrakk>P\<rbrakk>\<^sub>\<I> s * \<lbrakk>Q\<rbrakk>\<^sub>\<I> s]\<^sub>e"
+(* term "[\<lambda>s. \<lbrakk>P\<rbrakk>\<^sub>\<I> s * \<lbrakk>Q\<rbrakk>\<^sub>\<I> s]\<^sub>e" *)
 term "(\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>)\<^sub>e"
 
-lemma iverson_bracket_conj: "\<lbrakk>(P \<and> Q)\<^sub>e\<rbrakk>\<^sub>\<I> = (\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>)\<^sub>e"
+lemma iverson_bracket_conj: "\<lbrakk>P \<and> Q\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>)\<^sub>e"
   by (expr_auto)
 
-term "(a \<le> \<s> \<and> \<s> \<le> b)\<^sub>e"
-lemma iverson_bracket_conj1 : "\<lbrakk>(a \<le> \<s> \<and> \<s> \<le> b)\<^sub>e\<rbrakk>\<^sub>\<I> = (\<lbrakk>\<lambda>s. a \<le> s\<rbrakk>\<^sub>\<I> * \<lbrakk>\<lambda>s. s \<le> b\<rbrakk>\<^sub>\<I>)\<^sub>e"
+(* term "(a \<le> \<s> \<and> \<s> \<le> b)\<^sub>e" *)
+lemma iverson_bracket_conj1 : "\<lbrakk>\<lambda>s. (a \<le> s \<and> s \<le> b)\<rbrakk>\<^sub>\<I> = (\<lbrakk>\<lambda>s. a \<le> s\<rbrakk>\<^sub>\<I> * \<lbrakk>\<lambda>s. s \<le> b\<rbrakk>\<^sub>\<I>)\<^sub>e"
   by (expr_auto)
 
-lemma iverson_bracket_disj: "\<lbrakk>(P \<or> Q)\<^sub>e\<rbrakk>\<^sub>\<I> = (\<lbrakk>P\<rbrakk>\<^sub>\<I> + \<lbrakk>Q\<rbrakk>\<^sub>\<I> - (\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>))\<^sub>e"
+lemma iverson_bracket_disj: "\<lbrakk>P \<or> Q\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lbrakk>P\<rbrakk>\<^sub>\<I> + \<lbrakk>Q\<rbrakk>\<^sub>\<I> - (\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>))\<^sub>e"
   by (expr_auto)                          
 
-lemma iverson_bracket_not: "\<lbrakk>(\<not>P)\<^sub>e\<rbrakk>\<^sub>\<I> = (1 - \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
+lemma iverson_bracket_not: "\<lbrakk>\<not>P\<rbrakk>\<^sub>\<I>\<^sub>e = (1 - \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
   by (expr_auto)
 
 lemma iverson_bracket_plus: "(\<lbrakk>\<lambda>s. s \<in> A\<rbrakk>\<^sub>\<I> + \<lbrakk>\<lambda>s. s \<in> B\<rbrakk>\<^sub>\<I>)\<^sub>e = (\<lbrakk>\<lambda>s. s \<in> A \<inter> B\<rbrakk>\<^sub>\<I> + \<lbrakk>\<lambda>s. s \<in> A \<union> B\<rbrakk>\<^sub>\<I>)\<^sub>e"
@@ -65,8 +66,8 @@ lemma iverson_bracket_inter : "\<lbrakk>\<lambda>s. s \<in> A \<inter> B\<rbrakk
   by (expr_auto)
 
 
-term "(\<Prod> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
-term "\<lbrakk>(\<forall>m. P(m))\<^sub>e\<rbrakk>\<^sub>\<I>"
+term "(\<Prod> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
+term "\<lbrakk>(\<forall>m. P(m))\<rbrakk>\<^sub>\<I>\<^sub>e"
 term "prod"
 term "1 dvd 2"
 thm "infinite_finite_induct"
@@ -95,7 +96,7 @@ term "suminf"
 (*
   3. Inf_Sum, where sums over possibly infinite sets
 *)
-term "\<Sum>\<^sub>\<infinity>"
+(* term "\<Sum>\<^sub>\<infinity>" *)
 term "infsum"
 term "has_sum"
 term "summable_on"
@@ -103,7 +104,7 @@ term "summable_on"
   4. Inf_Set_Sum
 *)
 term "infsetsum"
-term "\<Sum>\<^sub>a"
+(* term "\<Sum>\<^sub>a"*)
 
 (* Infinite sums give 0, no matter how P is defined. *)
 lemma infinite_sum_is_0:
@@ -116,7 +117,7 @@ lemma infinite_sum_is_0:
 lemma iverson_bracket_forall_prod:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
   assumes "finite (UNIV::'b set)"
-  shows "\<lbrakk>(\<forall>m. P m)\<^sub>e\<rbrakk>\<^sub>\<I> = (\<Prod> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
+  shows "\<lbrakk>(\<forall>m. P m)\<rbrakk>\<^sub>\<I>\<^sub>e = (\<Prod> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
   apply (expr_auto)
 proof -
   fix x::"'a" and xa::"'b"
@@ -127,22 +128,23 @@ proof -
     using a1 by auto
 qed
 
-term "(\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
-term "\<lambda>s. (min (1::real) ((\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e s))"
+term "\<lbrakk>P\<rbrakk>\<^sub>\<I>"
+term "(\<Sum> m|True. (\<lbrakk>P \<guillemotleft>m\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
+term "\<lambda>s. (min (1::real) ((\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e s))"
 (* term "(min (1::real) (\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>)))\<^sub>e" *)
 
 (* How about infinite? *)
 lemma iverson_bracket_exist_sum:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
   assumes "finite (UNIV::'b set)"
-  shows "\<lbrakk>(\<exists>m. P m)\<^sub>e\<rbrakk>\<^sub>\<I> = (\<lambda>s. (min (1::real) ((\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e s)))"
+  shows "\<lbrakk>(\<exists>m. P m)\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lambda>s. (min (1::real) ((\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e s)))"
   apply (expr_auto)
   by (smt (verit) UNIV_I assms sum_nonneg_leq_bound)
 
 lemma iverson_bracket_exist_sum_1:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
   assumes "finite (UNIV::'b set)"
-  shows "\<lbrakk>(\<exists>m. P m)\<^sub>e\<rbrakk>\<^sub>\<I> = (1 - (\<Prod> m|True. (\<lbrakk>(\<not>P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>)))\<^sub>e"
+  shows "\<lbrakk>(\<exists>m. P m)\<rbrakk>\<^sub>\<I>\<^sub>e = (1 - (\<Prod> m|True. (\<lbrakk>(\<not>P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e)))\<^sub>e"
   apply (expr_auto)
   using assms by auto
 
@@ -150,7 +152,7 @@ lemma iverson_bracket_exist_sum_1:
 lemma iverson_bracket_card:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
   assumes "finite (UNIV::'b set)"
-  shows "(card {m. P m})\<^sub>e = (\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
+  shows "(card {m. P m})\<^sub>e = (\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
   apply (expr_auto)
 proof -
   fix x::"'a"
@@ -190,7 +192,7 @@ qed
 lemma iverson_bracket_product:
   fixes P::"'s \<Rightarrow> bool"
   assumes "finite (UNIV::'s set)"
-  shows "(\<Prod> m|True. (f ^ (\<guillemotleft>nat_of_real_1\<guillemotright> \<lbrakk>P\<rbrakk>\<^sub>\<I>))\<^sub>e m) = (\<Prod> m|P m. (f)\<^sub>e m)"
+  shows "(\<Prod> m|True. (f ^ (\<guillemotleft>nat_of_real_1\<guillemotright> (\<lbrakk>P\<rbrakk>\<^sub>\<I>)))\<^sub>e m) = (\<Prod> m|P m. (f)\<^sub>e m)"
 proof -
   let ?P = "\<lambda>m. (if P m then 1::\<real> else (0::\<real>))"
   let ?Q = "\<lambda>r. (if r = (1::\<real>) then 1::\<nat> else (0::\<nat>))"
@@ -209,28 +211,32 @@ proof -
 qed
 
 lemma max_iverson_bracket:
-  "(max x y)\<^sub>e = (x * (\<lbrakk>(x > y)\<^sub>e\<rbrakk>\<^sub>\<I>) + y * (\<lbrakk>(x \<le> y)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
+  "(max x y)\<^sub>e = (x * (\<lbrakk>x > y\<rbrakk>\<^sub>\<I>\<^sub>e) + y * (\<lbrakk>x \<le> y\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
   (*"(\<guillemotleft>max\<guillemotright> \<guillemotleft>(x)\<guillemotright> \<guillemotleft>y\<guillemotright>) = (\<forall>s. (\<guillemotleft>x\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> > \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I> s) + \<guillemotleft>y\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> \<le> \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I> s)))"*)
   by (expr_auto)
 
 lemma min_iverson_bracket:
-  "(\<guillemotleft>min\<guillemotright> \<guillemotleft>(x)\<guillemotright> \<guillemotleft>y\<guillemotright>)\<^sub>e = (\<guillemotleft>x\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> \<le> \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>) + \<guillemotleft>y\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> > \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>))\<^sub>e"
+  "(min x y)\<^sub>e = (x * (\<lbrakk>x \<le> y\<rbrakk>\<^sub>\<I>\<^sub>e) + y * (\<lbrakk>x > y\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
   by (expr_auto)
 
 (* Floor and ceiling functions *)
+(* Need an infinite sum to prove this law *)
 lemma floor_iverson_bracket:
-  "(\<lfloor>\<guillemotleft>x\<guillemotright>\<rfloor>)\<^sub>e = (\<Sum>n|True. n*\<lbrakk>((real_of_int) \<guillemotleft>n\<guillemotright> \<le> \<guillemotleft>x\<guillemotright> \<and> \<guillemotleft>x\<guillemotright> < (real_of_int) (\<guillemotleft>n\<guillemotright>+1))\<^sub>e\<rbrakk>\<^sub>\<I>)\<^sub>e"
+  "(\<lfloor>x\<rfloor>)\<^sub>e = (\<Sum>n|True. n*\<lbrakk>((real_of_int) \<guillemotleft>n\<guillemotright> \<le> x \<and> x < (real_of_int) (\<guillemotleft>n\<guillemotright>+1))\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   apply (expr_auto)
   oops
 
+(* Need an infinite sum to prove this law *)
 lemma ceiling_iverson_bracket:
-  "(\<lceil>\<guillemotleft>x\<guillemotright>\<rceil>)\<^sub>e = (\<Sum>n|True. n*\<lbrakk>((real_of_int) \<guillemotleft>n-1\<guillemotright> < \<guillemotleft>x\<guillemotright> \<and> \<guillemotleft>x\<guillemotright> \<le> (real_of_int) (\<guillemotleft>n\<guillemotright>))\<^sub>e\<rbrakk>\<^sub>\<I>)\<^sub>e"
+  "(\<lceil>x\<rceil>)\<^sub>e = (\<Sum>n|True. n*\<lbrakk>((real_of_int) \<guillemotleft>n-1\<guillemotright> < x \<and> x \<le> (real_of_int) (\<guillemotleft>n\<guillemotright>))\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   apply (expr_auto)
   oops
 
 subsection \<open> Inverse Iverson Bracket \<close>
 term "`(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
-(* maybe we need definition using THE *)
+(* Simon: maybe we need to find out a definition for inverse bracket using THE etc. 
+TODO: leave this mechanisation as is now.
+*)
 axiomatization iverson_bracket_inv :: "('s \<Rightarrow> real) \<Rightarrow> 's pred" ("\<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I>") where 
 iverson_bracket_inv_def: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = `(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
 

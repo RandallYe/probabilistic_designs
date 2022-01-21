@@ -16,7 +16,7 @@ declare [[show_types]]
 named_theorems dist_defs
 
 definition is_prob:: "(real, 's) expr \<Rightarrow> bool" where
-[dist_defs]: "is_prob e = (\<forall>s. ((0 \<le> (e s)) \<and> ((e s) \<le> 1)))"
+[dist_defs]: "is_prob e = `((0 \<le> (e)) \<and> ((e) \<le> 1))`"
 
 definition is_sum_1:: "(real, 's) expr \<Rightarrow> bool" where
 [dist_defs]: "is_sum_1 e = ((\<Sum>\<^sub>\<infinity> s. e s) = 1)"
