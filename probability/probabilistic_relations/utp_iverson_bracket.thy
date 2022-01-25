@@ -30,6 +30,17 @@ translations
   "_e_iverson_bracket P" == "CONST iverson_bracket (P)\<^sub>e"
   "_iverson_bracket P" == "CONST iverson_bracket P"
 
+(*
+definition "iverson_bracket_e P = iverson_bracket (P)\<^sub>e"
+
+consts iverson_bracket_c :: "'f \<Rightarrow> ('g \<Rightarrow> 'h)" 
+
+adhoc_overloading
+  (*iverson_bracket_c iverson_bracket and*)
+  iverson_bracket_c iverson_bracket_e
+
+notation iverson_bracket_c ("\<lbrakk>_\<rbrakk>\<^sub>\<I>" 150)
+*)
 
 definition nat_of_real_1 :: "real \<Rightarrow> nat" where
 "nat_of_real_1 r = (if r = (1::\<real>) then (1) else 0)"
@@ -46,17 +57,17 @@ term "[\<lbrakk>P\<rbrakk>\<^sub>\<I>]\<^sub>e"
 (* term "[\<lambda>s. \<lbrakk>P\<rbrakk>\<^sub>\<I> s * \<lbrakk>Q\<rbrakk>\<^sub>\<I> s]\<^sub>e" *)
 term "(\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>)\<^sub>e"
 
-lemma iverson_bracket_conj: "\<lbrakk>P \<and> Q\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>)\<^sub>e"
+lemma iverson_bracket_conj: "\<lbrakk>P \<and> Q\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>Q\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   by (expr_auto)
 
 (* term "(a \<le> \<s> \<and> \<s> \<le> b)\<^sub>e" *)
 lemma iverson_bracket_conj1 : "\<lbrakk>\<lambda>s. (a \<le> s \<and> s \<le> b)\<rbrakk>\<^sub>\<I> = (\<lbrakk>\<lambda>s. a \<le> s\<rbrakk>\<^sub>\<I> * \<lbrakk>\<lambda>s. s \<le> b\<rbrakk>\<^sub>\<I>)\<^sub>e"
   by (expr_auto)
 
-lemma iverson_bracket_disj: "\<lbrakk>P \<or> Q\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lbrakk>P\<rbrakk>\<^sub>\<I> + \<lbrakk>Q\<rbrakk>\<^sub>\<I> - (\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>))\<^sub>e"
+lemma iverson_bracket_disj: "\<lbrakk>P \<or> Q\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e + \<lbrakk>Q\<rbrakk>\<^sub>\<I>\<^sub>e - (\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>Q\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
   by (expr_auto)                          
 
-lemma iverson_bracket_not: "\<lbrakk>\<not>P\<rbrakk>\<^sub>\<I>\<^sub>e = (1 - \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
+lemma iverson_bracket_not: "\<lbrakk>\<not>P\<rbrakk>\<^sub>\<I>\<^sub>e = (1 - \<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   by (expr_auto)
 
 lemma iverson_bracket_plus: "(\<lbrakk>\<lambda>s. s \<in> A\<rbrakk>\<^sub>\<I> + \<lbrakk>\<lambda>s. s \<in> B\<rbrakk>\<^sub>\<I>)\<^sub>e = (\<lbrakk>\<lambda>s. s \<in> A \<inter> B\<rbrakk>\<^sub>\<I> + \<lbrakk>\<lambda>s. s \<in> A \<union> B\<rbrakk>\<^sub>\<I>)\<^sub>e"
@@ -174,7 +185,7 @@ qed
 lemma iverson_bracket_summation:
   fixes P::"'s \<Rightarrow> bool"
   assumes "finite (UNIV::'s set)"
-  shows "(\<Sum> m|True. (f * \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e m) = (\<Sum> m|P m. (f)\<^sub>e m)"
+  shows "(\<Sum> m|True. (f * \<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e m) = (\<Sum> m|P m. (f)\<^sub>e m)"
 proof -
   let ?P = "\<lambda>m. (if P m then 1::\<real> else (0::\<real>))"
   have f1: "(\<Sum>m::'s\<in>UNIV. f m * ?P m) = (\<Sum>m::'s\<in>{m. \<not> P m} \<union> {m. P m}. f m * ?P m)"
@@ -192,7 +203,7 @@ qed
 lemma iverson_bracket_product:
   fixes P::"'s \<Rightarrow> bool"
   assumes "finite (UNIV::'s set)"
-  shows "(\<Prod> m|True. (f ^ (\<guillemotleft>nat_of_real_1\<guillemotright> (\<lbrakk>P\<rbrakk>\<^sub>\<I>)))\<^sub>e m) = (\<Prod> m|P m. (f)\<^sub>e m)"
+  shows "(\<Prod> m|True. (f ^ (\<guillemotleft>nat_of_real_1\<guillemotright> (\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)))\<^sub>e m) = (\<Prod> m|P m. (f)\<^sub>e m)"
 proof -
   let ?P = "\<lambda>m. (if P m then 1::\<real> else (0::\<real>))"
   let ?Q = "\<lambda>r. (if r = (1::\<real>) then 1::\<nat> else (0::\<nat>))"
@@ -238,7 +249,7 @@ term "`(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
 TODO: leave this mechanisation as is now.
 *)
 axiomatization iverson_bracket_inv :: "('s \<Rightarrow> real) \<Rightarrow> 's pred" ("\<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I>") where 
-iverson_bracket_inv_def: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = `(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
+iverson_bracket_inv_def: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = `(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)`"
 
 expr_ctr iverson_bracket_inv
 
@@ -285,7 +296,7 @@ proof -
 qed
 *)
 
-lemma iverson_bracket_approximate_inverse: "`N \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I>`"
+lemma iverson_bracket_approximate_inverse: "`N \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I>\<^sub>e`"
   by (metis SEXP_def iverson_bracket_inv_def ref_order.order_refl)
 (*
 proof -
@@ -298,7 +309,8 @@ qed
 *)
 
 lemma iverson_bracket_inv_approximate_inverse: "(\<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u)"
-  using iverson_bracket_inv_def by fastforce
+  using iverson_bracket_inv_def
+  by (smt (verit, ccfv_SIG) SEXP_def taut_def)
 (*
 proof -
   have 1: "(\<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = `(\<lbrakk>P\<rbrakk>\<^sub>\<I> \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
