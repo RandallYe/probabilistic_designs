@@ -67,12 +67,20 @@ definition pskip :: "'s phrel" where
 [prob_rel_defs]: "pskip = prel_of_set (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 (* assignment *)
-definition passign :: "('a \<Longrightarrow> 's) \<Rightarrow> ('a, 's) expr \<Rightarrow> 's phrel" (infix ":=\<^sub>p" 162) where
+definition passign :: "('a \<Longrightarrow> 's) \<Rightarrow> ('a, 's) expr \<Rightarrow> 's phrel" (*(infix ":=\<^sub>p" 162)*) where
 [prob_rel_defs]: "passign x e = prel_of_set (\<lbrakk> \<lbrakk>(x := e)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
+
+syntax 
+  "_passign" :: "logic \<Rightarrow> logic \<Rightarrow> logic" (infix ":=\<^sub>p" 162) 
+
+translations
+  "_passign x e" == "CONST passign x (e)\<^sub>e"
+  "_passign x e" <= "_passign x (e)\<^sub>e"
 
 term "x := 1"
 term "x := C"
-term "x :=\<^sub>p 1"
+term "x :=\<^sub>p (1)"
+term "x :=\<^sub>p C"
 term "((set_of_prel P))"
 term "(r * @(set_of_prel P) + (1 - r) * @(set_of_prel  Q))\<^sub>e"
 
