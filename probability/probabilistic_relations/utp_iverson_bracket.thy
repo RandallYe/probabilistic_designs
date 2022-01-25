@@ -1,10 +1,12 @@
-section \<open> Probabilistic Designs \<close>
+section \<open> Iverson Bracket \<close>
 
 theory utp_iverson_bracket
   imports "/Users/rye/Isabelle/New_UTP/UTP/utp"
 begin 
 
 declare [[show_types]]
+
+(* named_theorems iverson_bracket_defs *)
 
 subsection \<open> Iverson Bracket \<close>
 

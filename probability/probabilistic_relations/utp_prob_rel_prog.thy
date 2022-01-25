@@ -20,6 +20,30 @@ typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<R
   morphisms set_of_prel prel_of_set
   using is_prob_def taut_def by force
 
+(*
+  prel_of_set_cases:
+    (\<And>y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>.
+        (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) = prel_of_set y \<Longrightarrow> y \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> ?P::\<bool>) \<Longrightarrow>
+    ?P
+  prel_of_set_induct:
+    (\<And>y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>.
+        y \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> (?P::(?'s\<^sub>1, ?'s\<^sub>2) prel \<Rightarrow> \<bool>) (prel_of_set y)) \<Longrightarrow>
+    ?P (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel)
+  prel_of_set_inject:
+    (?x::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow>
+    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> (prel_of_set ?x = prel_of_set ?y) = (?x = ?y)
+  prel_of_set_inverse:
+    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> set_of_prel (prel_of_set ?y) = ?y
+  set_of_prel: set_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s}
+  set_of_prel_cases:
+    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow>
+    (\<And>x::(?'s\<^sub>1, ?'s\<^sub>2) prel. ?y = set_of_prel x \<Longrightarrow> ?P::\<bool>) \<Longrightarrow> ?P
+  set_of_prel_induct:
+    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow>
+    (\<And>x::(?'s\<^sub>1, ?'s\<^sub>2) prel. (?P::(?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> \<bool>) (set_of_prel x)) \<Longrightarrow> ?P ?y
+  set_of_prel_inject: (set_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) = set_of_prel (?y::(?'s\<^sub>1, ?'s\<^sub>2) prel)) = (?x = ?y)
+  set_of_prel_inverse: prel_of_set (set_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel)) = ?x
+*)
 term "prel_of_set"
 term "set_of_prel"
 thm "prel_of_set_inverse"
@@ -63,7 +87,7 @@ lemma deadlock_always: "`@(deadlock_state pzero)`"
 
 (* suggest by simon: bundle: notation here *)
 (* ok *)
-definition pskip :: "'s phrel" where
+definition pskip :: "'s phrel" ("II\<^sub>p") where
 [prob_rel_defs]: "pskip = prel_of_set (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 (* assignment *)
@@ -85,13 +109,24 @@ term "((set_of_prel P))"
 term "(r * @(set_of_prel P) + (1 - r) * @(set_of_prel  Q))\<^sub>e"
 
 (* probabilistic choice *)
-definition pchoice :: "('s, 's) prel \<Rightarrow> ('s \<times> 's \<Rightarrow> real) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
+definition pchoice :: "('s, 's) prel \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [164, 0, 165] 164) where
 [prob_rel_defs]: "pchoice P r Q = prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
 
-definition pchoice' :: "('s \<times> 's \<Rightarrow> real) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
-    ("(pif (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
+(* definition pchoice' :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
+    ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
 [prob_rel_defs]: "pchoice' r P Q = prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
+*)
+
+syntax 
+  "_pchoice" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 164, 164] 164) 
+
+translations
+  "_pchoice r P Q" == "CONST pchoice P (r)\<^sub>e Q"
+  "_pchoice r P Q" <= "_pchoice (r)\<^sub>e P Q"
+
+term "if\<^sub>p 0.5 then P else Q"
+term "if\<^sub>p R then P else Q"
 
 (* conditional choice *)
 definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where 
@@ -147,7 +182,7 @@ adhoc_overloading
 
 term "II"
 term "\<^bold>v\<^sup>> := \<^bold>v\<^sup><"
-term "$\<^bold>v\<^sup>> := $\<^bold>v\<^sup><"
+term "$\<^bold>v\<^sup>> :=\<^sub>p $\<^bold>v\<^sup><"
 term "(P;Q)"
 term "((P::('s, 's) prel) \<^bold>\<parallel> Q)"
 term "((P::'s list) \<^bold>\<parallel> Q)"
@@ -161,7 +196,7 @@ translations
   "_pcond P b Q" == "CONST pcond P b Q"
 *) 
 (*
-consts pchoice_cond :: "'a \<Rightarrow> 'b \<Rightarrow> 'c \<Rightarrow> 'd" ("(pif (_)/ then (_)/ else (_))" [0, 0, 167] 167)
+consts pchoice_cond :: "'a \<Rightarrow> 'b \<Rightarrow> 'c \<Rightarrow> 'd" ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167)
 
 adhoc_overloading
   pchoice_cond pcond
@@ -169,9 +204,9 @@ adhoc_overloading
 
 
 term "if True then P else Q"
-term "pif R then P else Q"
+term "if\<^sub>p R then P else Q"
 *)
-term "pif R then P else Q"
+term "if\<^sub>p R then P else Q"
 
 subsection \<open> Syntactical examples \<close>
 text \<open> Example 13 from Jim's draft report. 
@@ -190,10 +225,30 @@ alphabet DWTA_state =
   a:: Status
 
 term "r := C"
-term "r :=\<^sub>p (C)\<^sub>e"
-term "(pif (3/5)\<^sub>e then (r := (C)\<^sub>e) else (r := (D)\<^sub>e))"
+term "r :=\<^sub>p C"
+
+term "(r :=\<^sub>p C) ; (if\<^sub>p (1/2) then (a :=\<^sub>p S) else (a :=\<^sub>p F))"
+
 definition dwta where
-"dwta = (pif 3/5 then (r := (C)\<^sub>e) else (r := (D)\<^sub>e))\<^sub>e"
+"dwta = 
+  (if\<^sub>p (3/5) 
+    then ((r :=\<^sub>p C) ; (if\<^sub>p ( 1/2) then (a :=\<^sub>p S) else (a :=\<^sub>p F))) 
+    else ((r :=\<^sub>p D) ; (if\<^sub>p (3/10) then (a :=\<^sub>p S) else (a :=\<^sub>p F)))
+  )
+"
+
+term "C"
+term "(r\<^sup>> = C)\<^sub>e"
+term "\<lbrakk>(r\<^sup>> = C)\<^sub>e\<rbrakk>\<^sub>\<I>"
+term "\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e"
+
+lemma "(r :=\<^sub>p C) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
+  apply (simp add: prob_rel_defs expr_defs )
+  oops
+
+lemma "((r :=\<^sub>p C); (a :=\<^sub>p S)) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
+  apply (simp add: prob_rel_defs expr_defs)
+  oops
 
 subsection \<open> Distributions - Healthiness conditions \<close>
 term "`is_dist (@(curry P))`"
