@@ -64,7 +64,18 @@ alphabet StColor =
 
 term "{s. P s}"
 term "{s. P s = (1::\<real>)}"
+(* c is a lens *)
+term "c"
+term "(c = Yellow)\<^sub>e"
 term "c\<^sub>v"
+term "c\<^sub>v P = Red"
+(* *)
+term "c\<^sup>>"
+term "$c\<^sup>>"
+(* *)
+term "c\<^sup><"
+term "$c\<^sup><"
+term "$\<^bold>v\<^sup>>"
 term "$\<^bold>v\<^sup>>"
 term "$\<^bold>v\<^sup><"
 term "get\<^bsub>c\<^esub>"

@@ -77,6 +77,10 @@ definition deadlock_state where
 [prob_rel_defs]: "deadlock_state P s = (reachable_states P s = {})"
 
 subsection \<open> Probabilistic programming \<close>
+(* Priorities from larger (tighter) to smaller:
+  II, :=\<^sub>p, pif then else, ;, \<parallel> 
+*)
+
 (* deadlock: zero and not a distribution *)
 definition pzero :: "('s\<^sub>1, 's\<^sub>2) prel" ("0\<^sub>p") where
 [prob_rel_defs]: "pzero = prel_of_set (\<lambda> s. 0)"
@@ -105,6 +109,11 @@ term "x := 1"
 term "x := C"
 term "x :=\<^sub>p (1)"
 term "x :=\<^sub>p C"
+(* Question: what priority should I give? 
+If the priority of :=\<^sub>p is larger (tighter) than + (65), then the syntax below is incorrect.
+Otherwise, it should be correct
+*)
+term "x :=\<^sub>p 1 + p"
 term "((set_of_prel P))"
 term "(r * @(set_of_prel P) + (1 - r) * @(set_of_prel  Q))\<^sub>e"
 
@@ -183,6 +192,7 @@ adhoc_overloading
 term "II"
 term "\<^bold>v\<^sup>> := \<^bold>v\<^sup><"
 term "$\<^bold>v\<^sup>> :=\<^sub>p $\<^bold>v\<^sup><"
+term "\<^bold>v :=\<^sub>p \<^bold>v"
 term "(P;Q)"
 term "((P::('s, 's) prel) \<^bold>\<parallel> Q)"
 term "((P::'s list) \<^bold>\<parallel> Q)"
@@ -209,6 +219,7 @@ term "if\<^sub>p R then P else Q"
 term "if\<^sub>p R then P else Q"
 
 subsection \<open> Syntactical examples \<close>
+subsubsection \<open> Doctor Who's Tardis Attacker \<close>
 text \<open> Example 13 from Jim's draft report. 
 Two robots, the Cyberman C and the Dalek D, attack Doctor Who’s Tardis once a day between them. 
 C has a probability 1/2 of a successful attack, 
@@ -249,6 +260,19 @@ lemma "(r :=\<^sub>p C) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> 
 lemma "((r :=\<^sub>p C); (a :=\<^sub>p S)) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: prob_rel_defs expr_defs)
   oops
+
+subsubsection \<open> x \<close>
+alphabet state =
+  x :: int
+
+term "(if\<^sub>p ( 1/2) then (x :=\<^sub>p 1) else (x :=\<^sub>p 2))"
+term "(x := x + 1)"
+(* Next is syntactically correct if the priority of :=\<^sub>p is larger than + (65) *)
+term "(x :=\<^sub>p x + 1)"
+term "(x :=\<^sub>p (x + 1))"
+term "((if\<^sub>p ( 1/2) then (x :=\<^sub>p 1) else (x :=\<^sub>p 2)) ; (x :=\<^sub>p (x + 1)))"
+lemma "((if\<^sub>p ( 1/2) then (x :=\<^sub>p 1) else (x :=\<^sub>p 2)) ; (x :=\<^sub>p (x + 1)))
+  = (if\<^sub>p ( 1/2) then (x :=\<^sub>p 2) else (x :=\<^sub>p 3))"
 
 subsection \<open> Distributions - Healthiness conditions \<close>
 term "`is_dist (@(curry P))`"
