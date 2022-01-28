@@ -94,7 +94,23 @@ lemma deadlock_always: "`@(deadlock_state pzero)`"
 definition pskip :: "'s phrel" ("II\<^sub>p") where
 [prob_rel_defs]: "pskip = prel_of_set (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
+adhoc_overloading
+  uskip pskip
+
+term "II::'s rel"
+term "II::'s phrel"
+term "x := ($x + 1)"
+
+definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prel" where 
+[prob_rel_defs]: "passigns \<sigma> = prel_of_set (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
+
+adhoc_overloading
+  uassigns passigns
+
+term "(s := e)::'s phrel"
+term "(s := e)::'s rel"
 (* assignment *)
+(*
 definition passign :: "('a \<Longrightarrow> 's) \<Rightarrow> ('a, 's) expr \<Rightarrow> 's phrel" (*(infix ":=\<^sub>p" 162)*) where
 [prob_rel_defs]: "passign x e = prel_of_set (\<lbrakk> \<lbrakk>(x := e)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
@@ -104,16 +120,19 @@ syntax
 translations
   "_passign x e" == "CONST passign x (e)\<^sub>e"
   "_passign x e" <= "_passign x (e)\<^sub>e"
-
-term "x := 1"
-term "x := C"
-term "x :=\<^sub>p (1)"
-term "x :=\<^sub>p C"
+*)
+term "(x := 1)::'s phrel"
+term "(x := C)::'s phrel"
 (* Question: what priority should I give? 
 If the priority of :=\<^sub>p is larger (tighter) than + (65), then the syntax below is incorrect.
 Otherwise, it should be correct
 *)
-term "x :=\<^sub>p 1 + p"
+(* term "x :=\<^sub>p 1 + p" *)
+(* TODO: Simon: contact Christine about suggestion precedence ... reference from ITree: *)
+term "(x := $x + 1)::'s rel"
+term "(x := ($x + 1))::'s rel"
+term "(\<^bold>v\<^sup>> := $\<^bold>v\<^sup><)::'s phrel"
+
 term "((set_of_prel P))"
 term "(r * @(set_of_prel P) + (1 - r) * @(set_of_prel  Q))\<^sub>e"
 
@@ -155,17 +174,29 @@ thm "pred_seq_hom"
 
 definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (infixl ";\<^sub>p" 28) where
 [prob_rel_defs]: "pcomp P Q = prel_of_set 
-  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel Q)))\<^sub>e"
+    (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel Q)))\<^sub>e"
+
+term "(P;\<^sub>p Q)"
 
 definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 27) where
 [prob_rel_defs]: "pparallel P Q = prel_of_set \<^bold>\<N> (@(set_of_prel P) * @(set_of_prel Q))\<^sub>e"
 
-term "\<^bold>v\<^sup>> := \<^bold>v\<^sup><"
+no_notation Sublist.parallel (infixl "\<parallel>" 50)
+consts
+  parallel_c :: "'a \<Rightarrow> 'a \<Rightarrow> 'c" (infixl "\<parallel>" 27)
+
+adhoc_overloading
+  parallel_c pparallel and parallel_c Sublist.parallel
+
+term "((P::('s, 's) prel) \<parallel> Q)"
+term "((P::'s list) \<parallel> Q)"
+term "([] \<parallel> [a])"
 
 bundle UTP_Prob_Rel_Syntax
 begin
 
-no_notation uskip ("II")
+(* no_notation uskip ("II") *)
+(* notation pskip ("II") *)
 (* how to no_notation a notation that is given in the syntax translation, like below.
 
 no_notation _assign (infix ":=" 76)
@@ -173,7 +204,7 @@ no_notation _assign (infix ":=" 76)
 (* no_notation (infixl "\<parallel>" 166) *)
 (* no_notation If ("(if (_)/ then (_)/ else (_))" [0, 0, 10] 10) *)
 
-notation pskip ("II")
+
 (* notation passign (infix ":=" 162) *)
 notation pcomp (infixl ";" 28)
 (* notation pchoice ("(_ \<oplus>\<^bsub>_\<^esub> _)" [164, 0, 165] 164) *)
@@ -182,21 +213,6 @@ notation pcomp (infixl ";" 28)
 end
 
 unbundle UTP_Prob_Rel_Syntax
-
-consts
-  parallel_c :: "'a \<Rightarrow> 'b \<Rightarrow> 'c" (infixl "\<^bold>\<parallel>" 27)
-
-adhoc_overloading
-  parallel_c pparallel and parallel_c Sublist.parallel
-
-term "II"
-term "\<^bold>v\<^sup>> := \<^bold>v\<^sup><"
-term "$\<^bold>v\<^sup>> :=\<^sub>p $\<^bold>v\<^sup><"
-term "\<^bold>v :=\<^sub>p \<^bold>v"
-term "(P;Q)"
-term "((P::('s, 's) prel) \<^bold>\<parallel> Q)"
-term "((P::'s list) \<^bold>\<parallel> Q)"
-term "([] \<^bold>\<parallel> [a])"
 
 (*
 syntax 
@@ -216,8 +232,8 @@ adhoc_overloading
 term "if True then P else Q"
 term "if\<^sub>p R then P else Q"
 *)
-term "if\<^sub>p R then P else Q"
 
+subsection \<open> \<close>
 subsection \<open> Syntactical examples \<close>
 subsubsection \<open> Doctor Who's Tardis Attacker \<close>
 text \<open> Example 13 from Jim's draft report. 
@@ -235,16 +251,15 @@ alphabet DWTA_state =
   r:: Attacker
   a:: Status
 
-term "r := C"
-term "r :=\<^sub>p C"
+term "(r := C)::DWTA_state phrel"
 
-term "(r :=\<^sub>p C) ; (if\<^sub>p (1/2) then (a :=\<^sub>p S) else (a :=\<^sub>p F))"
+term "(r := C) ; (if\<^sub>p (1/2) then (a := S) else (a := F))"
 
 definition dwta where
 "dwta = 
   (if\<^sub>p (3/5) 
-    then ((r :=\<^sub>p C) ; (if\<^sub>p ( 1/2) then (a :=\<^sub>p S) else (a :=\<^sub>p F))) 
-    else ((r :=\<^sub>p D) ; (if\<^sub>p (3/10) then (a :=\<^sub>p S) else (a :=\<^sub>p F)))
+    then ((r := C) ; (if\<^sub>p ( 1/2) then (a := S) else (a := F))) 
+    else ((r := D) ; (if\<^sub>p (3/10) then (a := S) else (a := F)))
   )
 "
 
@@ -252,14 +267,85 @@ term "C"
 term "(r\<^sup>> = C)\<^sub>e"
 term "\<lbrakk>(r\<^sup>> = C)\<^sub>e\<rbrakk>\<^sub>\<I>"
 term "\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e"
+term "(r := C)::DWTA_state phrel"
 
-lemma "(r :=\<^sub>p C) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
-  apply (simp add: prob_rel_defs expr_defs )
-  oops
-
-lemma "((r :=\<^sub>p C); (a :=\<^sub>p S)) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
+lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: prob_rel_defs expr_defs)
-  oops
+  apply (subst prel_of_set_inject)
+  apply (simp add: is_prob_def)+
+  by (rel_auto)
+
+lemma dwta_scomp_simp: 
+  "(((r := C)::(DWTA_state, DWTA_state) prel); (a := S)) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
+  apply (simp add: prob_rel_defs expr_defs)
+  apply (subst prel_of_set_inject)
+  defer
+  apply (simp add: is_prob_def)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: is_prob_def)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: is_prob_def)
+  apply (rel_auto)
+  apply (rule infsumI)
+  apply (simp add: has_sum_def)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+  apply (rule_tac x = "{\<lparr>r\<^sub>v = C, a\<^sub>v = a\<^sub>v\<rparr>}" in exI)
+  apply (auto)
+  apply (simp add: sum.remove)
+  apply (subgoal_tac "(\<Sum>v\<^sub>0::DWTA_state\<in>Y - {\<lparr>r\<^sub>v = C, a\<^sub>v = a\<^sub>v\<rparr>}.
+  (if \<lparr>r\<^sub>v = C, a\<^sub>v = a\<^sub>v\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+    (if v\<^sub>0\<lparr>a\<^sub>v := S\<rparr> = \<lparr>r\<^sub>v = C, a\<^sub>v = S\<rparr> then 1::\<real> else (0::\<real>))) = 0")
+  apply simp
+  apply (subst sum_nonneg_eq_0_iff)
+  apply simp+
+  apply (rule infsum_0)
+  apply auto[1]
+  apply (rule infsum_0)
+  apply auto[1]
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (simp add: infsum_nonneg is_prob_def prel_of_set_inverse)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: is_prob_def)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: is_prob_def)
+  apply (rel_auto)
+  apply (subst infsumI[where x="if r\<^sub>v'=C \<and> a\<^sub>v'=S then 1 else 0"])
+  apply (simp add: has_sum_def, auto)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+  apply (rule_tac x = "{\<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr>}" in exI)
+  apply (auto)
+  apply (simp add: sum.remove)
+  apply (subgoal_tac "(\<Sum>v\<^sub>0::DWTA_state\<in>Y - {\<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr>}.
+    (if \<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+    (if v\<^sub>0\<lparr>a\<^sub>v := S\<rparr> = \<lparr>r\<^sub>v = C, a\<^sub>v = S\<rparr> then 1::\<real> else (0::\<real>))) = 0")
+  apply simp
+  apply (subst sum_nonneg_eq_0_iff)
+  apply simp+
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+  apply (rule_tac x = "{\<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr>}" in exI, auto)
+  apply (subgoal_tac "(\<Sum>v\<^sub>0::DWTA_state\<in>Y.
+           (if \<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+  (if v\<^sub>0\<lparr>a\<^sub>v := S\<rparr> = \<lparr>r\<^sub>v = r\<^sub>v', a\<^sub>v = a\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>))) = 0")
+  apply simp
+  apply (subst sum_nonneg_eq_0_iff)
+  apply simp+
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+  apply (rule_tac x = "{\<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr>}" in exI, auto)
+  apply (subgoal_tac "(\<Sum>v\<^sub>0::DWTA_state\<in>Y.
+           (if \<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+  (if v\<^sub>0\<lparr>a\<^sub>v := S\<rparr> = \<lparr>r\<^sub>v = r\<^sub>v', a\<^sub>v = a\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>))) = 0")
+  apply simp
+  apply (subst sum_nonneg_eq_0_iff)
+  by simp+
 
 subsubsection \<open> x \<close>
 alphabet state =
@@ -267,13 +353,13 @@ alphabet state =
 
 thm "utp_prob_rel_prog.state.cases"
 
-term "(if\<^sub>p ( 1/2) then (x :=\<^sub>p 1) else (x :=\<^sub>p 2))"
+term "(if\<^sub>p ( 1/2) then (x := 1) else (x := 2))"
 term "(x := x + 1)"
 term "x := (x + 1)"
 (* Next is syntactically correct if the priority of :=\<^sub>p is larger than + (65) *)
-term "(x :=\<^sub>p x + 1)"
-term "(x :=\<^sub>p (x + 1))"
-term "((if\<^sub>p ( 1/2) then ((x :=\<^sub>p 1)::(state, state) prel) else (x :=\<^sub>p 2)) ; (x :=\<^sub>p (x + 1)))"
+term "(x := x + 1)"
+term "(x := (x + 1))"
+term "((if\<^sub>p ( 1/2) then ((x := 1)::(state, state) prel) else (x := 2)) ; (x := (x + 1)))"
 term "v\<^sub>0 \<lparr>x\<^sub>v := x\<^sub>v v\<^sub>0 + (1::\<int>)\<rparr>"
 term "\<lparr>x\<^sub>v = 0\<rparr>"
 
@@ -283,8 +369,8 @@ lemma "\<exists>x\<^sub>v'. v\<^sub>0\<lparr>x\<^sub>v := x\<^sub>v v\<^sub>0 + 
 term "suminf"
 term "sum"
 
-lemma "((if\<^sub>p ( 1/2) then ((x :=\<^sub>p 1)::(state, state) prel) else (x :=\<^sub>p 2)) ; (x :=\<^sub>p (x + 1)))
-  = (if\<^sub>p ( 1/2) then (x :=\<^sub>p 2) else (x :=\<^sub>p 3))"
+lemma "((if\<^sub>p ( 1/2) then ((x := 1)::(state, state) prel) else (x := 2)) ; (x := (x + 1)))
+  = (if\<^sub>p ( 1/2) then (x := 2) else (x := 3))"
   apply (simp add: prob_rel_defs)
   apply (expr_auto)
   apply (subst prel_of_set_inverse)

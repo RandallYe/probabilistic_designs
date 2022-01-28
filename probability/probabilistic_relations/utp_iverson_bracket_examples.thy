@@ -72,6 +72,7 @@ term "c\<^sub>v P = Red"
 (* *)
 term "c\<^sup>>"
 term "$c\<^sup>>"
+term "$c"
 (* *)
 term "c\<^sup><"
 term "$c\<^sup><"
