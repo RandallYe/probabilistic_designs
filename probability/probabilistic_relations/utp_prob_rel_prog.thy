@@ -16,9 +16,22 @@ named_theorems prob_rel_defs
 
 (* suggestion: typedef 0 \<le> p \<le> 1*)
 
-typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). is_prob s}"
+(* typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). is_prob s}"
   morphisms set_of_prel prel_of_set
   using is_prob_def taut_def by force
+*)
+typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). (\<forall>a. is_dist ((curry s) a))}"
+  morphisms set_of_prel prel_of_set
+  apply (simp add: dist_defs taut_def)
+  apply (rule_tac x = "\<lambda>(a,b). if b = c then 1 else 0" in exI)
+  apply (auto)
+  apply (rule infsumI)
+  apply (simp add: has_sum_def)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+  apply (rule_tac x = "{c}" in exI)
+  by (auto)
 
 (*
   prel_of_set_cases:
@@ -47,6 +60,7 @@ typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<R
 term "prel_of_set"
 term "set_of_prel"
 thm "prel_of_set_inverse"
+thm "set_of_prel"
 
 type_synonym 's phrel = "('s, 's) prel"
 

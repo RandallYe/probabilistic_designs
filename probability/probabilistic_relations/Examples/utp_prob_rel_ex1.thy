@@ -42,7 +42,6 @@ term "(r\<^sup>> = C)\<^sub>e"
 term "\<lbrakk>(r\<^sup>> = C)\<^sub>e\<rbrakk>\<^sub>\<I>"
 term "\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e"
 term "(r := C)::DWTA_state phrel"
-term "{r, a}\<^sub>v := {C, S}"
 
 lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = $a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: prob_rel_defs expr_defs)
@@ -52,75 +51,21 @@ lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<
 
 lemma dwta_scomp_simp: 
   "(((r := C)::(DWTA_state, DWTA_state) prel); (a := S)) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
-  apply (simp add: prob_rel_defs expr_defs)
+  apply (simp add: passign_comp)
   apply (subst prel_of_set_inject)
-  defer
-  apply (simp add: is_prob_def)
-  apply (subst prel_of_set_inverse)
-  apply (simp add: is_prob_def)
-  apply (subst prel_of_set_inverse)
-  apply (simp add: is_prob_def)
+  apply (simp add: assigns_comp prel_assign_is_prob)
   apply (rel_auto)
-  apply (rule infsumI)
-  apply (simp add: has_sum_def)
-  apply (subst topological_tendstoI)
-  apply (auto)
-  apply (simp add: eventually_finite_subsets_at_top)
-  apply (rule_tac x = "{\<lparr>r\<^sub>v = C, a\<^sub>v = a\<^sub>v\<rparr>}" in exI)
-  apply (auto)
-  apply (simp add: sum.remove)
-  apply (subgoal_tac "(\<Sum>v\<^sub>0::DWTA_state\<in>Y - {\<lparr>r\<^sub>v = C, a\<^sub>v = a\<^sub>v\<rparr>}.
-  (if \<lparr>r\<^sub>v = C, a\<^sub>v = a\<^sub>v\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
-    (if v\<^sub>0\<lparr>a\<^sub>v := S\<rparr> = \<lparr>r\<^sub>v = C, a\<^sub>v = S\<rparr> then 1::\<real> else (0::\<real>))) = 0")
-  apply simp
-  apply (subst sum_nonneg_eq_0_iff)
-  apply simp+
-  apply (rule infsum_0)
-  apply auto[1]
-  apply (rule infsum_0)
-  apply auto[1]
-  apply (simp add: dist_defs)
-  apply (expr_auto)
-  apply (simp add: infsum_nonneg is_prob_def prel_of_set_inverse)
+  apply (simp add: is_prob_def)
+  by (rel_auto)
+
+lemma dwta_:
+  "(r := C) ; (if\<^sub>p ( 1/2) then (a := S) else (a := F))
+  = prel_of_set (1/2 * \<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 1/2 * \<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  apply (simp add: prob_rel_defs expr_defs)
   apply (subst prel_of_set_inverse)
   apply (simp add: is_prob_def)
   apply (subst prel_of_set_inverse)
   apply (simp add: is_prob_def)
-  apply (rel_auto)
-  apply (subst infsumI[where x="if r\<^sub>v'=C \<and> a\<^sub>v'=S then 1 else 0"])
-  apply (simp add: has_sum_def, auto)
-  apply (subst topological_tendstoI)
-  apply (auto)
-  apply (simp add: eventually_finite_subsets_at_top)
-  apply (rule_tac x = "{\<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr>}" in exI)
-  apply (auto)
-  apply (simp add: sum.remove)
-  apply (subgoal_tac "(\<Sum>v\<^sub>0::DWTA_state\<in>Y - {\<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr>}.
-    (if \<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
-    (if v\<^sub>0\<lparr>a\<^sub>v := S\<rparr> = \<lparr>r\<^sub>v = C, a\<^sub>v = S\<rparr> then 1::\<real> else (0::\<real>))) = 0")
-  apply simp
-  apply (subst sum_nonneg_eq_0_iff)
-  apply simp+
-  apply (subst topological_tendstoI)
-  apply (auto)
-  apply (simp add: eventually_finite_subsets_at_top)
-  apply (rule_tac x = "{\<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr>}" in exI, auto)
-  apply (subgoal_tac "(\<Sum>v\<^sub>0::DWTA_state\<in>Y.
-           (if \<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
-  (if v\<^sub>0\<lparr>a\<^sub>v := S\<rparr> = \<lparr>r\<^sub>v = r\<^sub>v', a\<^sub>v = a\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>))) = 0")
-  apply simp
-  apply (subst sum_nonneg_eq_0_iff)
-  apply simp+
-  apply (subst topological_tendstoI)
-  apply (auto)
-  apply (simp add: eventually_finite_subsets_at_top)
-  apply (rule_tac x = "{\<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr>}" in exI, auto)
-  apply (subgoal_tac "(\<Sum>v\<^sub>0::DWTA_state\<in>Y.
-           (if \<lparr>r\<^sub>v = C, a\<^sub>v = a\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
-  (if v\<^sub>0\<lparr>a\<^sub>v := S\<rparr> = \<lparr>r\<^sub>v = r\<^sub>v', a\<^sub>v = a\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>))) = 0")
-  apply simp
-  apply (subst sum_nonneg_eq_0_iff)
-  by simp+
 
 subsubsection \<open> x \<close>
 alphabet state =

@@ -176,5 +176,54 @@ lemma passign_comp:
     apply (subst sum_nonneg_eq_0_iff)
     by (simp)+
 
+lemma set_of_prel_is_prob: "is_prob (set_of_prel Q)"
+  using set_of_prel by auto
+
+lemma set_of_prel_in_0_1: "set_of_prel Q x \<ge> 0 \<and> set_of_prel Q x \<le> 1"
+  using set_of_prel_is_prob 
+  by (smt (verit) SEXP_def is_prob_def taut_def)
+
+(* In order to prove this law, we need to restrict P Q to distributions *)
+lemma passign_pif_simp:
+  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> 1"
+  shows "(x := c) ; (if\<^sub>p (r) then P else Q) = 
+    prel_of_set (r * ([ x\<^sup>> \<leadsto> c\<^sup>> ] \<dagger> @(set_of_prel P)) +  (1-r) * ([ x\<^sup>> \<leadsto> c\<^sup>> ] \<dagger> @(set_of_prel Q)))\<^sub>e"
+  apply (simp add: prob_rel_defs expr_defs)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: is_prob_def)
+  apply (subst prel_of_set_inverse)
+   apply (simp add: is_prob_def expr_defs)
+   apply (auto)
+  apply (simp add: assms set_of_prel_in_0_1)
+  apply (simp add: assms convex_bound_le set_of_prel_in_0_1)
+  apply (subst prel_of_set_inject)
+    apply (simp add: dist_defs expr_defs)
+    apply (auto)
+     apply (simp add: assms infsum_nonneg set_of_prel_in_0_1)
+  apply (rel_auto)
+  apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
+          (if put\<^bsub>x\<^esub> a (c a) = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+          (r (v\<^sub>0, b) * set_of_prel P (v\<^sub>0, b) + ((1::\<real>) - r (v\<^sub>0, b)) * set_of_prel Q (v\<^sub>0, b))) = 1")
+     apply simp
+  apply (rule infsumI)
+    apply (simp add: has_sum_def)
+    apply (subst topological_tendstoI)
+    apply (auto)
+    apply (simp add: eventually_finite_subsets_at_top)
+    apply (rule_tac x = "{put\<^bsub>x\<^esub> a (c a)}" in exI)
+    apply (auto)
+  apply (subgoal_tac "(\<Sum>v\<^sub>0::'a\<in>Y.
+          (if put\<^bsub>x\<^esub> a (c a) = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+          (r (v\<^sub>0, b) * set_of_prel P (v\<^sub>0, b) + ((1::\<real>) - r (v\<^sub>0, b)) * set_of_prel Q (v\<^sub>0, b))) 
+      = 1")
+    apply presburger
+    apply (simp add: sum.remove)
+    apply (subgoal_tac "(\<Sum>v\<^sub>0::'a\<in>Y - {put\<^bsub>x\<^esub> a (c a)}.
+          (if put\<^bsub>x\<^esub> a (c a) = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+          (r (v\<^sub>0, b) * set_of_prel P (v\<^sub>0, b) + ((1::\<real>) - r (v\<^sub>0, b)) * set_of_prel Q (v\<^sub>0, b))) = 0")
+    apply (subgoal_tac "r (put\<^bsub>x\<^esub> a (c a), b) * set_of_prel P (put\<^bsub>x\<^esub> a (c a), b) + 
+      ((1::\<real>) - r (put\<^bsub>x\<^esub> a (c a), b)) * set_of_prel Q (put\<^bsub>x\<^esub> a (c a), b) = 1") 
+    defer
+    apply (smt (verit) DiffE mult_eq_0_iff singleton_iff sum.not_neutral_contains_not_neutral)
 
 end
