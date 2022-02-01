@@ -42,8 +42,9 @@ term "(r\<^sup>> = C)\<^sub>e"
 term "\<lbrakk>(r\<^sup>> = C)\<^sub>e\<rbrakk>\<^sub>\<I>"
 term "\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e"
 term "(r := C)::DWTA_state phrel"
+term "{r, a}\<^sub>v := {C, S}"
 
-lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
+lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = $a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: prob_rel_defs expr_defs)
   apply (subst prel_of_set_inject)
   apply (simp add: is_prob_def)+

@@ -70,7 +70,7 @@ term "(c = Yellow)\<^sub>e"
 term "c\<^sub>v"
 term "c\<^sub>v P = Red"
 (* *)
-term "c\<^sup>>"
+term "c\<^sup>>" (* "[get\<^bsub>c\<^esub>]\<^sub>e \<up> snd\<^sub>L" :: "'a \<times> 'b StColor_scheme \<Rightarrow> color" *)
 term "$c\<^sup>>"
 term "$c"
 (* *)
@@ -79,7 +79,7 @@ term "$c\<^sup><"
 term "$\<^bold>v\<^sup>>"
 term "$\<^bold>v\<^sup>>"
 term "$\<^bold>v\<^sup><"
-term "get\<^bsub>c\<^esub>"
+term "get\<^bsub>c\<^esub>" (* :: "'a StColor_scheme \<Rightarrow> color" *)
 term "($c\<^sup>> = Red)\<^sub>e"
 term "(($c\<^sup>> = Red) \<and> ($c\<^sup>< = Green))\<^sub>e"
 term "(($c\<^sup>> = Red) \<and> ($c\<^sup>< = Green))\<^sub>u ::color\<leftrightarrow>color"

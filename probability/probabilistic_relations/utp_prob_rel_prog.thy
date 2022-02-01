@@ -100,6 +100,34 @@ adhoc_overloading
 term "II::'s rel"
 term "II::'s phrel"
 term "x := ($x + 1)"
+term "x\<^sup>> := ($x\<^sup>< + 1)"
+
+text \<open> The change of precedence of := in utp_rel.thy from 76 to 61 (otherwise x := x+1 won't be 
+parsed correctly). But this change, as discussed in @{url \<open>https://github.com/isabelle-utp/UTP/pull/1\<close>} 
+may cause a problem for \relcomp (\Zcomp) because its precedence is 75 now. After this change, \Zcomp will 
+be bound stronger than := .
+\<close>
+term "((x := 1)::'s rel) \<Zcomp> y := c"
+
+text \<open>As Simon recommended, we could use another annotation with difference precedence for relcomp. \<close>
+
+notation relcomp (infixr ";;" 55)
+term "x := $x + 1" (* OK. := (61) and + (65) *)
+term "x := $x + 1 ;; P" 
+term "x := $x + 1 \<Zcomp> P" (* Not parsed because \<Zcomp> (75) *)
+term "x := $x + 1 ;; y := $y - 1" 
+term "p \<union> q \<Zcomp> P" (* (p \<union> (q \<Zcomp> P)) *) (* \<union> (65) *)
+term "p \<union> q ;; P" (* (p \<union> q) ;; P*)
+term "p \<inter> q ;; P \<union> Q" (* (p \<inter> q) ;; (P \<union> Q) *) (* \<inter> (70) *)
+term "p  \<inter> q \<Zcomp> P \<union> Q" (* (p \<inter> (q ;; P)) \<union> Q *)
+
+term "((x := 1)::'s rel) ;; y := c"
+term "((x := 1)::'s rel) ;; (y + 1)"
+term "\<lambda>q. x"
+term "if b then c else q"
+term "1/2"
+term "a - {}"
+term "f o g"
 
 definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prel" where 
 [prob_rel_defs]: "passigns \<sigma> = prel_of_set (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
@@ -121,7 +149,7 @@ translations
   "_passign x e" == "CONST passign x (e)\<^sub>e"
   "_passign x e" <= "_passign x (e)\<^sub>e"
 *)
-term "(x := 1)::'s phrel"
+term "(x := 1)::'s rel"
 term "(x := C)::'s phrel"
 (* Question: what priority should I give? 
 If the priority of :=\<^sub>p is larger (tighter) than + (65), then the syntax below is incorrect.
@@ -131,14 +159,16 @@ Otherwise, it should be correct
 (* TODO: Simon: contact Christine about suggestion precedence ... reference from ITree: *)
 term "(x := $x + 1)::'s rel"
 term "(x := ($x + 1))::'s rel"
+(* \<^bold>v shouldn't be the LHS of an assignment *)
 term "(\<^bold>v\<^sup>> := $\<^bold>v\<^sup><)::'s phrel"
+term "($\<^bold>v\<^sup>> = $\<^bold>v\<^sup><)"
 
 term "((set_of_prel P))"
 term "(r * @(set_of_prel P) + (1 - r) * @(set_of_prel  Q))\<^sub>e"
 
 (* probabilistic choice *)
 definition pchoice :: "('s, 's) prel \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
-  ("(_ \<oplus>\<^bsub>_\<^esub> _)" [30, 0, 29] 29) where
+  ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [prob_rel_defs]: "pchoice P r Q = prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
 
 (* definition pchoice' :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
@@ -147,7 +177,7 @@ definition pchoice :: "('s, 's) prel \<Rightarrow> ('s \<times> 's \<Rightarrow>
 *)
 
 syntax 
-  "_pchoice" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 30, 29] 29) 
+  "_pchoice" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 61, 60] 60) 
 
 translations
   "_pchoice r P Q" == "CONST pchoice P (r)\<^sub>e Q"
@@ -155,6 +185,7 @@ translations
 
 term "if\<^sub>p 0.5 then P else Q"
 term "if\<^sub>p R then P else Q"
+term "if\<^sub>p R then P else Q = if\<^sub>p R then P else Q"
 
 (* conditional choice *)
 definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where 
@@ -172,18 +203,18 @@ term "
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel Q)))\<^sub>e"
 thm "pred_seq_hom"
 
-definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (infixl ";\<^sub>p" 28) where
+definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (infixl ";\<^sub>p" 59) where
 [prob_rel_defs]: "pcomp P Q = prel_of_set 
     (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel Q)))\<^sub>e"
 
 term "(P;\<^sub>p Q)"
 
-definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 27) where
+definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
 [prob_rel_defs]: "pparallel P Q = prel_of_set \<^bold>\<N> (@(set_of_prel P) * @(set_of_prel Q))\<^sub>e"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts
-  parallel_c :: "'a \<Rightarrow> 'a \<Rightarrow> 'c" (infixl "\<parallel>" 27)
+  parallel_c :: "'a \<Rightarrow> 'a \<Rightarrow> 'c" (infixl "\<parallel>" 58)
 
 adhoc_overloading
   parallel_c pparallel and parallel_c Sublist.parallel
@@ -206,7 +237,7 @@ no_notation _assign (infix ":=" 76)
 
 
 (* notation passign (infix ":=" 162) *)
-notation pcomp (infixl ";" 28)
+notation pcomp (infixl ";" 59)
 (* notation pchoice ("(_ \<oplus>\<^bsub>_\<^esub> _)" [164, 0, 165] 164) *)
 (* notation pparallel (infixl "\<parallel>" 166) *)
 
