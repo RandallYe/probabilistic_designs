@@ -21,7 +21,7 @@ lemma infsum_singleton_1:
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if v\<^sub>0 = c then (m::\<real>) else 0)) = m"
   by (smt (verit, del_insts) infsum_cong infsum_singleton)
 
-lemma infsum_mult_singleton_eq: 
+lemma infsum_mult_singleton_left: 
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. ((if v\<^sub>0 = c then (1::\<real>) else 0) * (P v\<^sub>0))) = P c"
   apply (rule infsumI)
   apply (simp add: has_sum_def)
@@ -32,14 +32,20 @@ lemma infsum_mult_singleton_eq:
   apply (auto)
   by (simp add: sum.remove)
 
-lemma infsum_mult_singleton_eq_1: 
+lemma infsum_mult_singleton_right: 
+  "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. ((P v\<^sub>0) * (if v\<^sub>0 = c then (1::\<real>) else 0))) = P c"
+  using infsum_mult_singleton_left
+  by (metis (no_types, lifting) infsum_cong mult.commute)
+
+lemma infsum_mult_singleton_left_1: 
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. ((if c = v\<^sub>0 then (1::\<real>) else 0) * (P v\<^sub>0))) = P c"
-  using infsum_mult_singleton_eq
+  using infsum_mult_singleton_left
   by (smt (verit) infsum_cong)
 
-lemma infsum_mult_singleton_eq_2: 
-  "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. ((P v\<^sub>0) * (if v\<^sub>0 = c then (1::\<real>) else 0))) = P c"
-  by (metis (no_types, lifting) infsum_cong infsum_mult_singleton_eq mult.commute)
+lemma infsum_mult_singleton_right_1: 
+  "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. ((P v\<^sub>0) * (if c = v\<^sub>0 then (1::\<real>) else 0))) = P c"
+  using infsum_mult_singleton_right
+  by (smt (verit) infsum_cong)
 
 lemma infsum_mult_singleton_1:
   "(\<Sum>\<^sub>\<infinity>s::'a. 
@@ -83,16 +89,20 @@ lemma infsum_mult_singleton_1:
   by (smt (verit, ccfv_SIG) Diff_insert_absorb mk_disjoint_insert mult_cancel_left1 
       sum.not_neutral_contains_not_neutral)
 
+lemma infsum_mult_subset_left: 
+  "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. ((if b v\<^sub>0 then (1::\<real>) else 0) * (P v\<^sub>0))) = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> {v\<^sub>0. b v\<^sub>0}. (P v\<^sub>0))"
+  apply (rule infsum_cong_neutral)
+  by simp+
 
 term "set_of_prel P"
 term "\<lambda>s. (set_of_prel P) s"
 term "(case \<s> of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) (v\<^sub>0::'a)"
 
-lemma prel_left_unit: "II ; P = P"
+theorem prel_left_unit: "II ; P = P"
   apply (simp add: prob_rel_defs expr_defs)
   apply (subst prel_of_set_inverse)
    apply (simp add: dist_defs)
-  apply (smt (verit, best) infsum_cong infsum_mult_singleton_eq_1 mult_cancel_right1)
+  apply (smt (verit, best) infsum_cong infsum_mult_singleton_left mult_cancel_right1)
   apply (simp add: lens_defs)
   apply (subgoal_tac "\<forall>s. (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
            (if (case s of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) v\<^sub>0 \<in> II then 1::\<real> else (0::\<real>)) *
@@ -105,13 +115,13 @@ lemma prel_left_unit: "II ; P = P"
   using set_of_prel_inverse apply auto[1]
    apply presburger
   apply (auto)
-  using infsum_mult_singleton_eq_1 by metis
+  by (simp add: infsum_mult_singleton_left_1)
 
-lemma prel_right_unit: "P ; II = P"
+theorem prel_right_unit: "P ; II = P"
   apply (simp add: prob_rel_defs expr_defs)
   apply (subst prel_of_set_inverse)
   apply (simp add: dist_defs)
-  apply (smt (verit, best) infsum_cong infsum_mult_singleton_eq_1 mult_cancel_right1)
+  apply (smt (verit, best) infsum_cong infsum_mult_singleton_left mult_cancel_right1)
   apply (simp add: lens_defs)
   apply (subgoal_tac "\<forall>s. (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
            set_of_prel P ((case s of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) v\<^sub>0) *
@@ -125,7 +135,7 @@ lemma prel_right_unit: "P ; II = P"
   using set_of_prel_inverse apply auto[1]
    apply presburger
   apply (auto)
-  using infsum_mult_singleton_eq_2 by metis
+  using infsum_mult_singleton_right by metis
 
 term "(x := e) :: 's phrel"                                                                                                                                           
 term "prel_of_set (\<lbrakk> x\<^sup>> = e \<rbrakk>\<^sub>\<I>\<^sub>e)"
@@ -214,7 +224,7 @@ lemma passign_comp:
 
     (* *)
     apply (rel_auto)
-    apply (subst infsum_mult_singleton_eq_1)
+    apply (subst infsum_mult_singleton_left_1)
     apply simp
     by (smt (verit, best) infsum_0 mult_cancel_left1 mult_cancel_right1)
 
@@ -244,6 +254,31 @@ proof (rule ccontr)
   then show "False"
     by (simp add: prel_sum_1)
 qed
+
+lemma real_space_complete: "complete (UNIV::real set)"
+  by (simp add: complete_def convergentD real_Cauchy_convergent)
+
+lemma prel_summable_on_subset:
+  shows "(\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on A"
+  apply (rule summable_on_subset[where A="UNIV" and B = "A"])
+  apply (simp add: real_space_complete)
+  apply simp
+  apply (simp add: prel_summable)
+  by simp
+
+lemma infsum_mult_subset_summable:
+  shows "(\<lambda>v\<^sub>0. (if b v\<^sub>0 then (1::\<real>) else 0) * (set_of_prel P (s\<^sub>1, v\<^sub>0))) summable_on UNIV"
+  apply (subgoal_tac "(\<lambda>v\<^sub>0. (if b v\<^sub>0 then (1::\<real>) else 0) * (set_of_prel P (s\<^sub>1, v\<^sub>0))) summable_on UNIV
+    \<longleftrightarrow> (\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on {x. b x}")
+  apply (simp add: prel_summable_on_subset)
+  apply (rule summable_on_cong_neutral)
+  by simp+
+
+
+lemma prel_infsum_infsum_mult_singleton_1:
+  "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if c = v\<^sub>0 then 1::\<real> else (0::\<real>)) * set_of_prel P (v\<^sub>0, s)) = (1::\<real>)"
+  apply (subst infsum_mult_singleton_left_1)
+  by (simp add: prel_sum_1)
 
 (*
 lemma "(\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * set_of_prel P (s\<^sub>1, s) + ((1::\<real>) - r (s\<^sub>1, s)) * set_of_prel Q (s\<^sub>1, s))
@@ -295,19 +330,78 @@ proof -
     by (simp add: f1 prel_sum_1)
 qed
 
-lemma passign_pif_simp:
-  shows "x := e ; P = prel_of_set (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(set_of_prel P)))\<^sub>e"
+theorem prel_left_one_point: "x := e ; P = prel_of_set (([ x\<^sup>< \<leadsto> e\<^sup>< ] \<dagger> @(set_of_prel P)))\<^sub>e"
   apply (simp add: prob_rel_defs expr_defs)
   apply (subst prel_of_set_inverse)
+
   apply (simp add: dist_defs expr_defs)
   apply (rel_auto)
    apply (simp add: infsum_singleton)
+
   apply (subst prel_of_set_inject)
-    apply (simp add: dist_defs expr_defs)
-    apply (rel_auto)
+  apply (simp add: dist_defs expr_defs)
+  apply (rel_auto)
+  apply (simp add: infsum_nonneg prel_in_0_1')
+  apply (simp add: infsum_mult_singleton_left_1 prel_in_0_1')
+  apply (simp add: prel_infsum_infsum_mult_singleton_1)
+  apply (simp add: dist_defs expr_defs)
+  apply (auto)
+  using prel_in_0_1' apply blast+
+  apply (simp add: lens_defs)
+  apply (simp add: prel_sum_1)
+  apply (rel_auto)
+  by (simp add: infsum_mult_singleton_left_1)
+
+theorem prel_right_one_point: "P ; x := e = prel_of_set (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(set_of_prel P)))\<^sub>e"
+  apply (simp add: prob_rel_defs expr_defs)
+  apply (subst prel_of_set_inverse)
+
+  apply (simp add: dist_defs expr_defs)
+  apply (rel_auto)
+   apply (simp add: infsum_singleton)
+
+  apply (subst prel_of_set_inject)
+  apply (simp add: dist_defs expr_defs)
+  apply (rel_auto)
       apply (simp add: infsum_nonneg prel_in_0_1')
-     apply (simp add: infsum_mult_singleton_eq_1 prel_in_0_1')
+  apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. set_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) \<le> 
+    (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. set_of_prel P (s\<^sub>1, v\<^sub>0))")
+  apply (simp add: prel_sum_1)
+     apply (rule infsum_mono)
+  defer
+       apply (simp add: prel_summable)
+  apply (simp add: prel_in_0_1')
+  apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. set_of_prel P (s\<^sub>1, v\<^sub>0) * 
+    (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 1")
+  apply simp
+     apply (rule infsumI)
+    apply (simp add: has_sum_def)
+    apply (auto)
+    apply (subst topological_tendstoI)
+    apply (auto)
+    apply (simp add: eventually_finite_subsets_at_top)
+    apply (rule_tac x = "{v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}" in exI)
+     apply (auto)
   sledgehammer
+    apply (subgoal_tac "(\<Sum>v\<^sub>0::'a\<in>Y.
+        (if put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1) = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+        (if put\<^bsub>y\<^esub> v\<^sub>0 (f v\<^sub>0) = put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1)) (f (put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1))) then 1::\<real> else (0::\<real>))) 
+      = 1")
+    apply presburger
+    apply (simp add: sum.remove)
+    apply (subst sum_nonneg_eq_0_iff)
+    apply (simp)+
+    apply force
+  apply (subst infsum_mult_singleton_right)
+  apply (simp add: infsum_mult_singleton_right_1 prel_in_0_1')
+  apply (simp add: prel_infsum_infsum_mult_singleton_1)
+  apply (simp add: dist_defs expr_defs)
+  apply (auto)
+  using prel_in_0_1' apply blast+
+  apply (simp add: lens_defs)
+  apply (simp add: prel_sum_1)
+  apply (rel_auto)
+  by (simp add: infsum_mult_singleton_left)
 
 (* In order to prove this law, we need to restrict P Q to distributions *)
 (*
