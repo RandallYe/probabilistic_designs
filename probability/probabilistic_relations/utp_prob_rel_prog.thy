@@ -20,7 +20,7 @@ named_theorems prob_rel_defs
   morphisms set_of_prel prel_of_set
   using is_prob_def taut_def by force
 *)
-typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). (\<forall>a. is_dist ((curry s) a))}"
+typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). (\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry s) s\<^sub>1))}"
   morphisms set_of_prel prel_of_set
   apply (simp add: dist_defs taut_def)
   apply (rule_tac x = "\<lambda>(a,b). if b = c then 1 else 0" in exI)
@@ -86,15 +86,18 @@ that have probability @{text "P (s, s')"} larger than 0.
 definition reachable_states :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> 's\<^sub>1 \<Rightarrow> 's\<^sub>2 set" where
 [prob_rel_defs]: "reachable_states P s = {s'. (curry (set_of_prel P)) s s' > 0}"
 
+(*
 text \<open> A deadlock state has no reachable states from it. \<close>
 definition deadlock_state where
 [prob_rel_defs]: "deadlock_state P s = (reachable_states P s = {})"
+*)
 
 subsection \<open> Probabilistic programming \<close>
 (* Priorities from larger (tighter) to smaller:
   II, :=\<^sub>p, pif then else, ;, \<parallel> 
 *)
 
+(*
 (* deadlock: zero and not a distribution *)
 definition pzero :: "('s\<^sub>1, 's\<^sub>2) prel" ("0\<^sub>p") where
 [prob_rel_defs]: "pzero = prel_of_set (\<lambda> s. 0)"
@@ -102,6 +105,7 @@ definition pzero :: "('s\<^sub>1, 's\<^sub>2) prel" ("0\<^sub>p") where
 lemma deadlock_always: "`@(deadlock_state pzero)`"
   apply (simp add: prob_rel_defs)
   by (simp add: is_prob_def prel_of_set_inverse)
+*)
 
 (* suggest by simon: bundle: notation here *)
 (* ok *)
@@ -221,10 +225,9 @@ definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (in
 [prob_rel_defs]: "pcomp P Q = prel_of_set 
     (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel Q)))\<^sub>e"
 
-term "(P;\<^sub>p Q)"
 
 definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
-[prob_rel_defs]: "pparallel P Q = prel_of_set \<^bold>\<N> (@(set_of_prel P) * @(set_of_prel Q))\<^sub>e"
+[prob_rel_defs]: "pparallel P Q = prel_of_set (\<^bold>\<N> (@(set_of_prel P) * @(set_of_prel Q))\<^sub>e)"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts

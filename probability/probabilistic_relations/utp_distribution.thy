@@ -19,7 +19,7 @@ definition is_prob:: "(real, 's) expr \<Rightarrow> bool" where
 [dist_defs]: "is_prob e = `((0 \<le> (e)) \<and> ((e) \<le> 1))`"
 
 definition is_sum_1:: "(real, 's) expr \<Rightarrow> bool" where
-[dist_defs]: "is_sum_1 e = ((\<Sum>\<^sub>\<infinity> s. e s) = 1)"
+[dist_defs]: "is_sum_1 e = ((\<Sum>\<^sub>\<infinity> s. e s) = (1::\<real>))"
 (*
 "is_sum_1 e = ((\<Sum>s|True. e s) = 1)"
 *)
@@ -27,15 +27,18 @@ definition is_sum_1:: "(real, 's) expr \<Rightarrow> bool" where
 definition is_dist:: "(real, 's) expr \<Rightarrow> bool" where
 [dist_defs]: "is_dist e = (is_prob e \<and> is_sum_1 e)"
 
+(*
 definition prob_prog::"('s\<^sub>1 \<leftrightarrow> 's\<^sub>2) \<Rightarrow> real" where
 "prob_prog s = 1"
-
+*)
+(*
 term "{1::nat..}"
 lemma "is_dist (\<lambda>(m::nat,n). (1/2)^(n+m))"
-  apply (simp add: dist_defs)
+  apply (simp add: dist_defs expr_defs)
   apply (auto)
-   apply (simp add: power_le_one)
+  apply (simp add: power_le_one)
   sorry
+*)
 
 full_exprs
 
@@ -48,6 +51,7 @@ then this definition here will have a problem (divide-by-zero). How to deal with
 definition dist_norm::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>\<N> _") where
 [dist_defs]: "dist_norm e = (e / (\<Sum>\<^sub>\<infinity> s. \<guillemotleft>e\<guillemotright> s))\<^sub>e"
 
+(*
 lemma sum_larger: "`e \<le> infsum \<guillemotleft>e\<guillemotright> UNIV`"
   apply (simp add: infsum_def)
   sorry
@@ -86,4 +90,5 @@ lemma "is_dist ((1/2)^($n+$m))\<^sub>e"
   apply (auto)
   apply (simp add: power_le_one)
   sledgehammer
+*)
 end
