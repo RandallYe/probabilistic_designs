@@ -43,25 +43,34 @@ term "\<lbrakk>(r\<^sup>> = C)\<^sub>e\<rbrakk>\<^sub>\<I>"
 term "\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e"
 term "(r := C)::DWTA_state phrel"
 
+(*
 lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = $a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: prob_rel_defs expr_defs)
+  apply (rel_auto)
   apply (subst prel_of_set_inject)
-  apply (simp add: is_prob_def)+
-  by (rel_auto)
+    apply (simp add: dist_defs expr_defs)
+    apply (simp add: infsum_singleton)
+   apply (simp add: dist_defs expr_defs)
+   apply (auto)
+*)
 
 lemma dwta_scomp_simp: 
   "(((r := C)::(DWTA_state, DWTA_state) prel); (a := S)) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: passign_comp)
   apply (subst prel_of_set_inject)
-  apply (simp add: assigns_comp prel_assign_is_prob)
-  apply (rel_auto)
+  apply (simp add: assigns_comp dist_defs expr_defs)
+    apply (rel_auto)
+    apply (simp add: infsum_singleton)
+   apply (simp add: dist_defs expr_defs lens_defs)
   apply (simp add: is_prob_def)
   by (rel_auto)
 
 lemma dwta_:
   "(r := C) ; (if\<^sub>p ( 1/2) then (a := S) else (a := F))
   = prel_of_set (1/2 * \<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 1/2 * \<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  apply (simp add: prel_left_one_point)
   apply (simp add: prob_rel_defs expr_defs)
+  apply (rel_auto)
   apply (subst prel_of_set_inverse)
   apply (simp add: is_prob_def)
   apply (subst prel_of_set_inverse)
