@@ -46,7 +46,7 @@ typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<R
     (?x::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow>
     (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> (prel_of_set ?x = prel_of_set ?y) = (?x = ?y)
   prel_of_set_inverse:
-    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> set_of_prel (prel_of_set ?y) = ?y
+    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_dist s} \<Longrightarrow> set_of_prel (prel_of_set ?y) = ?y
   set_of_prel: set_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s}
   set_of_prel_cases:
     (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow>
@@ -57,6 +57,7 @@ typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<R
   set_of_prel_inject: (set_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) = set_of_prel (?y::(?'s\<^sub>1, ?'s\<^sub>2) prel)) = (?x = ?y)
   set_of_prel_inverse: prel_of_set (set_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel)) = ?x
 *)
+find_theorems "prel.set_of_prel"
 term "prel_of_set"
 term "set_of_prel"
 thm "prel_of_set_inverse"

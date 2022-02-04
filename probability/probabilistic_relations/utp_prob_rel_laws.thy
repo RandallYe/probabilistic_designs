@@ -7,6 +7,8 @@ begin
 
 declare [[show_types]]
 
+subsection \<open> Laws of @{text infsum} \<close>
+
 lemma infsum_singleton: 
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if c = v\<^sub>0 then (m::\<real>) else 0)) = m"
   apply (rule infsumI)
@@ -16,6 +18,17 @@ lemma infsum_singleton:
   apply (simp add: eventually_finite_subsets_at_top)
   apply (rule_tac x = "{c}" in exI)
   by (auto)
+
+lemma infsum_singleton_summable:
+  assumes "m \<noteq> 0"
+  shows "(\<lambda>v\<^sub>0. (if c = v\<^sub>0 then (m::\<real>) else 0)) summable_on UNIV"
+proof (rule ccontr)
+  assume a1: "\<not> (\<lambda>v\<^sub>0::'a. if c = v\<^sub>0 then m else (0::\<real>)) summable_on UNIV"
+  from a1 have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if c = v\<^sub>0 then (m::\<real>) else 0)) = (0::\<real>)"
+    by (simp add: infsum_def)
+  then show "False"
+    by (simp add: infsum_singleton assms)
+qed
 
 lemma infsum_singleton_1: 
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if v\<^sub>0 = c then (m::\<real>) else 0)) = m"
@@ -94,6 +107,234 @@ lemma infsum_mult_subset_left:
   apply (rule infsum_cong_neutral)
   by simp+
 
+lemma infsum_mult_subset_right: 
+  "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. ((P v\<^sub>0) * (if b v\<^sub>0 then (1::\<real>) else 0))) = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> {v\<^sub>0. b v\<^sub>0}. (P v\<^sub>0))"
+  apply (rule infsum_cong_neutral)
+  by simp+
+
+subsection \<open> Laws of type @{type prel} \<close>
+lemma prel_is_dist: "\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry (set_of_prel Q)) s\<^sub>1)"
+  using set_of_prel by force
+
+lemma prel_is_prob: "\<forall>s\<^sub>1::'s\<^sub>1. is_prob ((curry (set_of_prel Q)) s\<^sub>1)"
+  by (meson is_dist_def prel_is_dist)
+
+lemma prel_in_0_1: "(curry (set_of_prel Q)) x y \<ge> 0 \<and> (curry (set_of_prel Q)) x y \<le> 1"
+  using prel_is_prob 
+  by (smt (verit) SEXP_def is_prob_def taut_def)
+
+lemma prel_in_0_1': "(set_of_prel Q) s \<ge> 0 \<and> (set_of_prel Q) s \<le> 1"
+  using prel_in_0_1 curry_conv
+  by (metis case_prod_curry split_def)
+
+lemma prel_sum_1: "(\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, s)) = (1::\<real>)"
+  using prel_is_dist
+  by (metis (mono_tags, lifting) curry_def infsum_cong is_dist_def is_sum_1_def)
+
+(* The first component of pairs, which infsum is over, can be discarded. *)
+(* The basic observation is that 
+    A = {(s::'a, v\<^sub>0::'a) | s v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}
+is resulted from an injective function 
+  (\<lambda>v\<^sub>0. (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)) 
+from (UNIV::'a set) which the right summation is over.
+
+Informally speaking, every v\<^sub>0 in UNIV has a corresponding (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0) in A, and no more, 
+thus summations are equal. 
+*)
+lemma prel_infsum_over_pair_fst_discard:
+  "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a) \<in> {(s::'a, v\<^sub>0::'a) | s v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}. set_of_prel P (s\<^sub>1, v\<^sub>0)) = 
+   (\<Sum>\<^sub>\<infinity> v\<^sub>0::'a. set_of_prel P (s\<^sub>1, v\<^sub>0))"
+  apply (simp add: prel_sum_1)
+  \<comment> \<open> Definition of @{term "infsum"} \<close>
+  apply (rule infsumI)
+  apply (simp add: has_sum_def)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+proof -
+  fix S::"\<bbbP> \<real>"
+  assume a1: "open S"
+  assume a2: "(1::\<real>) \<in> S"
+  \<comment> \<open>How to improve this proof? Forward proof. Focus on the goal f0 9 lines below \<close>
+  have "(\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, s)) = (1::\<real>)"
+    by (simp add: prel_sum_1)
+  then have "has_sum (\<lambda>s::'a. set_of_prel P (s\<^sub>1, s)) UNIV (1::\<real>)"
+    by (metis has_sum_infsum infsum_not_exists zero_neq_one)
+  then have "(sum (\<lambda>s::'a. set_of_prel P (s\<^sub>1, s)) \<longlongrightarrow> (1::\<real>)) (finite_subsets_at_top UNIV)"
+    using has_sum_def by blast
+  then have "\<forall>\<^sub>F x::\<bbbP> 'a in finite_subsets_at_top UNIV. (\<Sum>s::'a\<in>x. set_of_prel P (s\<^sub>1, s)) \<in> S"
+    using a1 a2 tendsto_def by blast
+  then have f0: "\<exists>X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+      (\<Sum>s::'a\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S)"
+    by (simp add: eventually_finite_subsets_at_top)
+  then show "\<exists>X::'a rel. finite X \<and> X \<subseteq> {uu::'a \<times> 'a. \<exists>v\<^sub>0::'a. uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)} \<and>
+          (\<forall>Y::'a rel.
+              finite Y \<and> X \<subseteq> Y \<and> Y \<subseteq> {uu::'a \<times> 'a. \<exists>v\<^sub>0::'a. uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)} \<longrightarrow>
+              (\<Sum>x::'a \<times> 'a\<in>Y. case x of (s::'a, v\<^sub>0::'a) \<Rightarrow> set_of_prel P (s\<^sub>1, v\<^sub>0)) \<in> S)"
+  proof -
+    assume a11: "\<exists>X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+      (\<Sum>s::'a\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S)"
+    have f1: "finite
+       {uu::'a \<times> 'a. \<exists>v\<^sub>0::'a. v\<^sub>0 \<in> (SOME X::\<bbbP> 'a.
+          finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> (\<Sum>s::'a\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S))
+        \<and> uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)}"
+      apply (subst finite_Collect_bounded_ex)
+      apply (smt (verit, ccfv_threshold) CollectD a11 rev_finite_subset someI_ex subset_iff)
+      by (auto)
+    show ?thesis
+      (* Construct a witness from existing X from f0 using SOME (indifinite description) *)
+      apply (rule_tac x = "{(put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0) | v\<^sub>0 . 
+        v\<^sub>0 \<in> (SOME X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+        (\<Sum>s::'a\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S))}" in exI)
+      apply (rule conjI)
+      using f1 apply (smt (verit, best) Collect_mono rev_finite_subset)
+      apply (auto)
+    proof -
+      fix Y::"'a rel"
+      assume a111: "finite Y"
+      assume a112: "{uu::'a \<times> 'a.
+        \<exists>v\<^sub>0::'a.
+           uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0) \<and>
+           v\<^sub>0 \<in> (SOME X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> (\<Sum>s::'a\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S))}
+       \<subseteq> Y"
+      assume a113: "Y \<subseteq> {uu::'a \<times> 'a. \<exists>v\<^sub>0::'a. uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)}"
+      have f11: "(\<Sum>s::'a\<in>Range Y. set_of_prel P (s\<^sub>1, s)) \<in> S"
+        using a11 a111 a112
+        by (smt (verit, del_insts) Range_iff finite_Range mem_Collect_eq subset_iff verit_sko_ex_indirect)
+      have f12: "inj_on (\<lambda>v\<^sub>0. (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)) (Range Y)"
+        using inj_on_def by blast
+      have f13: "(\<Sum>x::'a \<times> 'a\<in>Y. case x of (s::'a, v\<^sub>0::'a) \<Rightarrow> set_of_prel P (s\<^sub>1, v\<^sub>0)) = 
+            (\<Sum>s::'a\<in>Range Y. set_of_prel P (s\<^sub>1, s))"
+        apply (rule sum.reindex_cong[where l = "(\<lambda>v\<^sub>0. (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0))" and B = "Range Y"]) 
+        apply (simp add: f12)
+        using a113 by (auto)
+      show "(\<Sum>x::'a \<times> 'a\<in>Y. case x of (s::'a, v\<^sub>0::'a) \<Rightarrow> set_of_prel P (s\<^sub>1, v\<^sub>0)) \<in> S"
+        using f11 f13 by presburger
+    qed
+  qed
+qed
+
+(*
+lemma 
+  assumes "finite Y"
+  shows  "(\<Sum>x::'a \<times> 'a\<in>Y. case x of (ss::'a, s::'a) \<Rightarrow> P s) = (\<Sum>s::'a \<in> Range Y. P s)"
+  sledgehammer
+
+lemma prel_sum_1': "(\<Sum>\<^sub>\<infinity>(ss::'a, s::'a). set_of_prel P (s\<^sub>1, s)) = (1::\<real>)"
+  apply (rule infsumI)
+  apply (simp add: has_sum_def)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+proof -
+  fix S::"\<bbbP> \<real>"
+  assume a1: "open S"
+  assume a2: "(1::\<real>) \<in> S"
+
+  have "(\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, s)) = (1::\<real>)"
+    by (simp add: prel_sum_1)
+  then have "has_sum (\<lambda>s::'a. set_of_prel P (s\<^sub>1, s)) UNIV (1::\<real>)"
+    by (metis has_sum_infsum infsum_not_exists zero_neq_one)
+  then have "(sum (\<lambda>s::'a. set_of_prel P (s\<^sub>1, s)) \<longlongrightarrow> (1::\<real>)) (finite_subsets_at_top UNIV)"
+    using has_sum_def by blast
+  then have "\<forall>\<^sub>F x::\<bbbP> 'a in finite_subsets_at_top UNIV. (\<Sum>s::'a\<in>x. set_of_prel P (s\<^sub>1, s)) \<in> S"
+    using a1 a2 tendsto_def by blast
+  then have "\<exists>X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+      (\<Sum>s::'a\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S)"
+    by (simp add: eventually_finite_subsets_at_top)
+  then show "\<exists>X::'a rel. finite X \<and> (\<forall>Y::'a rel. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+    (\<Sum>(ss::'a, s::'a)\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S)"
+  proof -
+    assume a11: "\<exists>X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+      (\<Sum>s::'a\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S)"
+    have f1: "finite
+       {uu::'a \<times> 'a. \<exists>x::'a. x \<in> (SOME X::\<bbbP> 'a.
+          finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> (\<Sum>s::'a\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S))
+        \<and> uu = (x, x)}"
+      apply (subst finite_Collect_bounded_ex)
+      apply (smt (verit, ccfv_threshold) CollectD a11 rev_finite_subset someI_ex subset_iff)
+      by (auto)
+    show ?thesis
+      apply (rule_tac x = "{(x, x) | x . 
+        x \<in> (SOME X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+        (\<Sum>s::'a\<in>Y. set_of_prel P (s\<^sub>1, s)) \<in> S))}" in exI)
+      apply (rule conjI)
+      using f1 apply (smt (verit, best) Collect_mono rev_finite_subset)
+      apply (auto)
+      sledgehammer
+      apply (rule someI_ex)
+qed
+*)
+
+lemma prel_summable: "(\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on UNIV"
+proof (rule ccontr)
+  assume a1: "\<not> (\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on UNIV"
+  from a1 have "(\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, s)) = (0::\<real>)"
+    by (simp add: infsum_def)
+  then show "False"
+    by (simp add: prel_sum_1)
+qed
+
+lemma real_space_complete: "complete (UNIV::real set)"
+  by (simp add: complete_def convergentD real_Cauchy_convergent)
+
+lemma prel_summable_on_subset:
+  shows "(\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on A"
+  apply (rule summable_on_subset[where A="UNIV" and B = "A"])
+  apply (simp add: real_space_complete)
+  apply simp
+  apply (simp add: prel_summable)
+  by simp
+
+lemma prel_mult_subset_left_summable:
+  shows "(\<lambda>v\<^sub>0. (if b v\<^sub>0 then (1::\<real>) else 0) * (set_of_prel P (s\<^sub>1, v\<^sub>0))) summable_on UNIV"
+  apply (subgoal_tac "(\<lambda>v\<^sub>0. (if b v\<^sub>0 then (1::\<real>) else 0) * (set_of_prel P (s\<^sub>1, v\<^sub>0))) summable_on UNIV
+    \<longleftrightarrow> (\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on {x. b x}")
+  apply (simp add: prel_summable_on_subset)
+  apply (rule summable_on_cong_neutral)
+  by simp+
+
+lemma prel_mult_subset_right_summable:
+  shows "(\<lambda>v\<^sub>0. (set_of_prel P (s\<^sub>1, v\<^sub>0)) * (if b v\<^sub>0 then (1::\<real>) else 0)) summable_on UNIV"
+  apply (subst summable_on_cong[where 
+        g = "(\<lambda>v\<^sub>0. (if b v\<^sub>0 then (1::\<real>) else 0) * (set_of_prel P (s\<^sub>1, v\<^sub>0)))"])
+  using mult.commute apply blast
+  by (simp add: prel_mult_subset_left_summable)
+
+lemma prel_infsum_infsum_mult_singleton_1:
+  "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if c = v\<^sub>0 then 1::\<real> else (0::\<real>)) * set_of_prel P (v\<^sub>0, s)) = (1::\<real>)"
+  apply (subst infsum_mult_singleton_left_1)
+  by (simp add: prel_sum_1)
+
+(*
+lemma "(\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * set_of_prel P (s\<^sub>1, s) + ((1::\<real>) - r (s\<^sub>1, s)) * set_of_prel Q (s\<^sub>1, s))
+  = ((\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * ( set_of_prel P (s\<^sub>1, s) - set_of_prel Q (s\<^sub>1, s))) + (\<Sum>\<^sub>\<infinity>s. set_of_prel Q (s\<^sub>1, s)))"
+proof -
+  have "(\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * set_of_prel P (s\<^sub>1, s) + ((1::\<real>) - r (s\<^sub>1, s)) * set_of_prel Q (s\<^sub>1, s)) 
+    = (\<Sum>\<^sub>\<infinity>s. set_of_prel Q (s\<^sub>1, s) + r (s\<^sub>1, s) * (set_of_prel P (s\<^sub>1, s) - set_of_prel Q (s\<^sub>1, s)))"
+    apply (rule infsum_cong)
+    by (smt (verit, ccfv_SIG) distrib_right mult_cancel_right1 right_diff_distrib)
+  also have "... = (\<Sum>\<^sub>\<infinity>s. set_of_prel Q (s\<^sub>1, s)) + (\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * (set_of_prel P (s\<^sub>1, s) - set_of_prel Q (s\<^sub>1, s)))"
+    apply (rule infsum_add)
+     apply (simp add: prel_summable)
+    sorry
+  also have "... = 1 + (\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * (set_of_prel P (s\<^sub>1, s) - set_of_prel Q (s\<^sub>1, s)))"
+    by (simp add: prel_sum_1)
+qed
+
+lemma prel_prob_choice_is_dist:
+  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> 1"
+  shows "(\<Sum>\<^sub>\<infinity>s::'a. r (s\<^sub>1, s) * set_of_prel P (s\<^sub>1, s) + 
+          ((1::\<real>) - r (s\<^sub>1, s)) * set_of_prel Q (s\<^sub>1, s)) = (1::\<real>)"
+  apply (rule infsumI)
+  apply (simp add: has_sum_def)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+  oops
+*)
+
+subsection \<open> Laws of probabilistic relations \<close>
 term "set_of_prel P"
 term "\<lambda>s. (set_of_prel P) s"
 term "(case \<s> of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) (v\<^sub>0::'a)"
@@ -161,7 +402,7 @@ lemma "is_prob ( set_of_prel ((x := e) ; (y := f)))"
   apply (simp add: dist_defs expr_defs)
 *)
   
-lemma passign_comp: 
+theorem passign_comp: 
   (* assumes "$x \<sharp> f" "x \<bowtie> y" *)
   shows "(x := e) ; (y := f) = prel_of_set (\<lbrakk> \<lbrakk>(x := e) \<Zcomp> (y := f)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
     apply (simp add: prob_rel_defs expr_defs)
@@ -228,86 +469,6 @@ lemma passign_comp:
     apply simp
     by (smt (verit, best) infsum_0 mult_cancel_left1 mult_cancel_right1)
 
-lemma prel_is_dist: "\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry (set_of_prel Q)) s\<^sub>1)"
-  using set_of_prel by force
-
-lemma prel_is_prob: "\<forall>s\<^sub>1::'s\<^sub>1. is_prob ((curry (set_of_prel Q)) s\<^sub>1)"
-  by (meson is_dist_def prel_is_dist)
-
-lemma prel_in_0_1: "(curry (set_of_prel Q)) x y \<ge> 0 \<and> (curry (set_of_prel Q)) x y \<le> 1"
-  using prel_is_prob 
-  by (smt (verit) SEXP_def is_prob_def taut_def)
-
-lemma prel_in_0_1': "(set_of_prel Q) s \<ge> 0 \<and> (set_of_prel Q) s \<le> 1"
-  using prel_in_0_1 curry_conv
-  by (metis case_prod_curry split_def)
-
-lemma prel_sum_1: "(\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, s)) = (1::\<real>)"
-  using prel_is_dist
-  by (metis (mono_tags, lifting) curry_def infsum_cong is_dist_def is_sum_1_def)
-
-lemma prel_summable: "(\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on UNIV"
-proof (rule ccontr)
-  assume a1: "\<not> (\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on UNIV"
-  from a1 have "(\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, s)) = (0::\<real>)"
-    by (simp add: infsum_def)
-  then show "False"
-    by (simp add: prel_sum_1)
-qed
-
-lemma real_space_complete: "complete (UNIV::real set)"
-  by (simp add: complete_def convergentD real_Cauchy_convergent)
-
-lemma prel_summable_on_subset:
-  shows "(\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on A"
-  apply (rule summable_on_subset[where A="UNIV" and B = "A"])
-  apply (simp add: real_space_complete)
-  apply simp
-  apply (simp add: prel_summable)
-  by simp
-
-lemma infsum_mult_subset_summable:
-  shows "(\<lambda>v\<^sub>0. (if b v\<^sub>0 then (1::\<real>) else 0) * (set_of_prel P (s\<^sub>1, v\<^sub>0))) summable_on UNIV"
-  apply (subgoal_tac "(\<lambda>v\<^sub>0. (if b v\<^sub>0 then (1::\<real>) else 0) * (set_of_prel P (s\<^sub>1, v\<^sub>0))) summable_on UNIV
-    \<longleftrightarrow> (\<lambda>x::'a. set_of_prel P (s\<^sub>1, x)) summable_on {x. b x}")
-  apply (simp add: prel_summable_on_subset)
-  apply (rule summable_on_cong_neutral)
-  by simp+
-
-
-lemma prel_infsum_infsum_mult_singleton_1:
-  "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if c = v\<^sub>0 then 1::\<real> else (0::\<real>)) * set_of_prel P (v\<^sub>0, s)) = (1::\<real>)"
-  apply (subst infsum_mult_singleton_left_1)
-  by (simp add: prel_sum_1)
-
-(*
-lemma "(\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * set_of_prel P (s\<^sub>1, s) + ((1::\<real>) - r (s\<^sub>1, s)) * set_of_prel Q (s\<^sub>1, s))
-  = ((\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * ( set_of_prel P (s\<^sub>1, s) - set_of_prel Q (s\<^sub>1, s))) + (\<Sum>\<^sub>\<infinity>s. set_of_prel Q (s\<^sub>1, s)))"
-proof -
-  have "(\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * set_of_prel P (s\<^sub>1, s) + ((1::\<real>) - r (s\<^sub>1, s)) * set_of_prel Q (s\<^sub>1, s)) 
-    = (\<Sum>\<^sub>\<infinity>s. set_of_prel Q (s\<^sub>1, s) + r (s\<^sub>1, s) * (set_of_prel P (s\<^sub>1, s) - set_of_prel Q (s\<^sub>1, s)))"
-    apply (rule infsum_cong)
-    by (smt (verit, ccfv_SIG) distrib_right mult_cancel_right1 right_diff_distrib)
-  also have "... = (\<Sum>\<^sub>\<infinity>s. set_of_prel Q (s\<^sub>1, s)) + (\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * (set_of_prel P (s\<^sub>1, s) - set_of_prel Q (s\<^sub>1, s)))"
-    apply (rule infsum_add)
-     apply (simp add: prel_summable)
-    sorry
-  also have "... = 1 + (\<Sum>\<^sub>\<infinity>s. r (s\<^sub>1, s) * (set_of_prel P (s\<^sub>1, s) - set_of_prel Q (s\<^sub>1, s)))"
-    by (simp add: prel_sum_1)
-qed
-
-lemma prel_prob_choice_is_dist:
-  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> 1"
-  shows "(\<Sum>\<^sub>\<infinity>s::'a. r (s\<^sub>1, s) * set_of_prel P (s\<^sub>1, s) + 
-          ((1::\<real>) - r (s\<^sub>1, s)) * set_of_prel Q (s\<^sub>1, s)) = (1::\<real>)"
-  apply (rule infsumI)
-  apply (simp add: has_sum_def)
-  apply (subst topological_tendstoI)
-  apply (auto)
-  apply (simp add: eventually_finite_subsets_at_top)
-  oops
-*)
-
 lemma prel_prob_choice_is_sum_1:
   assumes "0 \<le> r \<and> r \<le> 1"
   shows "(\<Sum>\<^sub>\<infinity>s::'a. r * set_of_prel P (s\<^sub>1, s) + 
@@ -352,6 +513,43 @@ theorem prel_left_one_point: "x := e ; P = prel_of_set (([ x\<^sup>< \<leadsto> 
   apply (rel_auto)
   by (simp add: infsum_mult_singleton_left_1)
 
+lemma prel_infsum_over_pair_subset_1:
+  "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a). set_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 1"
+proof -
+  have "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a). set_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 
+        (\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a) \<in> {(s::'a, v\<^sub>0::'a) | s v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}. set_of_prel P (s\<^sub>1, v\<^sub>0))"
+    apply (rule infsum_cong_neutral)
+    apply force
+    using DiffD2 prod.collapse apply fastforce
+    by force
+  then show ?thesis
+    by (metis prel_infsum_over_pair_fst_discard prel_sum_1)
+qed
+
+lemma prel_infsum_swap:
+ "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. set_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 
+  (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. \<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))"
+  apply (rule infsum_swap_banach)
+  apply (simp add: summable_on_def)
+  apply (rule_tac x = "1" in exI)
+  by (smt (verit, best) has_sum_infsum infsum_cong infsum_not_exists prel_infsum_over_pair_subset_1 split_cong)
+
+lemma prel_infsum_infsum_1:
+  "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. set_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) =
+       (1::\<real>)"
+  apply (simp add: prel_infsum_swap)
+proof -
+  have f0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))) 
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (set_of_prel P (s\<^sub>1, v\<^sub>0) * (\<Sum>\<^sub>\<infinity>s::'a. (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))))"
+    apply (subst infsum_cmult_right)
+     apply (simp add: infsum_singleton_summable)
+    by (simp)
+  then have f1: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (set_of_prel P (s\<^sub>1, v\<^sub>0) * 1))"
+    by (simp add: infsum_singleton)
+  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. \<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = (1::\<real>)"
+    using f0 prel_sum_1 by force
+qed
+
 theorem prel_right_one_point: "P ; x := e = prel_of_set (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(set_of_prel P)))\<^sub>e"
   apply (simp add: prob_rel_defs expr_defs)
   apply (subst prel_of_set_inverse)
@@ -368,8 +566,8 @@ theorem prel_right_one_point: "P ; x := e = prel_of_set (([ x\<^sup>> \<leadsto>
     (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. set_of_prel P (s\<^sub>1, v\<^sub>0))")
   apply (simp add: prel_sum_1)
      apply (rule infsum_mono)
-  defer
-       apply (simp add: prel_summable)
+  apply (simp add: prel_mult_subset_right_summable)
+  apply (simp add: prel_summable)
   apply (simp add: prel_in_0_1')
   apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. set_of_prel P (s\<^sub>1, v\<^sub>0) * 
     (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 1")
