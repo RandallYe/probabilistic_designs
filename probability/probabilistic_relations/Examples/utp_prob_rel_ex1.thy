@@ -60,7 +60,7 @@ term "(r := C)::DWTA_state phrel"
 
 term "(r := C) ; (if\<^sub>p (1/2) then (a := S) else (a := F))"
 
-definition dwta where
+definition dwta :: "(DWTA_state, DWTA_state) prel" where
 "dwta = 
   (if\<^sub>p (3/5) 
     then ((r := C) ; (if\<^sub>p ( 1/2) then (a := S) else (a := F))) 
@@ -120,43 +120,7 @@ lemma dwta_infsum_two_instances': "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
   apply auto[1]
   by auto
 
-(*
-lemma dwta_C_attack:
-  "((r := C)::(DWTA_state, DWTA_state) prel) ; (if\<^sub>p ( 1/2) then (a := S) else (a := F))
-  = prel_of_set (1/2 * \<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 1/2 * \<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
-  apply (simp add: prel_left_one_point)
-  apply (simp add: prel_defs expr_defs)
-  apply (subst prel_of_set_inverse)
-  apply (subst prel_of_set_inverse)
-    apply (simp add: dist_defs)
-    apply (rel_auto)
-    apply (simp add: infsum_singleton)
-  apply (subst prel_of_set_inverse)
-    apply (simp add: dist_defs)
-    apply (rel_auto)
-    apply (simp add: infsum_singleton)
-  apply (simp add: dist_defs)
-   apply (rel_auto)
-   apply (simp add: dwta_infsum_two_instances)
-  apply (subst prel_of_set_inverse)
-   apply (simp add: dist_defs)
-   apply (rel_auto)
-   apply (simp add: infsum_singleton)
-  apply (subst prel_of_set_inverse)
-   apply (simp add: dist_defs)
-   apply (rel_auto)
-   apply (simp add: infsum_singleton)
-  apply (subst prel_of_set_inject)
-  apply (simp add: dist_defs)
-   apply (rel_auto)
-    apply (simp add: dwta_infsum_two_instances)
-  apply (simp add: dist_defs lens_defs)
-   apply (simp add: dwta_infsum_two_instances')
-  by (rel_auto)
-*)
-term "((r := sr)::(DWTA_state, DWTA_state) prel) ; (if\<^sub>p ( p) then (a := S) else (a := F))"
-term "prel_of_set (p * \<lbrakk> $r\<^sup>> = D \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + (1 - @p) * \<lbrakk> $r\<^sup>> = D \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
-lemma dwta_D_attack:
+lemma dwta_attack_status:
   assumes "0 \<le> p \<and> p \<le> (1::\<real>)"
   shows "((r := \<guillemotleft>attacker\<guillemotright>)::(DWTA_state, DWTA_state) prel) ; (if\<^sub>p ( \<guillemotleft>p\<guillemotright>) then (a := S) else (a := F))
   = prel_of_set (\<guillemotleft>p\<guillemotright> * \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + (1 - \<guillemotleft>p\<guillemotright>) * \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
@@ -191,6 +155,37 @@ lemma dwta_D_attack:
    apply (simp add: dist_defs lens_defs expr_defs)
   apply (simp add: assms)
    apply (simp add: dwta_infsum_two_instances')
+  by (rel_auto)
+
+lemma dwta_simp: "dwta = prel_of_set (
+     3/10 * \<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 
+     3/10 * \<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e + 
+     6/50 * \<lbrakk> $r\<^sup>> = D \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 
+    14/50 * \<lbrakk> $r\<^sup>> = D \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e
+  )\<^sub>e"
+  apply (simp add: dwta_def)
+  apply (subst dwta_attack_status[where p = "((1/2)::\<real>)" and attacker = C])
+  apply (simp)
+  apply (subst dwta_attack_status[where p = "((3/10)::\<real>)" and attacker = D])
+  apply (simp)
+  apply (simp add: prel_defs)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: dist_defs expr_defs lens_defs)
+  apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
+   (1/2) * (if r\<^sub>v s = C \<and> a\<^sub>v s = S then 1::\<real> else (0::\<real>)) +
+   (1/2) * (if r\<^sub>v s = C \<and> a\<^sub>v s = F then 1::\<real> else (0::\<real>))) = (1::\<real>)")
+  apply (simp)
+  apply (subst dwta_infsum_two_instances'[where rr=C and p="1/2" and q="1/2"])
+  apply (simp)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: dist_defs expr_defs lens_defs)
+  apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
+   (3/10) * (if r\<^sub>v s = D \<and> a\<^sub>v s = S then 1::\<real> else (0::\<real>)) +
+   (7/10) * (if r\<^sub>v s = D \<and> a\<^sub>v s = F then 1::\<real> else (0::\<real>))) = (1::\<real>)")
+  apply (simp)
+  apply (subst dwta_infsum_two_instances'[where rr=D and p="3/10" and q="7/10"])
+  apply (simp)
+  apply (rule HOL.arg_cong[where f="prel_of_set"])
   by (rel_auto)
 
 subsubsection \<open> x \<close>
