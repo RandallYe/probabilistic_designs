@@ -34,7 +34,7 @@ lemma infsum_singleton_1:
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if v\<^sub>0 = c then (m::\<real>) else 0)) = m"
   by (smt (verit, del_insts) infsum_cong infsum_singleton)
 
-lemma infsum_singleton_cond_unique: 
+lemma infsum_singleton_cond_unique:
   assumes "\<exists>! v. b v"
   shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if b v\<^sub>0 then (m::\<real>) else 0)) = m"
   apply (rule infsumI)
@@ -353,7 +353,7 @@ term "\<lambda>s. (set_of_prel P) s"
 term "(case \<s> of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) (v\<^sub>0::'a)"
 
 theorem prel_left_unit: "II ; P = P"
-  apply (simp add: prob_rel_defs expr_defs)
+  apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
    apply (simp add: dist_defs)
   apply (smt (verit, best) infsum_cong infsum_mult_singleton_left mult_cancel_right1)
@@ -372,7 +372,7 @@ theorem prel_left_unit: "II ; P = P"
   by (simp add: infsum_mult_singleton_left_1)
 
 theorem prel_right_unit: "P ; II = P"
-  apply (simp add: prob_rel_defs expr_defs)
+  apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
   apply (simp add: dist_defs)
   apply (smt (verit, best) infsum_cong infsum_mult_singleton_left mult_cancel_right1)
@@ -397,16 +397,16 @@ term "prel_of_set (\<lbrakk> \<lbrakk>\<langle>[x \<leadsto> e]\<rangle>\<^sub>a
 term "prel_of_set (\<lbrakk> \<lbrakk>((y := f)::'a rel)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 term "((x := e):: 's phrel) = prel_of_set (\<lbrakk> \<lbrakk>x := e\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 lemma passign_simp: "(x := e) = prel_of_set (\<lbrakk> \<lbrakk>x := e\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
-  by (simp add: prob_rel_defs expr_defs)
+  by (simp add: prel_defs expr_defs)
 
 term "(x := e) \<Zcomp> (y := f)"  
 
 lemma prel_assign_is_prob: "is_prob (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
-  by (simp add: prob_rel_defs expr_defs dist_defs)
+  by (simp add: prel_defs expr_defs dist_defs)
 
 (*
 lemma "is_prob ( set_of_prel ((x := e) ; (y := f)))"
-  apply (simp add: prob_rel_defs)
+  apply (simp add: prel_defs)
   apply (subst prel_of_set_inverse)
    apply (subst prel_of_set_inverse)
    apply (simp add: dist_defs expr_defs)
@@ -418,7 +418,7 @@ lemma "is_prob ( set_of_prel ((x := e) ; (y := f)))"
 theorem passign_comp: 
   (* assumes "$x \<sharp> f" "x \<bowtie> y" *)
   shows "(x := e) ; (y := f) = prel_of_set (\<lbrakk> \<lbrakk>(x := e) \<Zcomp> (y := f)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
-    apply (simp add: prob_rel_defs expr_defs)
+    apply (simp add: prel_defs expr_defs)
     apply (subst prel_of_set_inverse)
    apply (simp add: dist_defs)
    apply (rel_auto)
@@ -505,7 +505,7 @@ proof -
 qed
 
 theorem prel_left_one_point: "x := e ; P = prel_of_set (([ x\<^sup>< \<leadsto> e\<^sup>< ] \<dagger> @(set_of_prel P)))\<^sub>e"
-  apply (simp add: prob_rel_defs expr_defs)
+  apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
 
   apply (simp add: dist_defs expr_defs)
@@ -567,7 +567,7 @@ qed
 term "prel_of_set (\<lbrakk> ($x\<^sup>< = e) \<rbrakk>\<^sub>\<I>\<^sub>e)"
 theorem prel_right_one_point: "P ; prel_of_set (\<lbrakk> ($x\<^sup>< = e\<^sup><) \<rbrakk>\<^sub>\<I>\<^sub>e) 
     = prel_of_set (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(set_of_prel P)))\<^sub>e"
-  apply (simp add: prob_rel_defs expr_defs)
+  apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
 
    apply (simp add: dist_defs expr_defs)
@@ -576,7 +576,7 @@ theorem prel_right_one_point: "P ; prel_of_set (\<lbrakk> ($x\<^sup>< = e\<^sup>
 *)
 (* This is not a valid law.
 theorem prel_right_one_point: "P ; x := e = prel_of_set (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(set_of_prel P)))\<^sub>e"
-  apply (simp add: prob_rel_defs expr_defs)
+  apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
 
   apply (simp add: dist_defs expr_defs)
@@ -633,7 +633,7 @@ lemma passign_pif_simp:
   assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> 1"
   shows "(x := c) ; (if\<^sub>p (r) then P else Q) = 
     prel_of_set (r * ([ x\<^sup>> \<leadsto> c\<^sup>> ] \<dagger> @(set_of_prel P)) +  (1-r) * ([ x\<^sup>> \<leadsto> c\<^sup>> ] \<dagger> @(set_of_prel Q)))\<^sub>e"
-  apply (simp add: prob_rel_defs expr_defs)
+  apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
    apply (simp add: dist_defs expr_defs)
   apply (rel_auto)
@@ -672,6 +672,30 @@ lemma passign_pif_simp:
       ((1::\<real>) - r (put\<^bsub>x\<^esub> a (c a), b)) * set_of_prel Q (put\<^bsub>x\<^esub> a (c a), b) = 1") 
     defer
     apply (smt (verit) DiffE mult_eq_0_iff singleton_iff sum.not_neutral_contains_not_neutral)
+*)
+
+subsubsection \<open> Substitutions \<close>
+
+term "[ x \<leadsto> f ]"
+term "(if\<^sub>p b then c else d)"
+(*
+lemma "prel_of_set ([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> (set_of_prel II\<^sub>p)) = (x := e)"
+  apply (simp add: expr_defs prel_defs)
+  apply (subst prel_of_set_inverse)
+   apply (simp add: dist_defs)
+   apply (simp add: infsum_singleton)
+  apply (subst prel_of_set_inject)
+    apply (simp add: dist_defs)
+    apply (auto)
+
+lemma "prel_of_set (\<sigma> \<dagger> (set_of_prel II\<^sub>p)) = (x := e)"
+  apply (simp add: expr_defs prel_defs)
+  apply (subst prel_of_set_inverse)
+   apply (simp add: dist_defs)
+   apply (simp add: infsum_singleton)
+  apply (subst prel_of_set_inject)
+    apply (simp add: dist_defs)
+  apply (auto)
 *)
 
 end

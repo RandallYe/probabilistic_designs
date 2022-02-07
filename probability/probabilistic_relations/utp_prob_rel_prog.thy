@@ -12,7 +12,7 @@ unbundle UTP_Syntax
 
 declare [[show_types]]
 
-named_theorems prob_rel_defs
+named_theorems prel_defs
 
 (* suggestion: typedef 0 \<le> p \<le> 1*)
 
@@ -85,12 +85,12 @@ text \<open> Reachable states of @{text P} from an initial state @{text s} are s
 that have probability @{text "P (s, s')"} larger than 0. 
 \<close>
 definition reachable_states :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> 's\<^sub>1 \<Rightarrow> 's\<^sub>2 set" where
-[prob_rel_defs]: "reachable_states P s = {s'. (curry (set_of_prel P)) s s' > 0}"
+[prel_defs]: "reachable_states P s = {s'. (curry (set_of_prel P)) s s' > 0}"
 
 (*
 text \<open> A deadlock state has no reachable states from it. \<close>
 definition deadlock_state where
-[prob_rel_defs]: "deadlock_state P s = (reachable_states P s = {})"
+[prel_defs]: "deadlock_state P s = (reachable_states P s = {})"
 *)
 
 subsection \<open> Probabilistic programming \<close>
@@ -101,17 +101,17 @@ subsection \<open> Probabilistic programming \<close>
 (*
 (* deadlock: zero and not a distribution *)
 definition pzero :: "('s\<^sub>1, 's\<^sub>2) prel" ("0\<^sub>p") where
-[prob_rel_defs]: "pzero = prel_of_set (\<lambda> s. 0)"
+[prel_defs]: "pzero = prel_of_set (\<lambda> s. 0)"
 
 lemma deadlock_always: "`@(deadlock_state pzero)`"
-  apply (simp add: prob_rel_defs)
+  apply (simp add: prel_defs)
   by (simp add: is_prob_def prel_of_set_inverse)
 *)
 
 (* suggest by simon: bundle: notation here *)
 (* ok *)
 definition pskip :: "'s phrel" ("II\<^sub>p") where
-[prob_rel_defs]: "pskip = prel_of_set (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
+[prel_defs]: "pskip = prel_of_set (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uskip pskip
@@ -149,7 +149,7 @@ term "a - {}"
 term "f o g"
 
 definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prel" where 
-[prob_rel_defs]: "passigns \<sigma> = prel_of_set (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
+[prel_defs]: "passigns \<sigma> = prel_of_set (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uassigns passigns
@@ -159,7 +159,7 @@ term "(s := e)::'s rel"
 (* assignment *)
 (*
 definition passign :: "('a \<Longrightarrow> 's) \<Rightarrow> ('a, 's) expr \<Rightarrow> 's phrel" (*(infix ":=\<^sub>p" 162)*) where
-[prob_rel_defs]: "passign x e = prel_of_set (\<lbrakk> \<lbrakk>(x := e)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
+[prel_defs]: "passign x e = prel_of_set (\<lbrakk> \<lbrakk>(x := e)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 syntax 
   "_passign" :: "logic \<Rightarrow> logic \<Rightarrow> logic" (infix ":=\<^sub>p" 30) 
@@ -188,11 +188,11 @@ term "(r * @(set_of_prel P) + (1 - r) * @(set_of_prel  Q))\<^sub>e"
 (* probabilistic choice *)
 definition pchoice :: "('s, 's) prel \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
-[prob_rel_defs]: "pchoice P r Q = prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
+[prel_defs]: "pchoice P r Q = prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
 
 (* definition pchoice' :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[prob_rel_defs]: "pchoice' r P Q = prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
+[prel_defs]: "pchoice' r P Q = prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
 *)
 
 syntax 
@@ -223,12 +223,12 @@ term "
 thm "pred_seq_hom"
 
 definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (infixl ";\<^sub>p" 59) where
-[prob_rel_defs]: "pcomp P Q = prel_of_set 
+[prel_defs]: "pcomp P Q = prel_of_set 
     (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel Q)))\<^sub>e"
 
 
 definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
-[prob_rel_defs]: "pparallel P Q = prel_of_set (\<^bold>\<N> (@(set_of_prel P) * @(set_of_prel Q))\<^sub>e)"
+[prel_defs]: "pparallel P Q = prel_of_set (\<^bold>\<N> (@(set_of_prel P) * @(set_of_prel Q))\<^sub>e)"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts

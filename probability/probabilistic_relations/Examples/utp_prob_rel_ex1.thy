@@ -9,7 +9,7 @@ unbundle UTP_Syntax
 
 declare [[show_types]]
 
-subsubsection \<open> Doctor Who's Tardis Attacker \<close>
+subsection \<open> Doctor Who's Tardis Attacker \<close>
 text \<open> Example 13 from Jim's draft report. 
 Two robots, the Cyberman C and the Dalek D, attack Doctor Who’s Tardis once a day between them. 
 C has a probability 1/2 of a successful attack, 
@@ -18,13 +18,44 @@ C attacks more often than D, with a probability of 3/5 on a particular day
 (and so D attacks with a probability of 2/5 on that day). 
 What is the probability that there is a successful attack today?\<close>
 
+subsubsection \<open> State space \<close>
 datatype Attacker = C | D
+find_theorems name: "Attacker.induct"
+
 datatype Status = S | F
 
 alphabet DWTA_state = 
   r:: Attacker
   a:: Status
 
+find_theorems name: "DWTA_state.induct"
+find_theorems name: "DWTA_state.select_convs"
+
+subsubsection \<open> Finite \<close>
+
+lemma attacker_finite: "finite (UNIV::Attacker set)"
+  by (metis Attacker.induct Collect_empty_eq Collect_mem_eq DiffD2 Diff_infinite_finite finite.emptyI 
+      finite_insert insertCI)
+
+lemma status_finite: "finite (UNIV::Status set)"
+by (metis Status.induct Collect_empty_eq Collect_mem_eq DiffD2 Diff_infinite_finite finite.emptyI 
+      finite_insert insertCI)
+
+lemma dwta_state_univ_rewrite: "(UNIV::DWTA_state set) = {\<lparr>r\<^sub>v = rr, a\<^sub>v = aa\<rparr> | (rr::Attacker) (aa::Status). True }"
+  by (metis (mono_tags, lifting) CollectI DWTA_state.cases UNIV_eq_I)
+
+lemma dwta_state_subset_finite: "finite {\<lparr>r\<^sub>v = rr, a\<^sub>v = aa\<rparr> | (rr::Attacker) (aa::Status). True \<and> True }"
+  apply (rule finite_image_set2[where P="\<lambda>x. True" and Q="\<lambda>x. True" and f = "\<lambda>x y. \<lparr>r\<^sub>v = x, a\<^sub>v = y\<rparr>"])
+  using attacker_finite status_finite by force+
+
+lemma dwta_state_finite: "finite (UNIV::DWTA_state set)"
+  apply (simp add: dwta_state_univ_rewrite)
+  using dwta_state_subset_finite by presburger
+
+lemma dwta_infsum_sum: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. f s) = sum f (UNIV::DWTA_state set)"
+  using dwta_state_finite by (simp)
+
+subsubsection \<open> Laws \<close>
 term "(r := C)::DWTA_state phrel"
 
 term "(r := C) ; (if\<^sub>p (1/2) then (a := S) else (a := F))"
@@ -39,13 +70,14 @@ definition dwta where
 
 term "C"
 term "(r\<^sup>> = C)\<^sub>e"
+term "($r\<^sup>> = C)\<^sub>e"
 term "\<lbrakk>(r\<^sup>> = C)\<^sub>e\<rbrakk>\<^sub>\<I>"
 term "\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e"
 term "(r := C)::DWTA_state phrel"
 
 (*
 lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = $a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
-  apply (simp add: prob_rel_defs expr_defs)
+  apply (simp add: prel_defs expr_defs)
   apply (rel_auto)
   apply (subst prel_of_set_inject)
     apply (simp add: dist_defs expr_defs)
@@ -55,26 +87,111 @@ lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<
 *)
 
 lemma dwta_scomp_simp: 
-  "(((r := C)::(DWTA_state, DWTA_state) prel); (a := S)) = prel_of_set (\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
+  "(((r := C)::(DWTA_state, DWTA_state) prel); (a := S)) = prel_of_set (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: passign_comp)
   apply (subst prel_of_set_inject)
   apply (simp add: assigns_comp dist_defs expr_defs)
-    apply (rel_auto)
-    apply (simp add: infsum_singleton)
-   apply (simp add: dist_defs expr_defs lens_defs)
-  apply (simp add: is_prob_def)
+  apply (rel_auto)
+  apply (simp add: infsum_singleton)
+  apply (simp add: dist_defs expr_defs lens_defs)
+  apply (rule infsum_singleton_cond_unique)
+  apply (metis DWTA_state.equality DWTA_state.select_convs(1) DWTA_state.select_convs(2) old.unit.exhaust)
   by (rel_auto)
 
-lemma dwta_:
-  "(r := C) ; (if\<^sub>p ( 1/2) then (a := S) else (a := F))
-  = prel_of_set (1/2 * \<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 1/2 * \<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+lemma dwta_infsum_two_instances: "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
+          p * (if \<lparr>r\<^sub>v = rr, a\<^sub>v = S\<rparr> = s then 1::\<real> else (0::\<real>)) +
+          q * (if \<lparr>r\<^sub>v = rr, a\<^sub>v = F\<rparr> = s then 1::\<real> else (0::\<real>))) = (p + q)"
+  apply (simp add: dwta_infsum_sum)
+  apply (subst sum.subset_diff[where A="UNIV" and B="{\<lparr>r\<^sub>v = rr, a\<^sub>v = S\<rparr>, \<lparr>r\<^sub>v = rr, a\<^sub>v = F\<rparr>}"])
+    apply (simp add: dwta_state_finite)+
+  apply (subst sum_nonneg_eq_0_iff)
+  using dwta_state_finite apply blast
+   apply auto[1]
+  by auto
+
+lemma dwta_infsum_two_instances': "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
+          p* (if r\<^sub>v s = rr \<and> a\<^sub>v s = S then 1::\<real> else (0::\<real>)) +
+          q* (if r\<^sub>v s = rr \<and> a\<^sub>v s = F then 1::\<real> else (0::\<real>))) = (p + q)"
+  apply (simp add: dwta_infsum_sum)
+  apply (subst sum.subset_diff[where A="UNIV" and B="{\<lparr>r\<^sub>v = rr, a\<^sub>v = S\<rparr>, \<lparr>r\<^sub>v = rr, a\<^sub>v = F\<rparr>}"])
+    apply (simp add: dwta_state_finite)+
+  apply (subst sum_nonneg_eq_0_iff)
+  using dwta_state_finite apply blast
+  apply auto[1]
+  by auto
+
+(*
+lemma dwta_C_attack:
+  "((r := C)::(DWTA_state, DWTA_state) prel) ; (if\<^sub>p ( 1/2) then (a := S) else (a := F))
+  = prel_of_set (1/2 * \<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 1/2 * \<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   apply (simp add: prel_left_one_point)
-  apply (simp add: prob_rel_defs expr_defs)
-  apply (rel_auto)
+  apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
-  apply (simp add: is_prob_def)
   apply (subst prel_of_set_inverse)
-  apply (simp add: is_prob_def)
+    apply (simp add: dist_defs)
+    apply (rel_auto)
+    apply (simp add: infsum_singleton)
+  apply (subst prel_of_set_inverse)
+    apply (simp add: dist_defs)
+    apply (rel_auto)
+    apply (simp add: infsum_singleton)
+  apply (simp add: dist_defs)
+   apply (rel_auto)
+   apply (simp add: dwta_infsum_two_instances)
+  apply (subst prel_of_set_inverse)
+   apply (simp add: dist_defs)
+   apply (rel_auto)
+   apply (simp add: infsum_singleton)
+  apply (subst prel_of_set_inverse)
+   apply (simp add: dist_defs)
+   apply (rel_auto)
+   apply (simp add: infsum_singleton)
+  apply (subst prel_of_set_inject)
+  apply (simp add: dist_defs)
+   apply (rel_auto)
+    apply (simp add: dwta_infsum_two_instances)
+  apply (simp add: dist_defs lens_defs)
+   apply (simp add: dwta_infsum_two_instances')
+  by (rel_auto)
+*)
+term "((r := sr)::(DWTA_state, DWTA_state) prel) ; (if\<^sub>p ( p) then (a := S) else (a := F))"
+term "prel_of_set (p * \<lbrakk> $r\<^sup>> = D \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + (1 - @p) * \<lbrakk> $r\<^sup>> = D \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+lemma dwta_D_attack:
+  assumes "0 \<le> p \<and> p \<le> (1::\<real>)"
+  shows "((r := \<guillemotleft>attacker\<guillemotright>)::(DWTA_state, DWTA_state) prel) ; (if\<^sub>p ( \<guillemotleft>p\<guillemotright>) then (a := S) else (a := F))
+  = prel_of_set (\<guillemotleft>p\<guillemotright> * \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + (1 - \<guillemotleft>p\<guillemotright>) * \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  apply (simp add: prel_left_one_point)
+  apply (simp add: prel_defs expr_defs)
+  apply (subst prel_of_set_inverse)
+  apply (subst prel_of_set_inverse)
+    apply (simp add: dist_defs)
+    apply (rel_auto)
+    apply (simp add: infsum_singleton)
+  apply (subst prel_of_set_inverse)
+    apply (simp add: dist_defs)
+    apply (rel_auto)
+    apply (simp add: infsum_singleton)
+  apply (simp add: dist_defs)
+   apply (rel_auto)
+  apply (simp add: assms)+
+   apply (simp add: dwta_infsum_two_instances)
+  apply (subst prel_of_set_inverse)
+   apply (simp add: dist_defs)
+   apply (rel_auto)
+   apply (simp add: infsum_singleton)
+  apply (subst prel_of_set_inverse)
+   apply (simp add: dist_defs)
+   apply (rel_auto)
+   apply (simp add: infsum_singleton)
+  apply (subst prel_of_set_inject)
+  apply (simp add: dist_defs)
+    apply (rel_auto)
+  apply (simp add: assms)+
+    apply (simp add: dwta_infsum_two_instances)
+   apply (simp add: dist_defs lens_defs expr_defs)
+  apply (simp add: assms)
+   apply (simp add: dwta_infsum_two_instances')
+  by (rel_auto)
 
 subsubsection \<open> x \<close>
 alphabet state =
@@ -100,7 +217,7 @@ term "sum"
 
 lemma "((if\<^sub>p ( 1/2) then ((x := 1)::(state, state) prel) else (x := 2)) ; (x := (x + 1)))
   = (if\<^sub>p ( 1/2) then (x := 2) else (x := 3))"
-  apply (simp add: prob_rel_defs)
+  apply (simp add: prel_defs)
   apply (expr_auto)
   apply (subst prel_of_set_inverse)
   apply (subst prel_of_set_inverse, auto, simp add: dist_defs)
@@ -207,7 +324,7 @@ definition PROB1:: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\
 *)
 
 lemma "\<not>is_dist_final_all pzero"
-  by (simp add: dist_defs prob_rel_defs)
+  by (simp add: dist_defs prel_defs)
 
 term "is_filter"
 term "Rep_filter"
@@ -223,7 +340,7 @@ lemma "has_sum (\<lambda>sa. if sa = s then 1::\<real> else (0::\<real>)) (UNIV)
   sorry
 
 lemma "is_dist_final_all II\<^sub>p"
-  apply (simp add: prob_rel_defs Id_def expr_defs dist_defs)
+  apply (simp add: prel_defs Id_def expr_defs dist_defs)
   apply (auto)
   sorry
 
