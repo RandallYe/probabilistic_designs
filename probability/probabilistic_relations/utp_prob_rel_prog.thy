@@ -20,7 +20,10 @@ named_theorems prel_defs
   morphisms set_of_prel prel_of_set
   using is_prob_def taut_def by force
 *)
-typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). (\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry s) s\<^sub>1))}"
+(* The final states of a program characterised by f is a distribution *)
+abbreviation "is_final_distribution f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry f) s\<^sub>1))"
+
+typedef ('s\<^sub>1, 's\<^sub>2) prel = "{f::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). is_final_distribution f}"
   morphisms set_of_prel prel_of_set
   apply (simp add: dist_defs taut_def)
   apply (rule_tac x = "\<lambda>(a,b). if b = c then 1 else 0" in exI)
@@ -110,8 +113,11 @@ lemma deadlock_always: "`@(deadlock_state pzero)`"
 
 (* suggest by simon: bundle: notation here *)
 (* ok *)
+(* The purpose of this abbreviation is to make later reference to this function inside pskip easier. *)
+abbreviation "pskip\<^sub>_f \<equiv> \<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
+
 definition pskip :: "'s phrel" ("II\<^sub>p") where
-[prel_defs]: "pskip = prel_of_set (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
+[prel_defs]: "pskip = prel_of_set (pskip\<^sub>_f)"
 
 adhoc_overloading
   uskip pskip
@@ -148,8 +154,10 @@ term "1/2"
 term "a - {}"
 term "f o g"
 
+abbreviation "passigns_f \<sigma> \<equiv> \<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
+
 definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prel" where 
-[prel_defs]: "passigns \<sigma> = prel_of_set (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
+[prel_defs]: "passigns \<sigma> = prel_of_set (passigns_f \<sigma>)"
 
 adhoc_overloading
   uassigns passigns
@@ -186,9 +194,11 @@ term "((set_of_prel P))"
 term "(r * @(set_of_prel P) + (1 - r) * @(set_of_prel  Q))\<^sub>e"
 
 (* probabilistic choice *)
+abbreviation "pchoice_f P r Q \<equiv> (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
+
 definition pchoice :: "('s, 's) prel \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
-[prel_defs]: "pchoice P r Q = prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
+[prel_defs]: "pchoice P r Q = prel_of_set (pchoice_f P r Q)"
 
 (* definition pchoice' :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
@@ -222,13 +232,16 @@ term "
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel Q)))\<^sub>e"
 thm "pred_seq_hom"
 
-definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (infixl ";\<^sub>p" 59) where
-[prel_defs]: "pcomp P Q = prel_of_set 
-    (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel Q)))\<^sub>e"
+abbreviation "pcomp_f P Q \<equiv> 
+  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel Q)))\<^sub>e" 
 
+definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (infixl ";\<^sub>p" 59) where
+[prel_defs]: "pcomp P Q = prel_of_set (pcomp_f P Q)"
+
+abbreviation "pparallel_f P Q \<equiv> (\<^bold>\<N> (@(set_of_prel P) * @(set_of_prel Q))\<^sub>e)"
 
 definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
-[prel_defs]: "pparallel P Q = prel_of_set (\<^bold>\<N> (@(set_of_prel P) * @(set_of_prel Q))\<^sub>e)"
+[prel_defs]: "pparallel P Q = prel_of_set (pparallel_f P Q)"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts

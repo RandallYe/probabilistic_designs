@@ -126,11 +126,26 @@ lemma infsum_mult_subset_right:
   by simp+
 
 subsection \<open> Laws of type @{type prel} \<close>
-lemma prel_is_dist: "\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry (set_of_prel Q)) s\<^sub>1)"
+lemma prel_is_dist: "is_final_distribution (set_of_prel (P::'a phrel))"
   using set_of_prel by force
 
+lemma prel_prob_sum1_summable:
+  assumes "is_final_distribution p"
+  shows "\<forall>s. 0 \<le> p s \<and> p s \<le> 1" 
+        "(\<Sum>\<^sub>\<infinity> s. p (s\<^sub>1, s)) = (1::\<real>)"
+        "(\<lambda>s. p (s\<^sub>1, s)) summable_on UNIV"
+  using assms apply (simp add: dist_defs expr_defs)
+  using assms is_dist_def is_sum_1_def apply (metis (no_types, lifting) curry_conv infsum_cong)
+proof (rule ccontr)
+  assume a1: "\<not> (\<lambda>s. p (s\<^sub>1, s)) summable_on UNIV"
+  from a1 have f1: "(\<Sum>\<^sub>\<infinity>s. p (s\<^sub>1, s)) = (0::\<real>)"
+    by (simp add: infsum_def)
+  then show "False"
+    by (metis assms case_prod_eta curry_case_prod is_dist_def is_sum_1_def zero_neq_one)
+qed
+
 lemma prel_is_prob: "\<forall>s\<^sub>1::'s\<^sub>1. is_prob ((curry (set_of_prel Q)) s\<^sub>1)"
-  by (meson is_dist_def prel_is_dist)
+  using is_dist_def set_of_prel by fastforce
 
 lemma prel_in_0_1: "(curry (set_of_prel Q)) x y \<ge> 0 \<and> (curry (set_of_prel Q)) x y \<le> 1"
   using prel_is_prob 
@@ -141,8 +156,7 @@ lemma prel_in_0_1': "(set_of_prel Q) s \<ge> 0 \<and> (set_of_prel Q) s \<le> 1"
   by (metis case_prod_curry split_def)
 
 lemma prel_sum_1: "(\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, s)) = (1::\<real>)"
-  using prel_is_dist
-  by (metis (mono_tags, lifting) curry_def infsum_cong is_dist_def is_sum_1_def)
+  using prel_prob_sum1_summable(2) set_of_prel by fastforce
 
 (* The first component of pairs, which infsum is over, can be discarded. *)
 (* The basic observation is that 
@@ -347,6 +361,61 @@ lemma prel_prob_choice_is_dist:
   oops
 *)
 
+subsection \<open> Conversion from a set of realed functions to @{text "prel"} and then back to the set \<close>
+
+lemma prel_set_conv_assign: "set_of_prel (prel_of_set (passigns_f \<sigma>)) = passigns_f \<sigma>"
+  apply (subst prel_of_set_inverse)
+  apply (simp add: dist_defs expr_defs, auto)
+  apply (rel_auto)
+  by (simp add: infsum_singleton)
+
+lemma prel_set_conv_pchoice: 
+  assumes "0 \<le> r \<and> r \<le> 1"
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "set_of_prel (prel_of_set (\<guillemotleft>r\<guillemotright> * (p) + (1 - \<guillemotleft>r\<guillemotright>) * (q))\<^sub>e) = (\<guillemotleft>r\<guillemotright> * (p) + (1 - \<guillemotleft>r\<guillemotright>) * (q))\<^sub>e"
+    apply (subst prel_of_set_inverse)
+    apply (simp add: dist_defs expr_defs, auto)
+    apply (simp add: assms(1) assms(2) assms(3) prel_prob_sum1_summable(1))
+    apply (simp add: assms(1) assms(2) assms(3) convex_bound_le prel_prob_sum1_summable(1))
+    apply (subst infsum_add)
+    apply (simp add: assms(2) prel_prob_sum1_summable(3) summable_on_cmult_right)
+    apply (simp add: assms(3) prel_prob_sum1_summable(3) summable_on_cmult_right)
+    apply (subst infsum_cmult_right)
+    apply (simp add: assms(2) prel_prob_sum1_summable(3) summable_on_cmult_right)
+    apply (subst infsum_cmult_right)
+    apply (simp add: assms(3) prel_prob_sum1_summable(3) summable_on_cmult_right)
+    by (simp add: assms(2) assms(3) prel_prob_sum1_summable(2))
+
+(*
+lemma prel_set_pchoice: 
+  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> 1"
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "set_of_prel (prel_of_set (r * (p) + (1 - r) * (q))\<^sub>e) = (r * (p) + (1 - r) * (q))\<^sub>e"
+proof -
+  have f1: "\<forall>s. 0 \<le> p s \<and> p s \<le> 1"
+    using assms(2) by (simp add: dist_defs expr_defs)
+  have f2: "\<forall>s. 0 \<le> q s \<and> q s \<le> 1"
+    using assms(3) by (simp add: dist_defs expr_defs)
+  have f3: "(\<Sum>\<^sub>\<infinity>s::'b. r (s\<^sub>1, s) * p (s\<^sub>1, s) + ((1::\<real>) - r (s\<^sub>1, s)) * q (s\<^sub>1, s)) = 
+    (\<Sum>\<^sub>\<infinity>s::'b. r (s\<^sub>1, s) * p (s\<^sub>1, s)) + (\<Sum>\<^sub>\<infinity>s::'b. ((1::\<real>) - r (s\<^sub>1, s)) * q (s\<^sub>1, s))"
+    apply (rule infsum_add)
+  show ?thesis
+    apply (subst prel_of_set_inverse)
+    apply (simp add: dist_defs expr_defs, auto)
+    using assms(1) apply (simp add: f1 f2)
+     apply (simp add: assms(1) convex_bound_le f1 f2)
+*)
+(*
+lemma prel_set_pchoice: "set_of_prel (prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e) 
+  = (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
+  apply (subst prel_of_set_inverse)
+  apply (simp add: dist_defs expr_defs, auto)
+  apply (rel_auto)
+  by (simp add: infsum_singleton)
+*)
+
 subsection \<open> Laws of probabilistic relations \<close>
 term "set_of_prel P"
 term "\<lambda>s. (set_of_prel P) s"
@@ -355,19 +424,19 @@ term "(case \<s> of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) (v\<
 theorem prel_left_unit: "II ; P = P"
   apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
-   apply (simp add: dist_defs)
+  apply (simp add: dist_defs)
   apply (smt (verit, best) infsum_cong infsum_mult_singleton_left mult_cancel_right1)
   apply (simp add: lens_defs)
   apply (subgoal_tac "\<forall>s. (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
-           (if (case s of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) v\<^sub>0 \<in> II then 1::\<real> else (0::\<real>)) *
-           set_of_prel P ((case s of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> \<lambda>u::'a. (u, \<rho>)) v\<^sub>0)) = (set_of_prel P) s")
+         (if (case s of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) v\<^sub>0 \<in> II then 1::\<real> else (0::\<real>)) *
+         set_of_prel P ((case s of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> \<lambda>u::'a. (u, \<rho>)) v\<^sub>0)) = (set_of_prel P) s")
   apply (subgoal_tac "prel_of_set (\<lambda>\<s>::'a \<times> 'a.
-         \<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
-           (if (case \<s> of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) v\<^sub>0 \<in> II then 1::\<real> else (0::\<real>)) *
-           set_of_prel P ((case \<s> of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> \<lambda>u::'a. (u, \<rho>)) v\<^sub>0)) =
-    prel_of_set (set_of_prel P)")
+       \<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
+         (if (case \<s> of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) v\<^sub>0 \<in> II then 1::\<real> else (0::\<real>)) *
+         set_of_prel P ((case \<s> of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> \<lambda>u::'a. (u, \<rho>)) v\<^sub>0)) =
+  prel_of_set (set_of_prel P)")
   using set_of_prel_inverse apply auto[1]
-   apply presburger
+  apply presburger
   apply (auto)
   by (simp add: infsum_mult_singleton_left_1)
 
@@ -387,7 +456,7 @@ theorem prel_right_unit: "P ; II = P"
            (if (case s of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> \<lambda>u::'a. (u, \<rho>)) v\<^sub>0 \<in> II then 1::\<real> else (0::\<real>))) =
         (set_of_prel P)")
   using set_of_prel_inverse apply auto[1]
-   apply presburger
+  apply presburger
   apply (auto)
   using infsum_mult_singleton_right by metis
 
@@ -404,93 +473,30 @@ term "(x := e) \<Zcomp> (y := f)"
 lemma prel_assign_is_prob: "is_prob (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
   by (simp add: prel_defs expr_defs dist_defs)
 
-(*
-lemma "is_prob ( set_of_prel ((x := e) ; (y := f)))"
-  apply (simp add: prel_defs)
-  apply (subst prel_of_set_inverse)
-   apply (subst prel_of_set_inverse)
-   apply (simp add: dist_defs expr_defs)
-   apply (subst prel_of_set_inverse)
-    apply (simp add: dist_defs expr_defs)
-  apply (simp add: dist_defs expr_defs)
-*)
-  
 theorem passign_comp: 
   (* assumes "$x \<sharp> f" "x \<bowtie> y" *)
   shows "(x := e) ; (y := f) = prel_of_set (\<lbrakk> \<lbrakk>(x := e) \<Zcomp> (y := f)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
-    apply (simp add: prel_defs expr_defs)
-    apply (subst prel_of_set_inverse)
-   apply (simp add: dist_defs)
-   apply (rel_auto)
-   apply (simp add: infsum_singleton)
-    apply (subst prel_of_set_inverse)
-   apply (simp add: dist_defs)
+  apply (simp add: prel_defs expr_defs)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: dist_defs)
   apply (rel_auto)
-   apply (simp add: infsum_singleton)
-    apply (subst prel_of_set_inject)
-    (* Left is_prob *)
-    apply (simp add: dist_defs expr_defs)
-    apply (auto)
-    apply (simp add: infsum_nonneg)
-    apply (rel_auto)
-     apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1) = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
-      (if put\<^bsub>y\<^esub> v\<^sub>0 (f v\<^sub>0) = s then 1::\<real> else (0::\<real>))) 
-      = (if put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1)) (f (put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1))) = s then 1 else 0)")
-    apply (simp)
-    apply (rule infsumI)
-    apply (simp add: has_sum_def)
-    apply (auto)
-    apply (subst topological_tendstoI)
-    apply (auto)
-    apply (simp add: eventually_finite_subsets_at_top)
-    apply (rule_tac x = "{put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1)}" in exI)
-    apply (auto)
-    apply (subgoal_tac "(\<Sum>v\<^sub>0::'a\<in>Y.
-        (if put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1) = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
-        (if put\<^bsub>y\<^esub> v\<^sub>0 (f v\<^sub>0) = put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1)) (f (put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1))) then 1::\<real> else (0::\<real>))) 
-      = 1")
-    apply presburger
-    apply (simp add: sum.remove)
-    apply (subst sum_nonneg_eq_0_iff)
-    apply (simp)+
-    apply force
-    (* *)
-    apply (subst topological_tendstoI)
-    apply (auto)
-    apply (simp add: eventually_finite_subsets_at_top)
-    apply (rule_tac x = "{put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1)}" in exI)
-    apply (auto)
-    apply (subgoal_tac "(\<Sum>v\<^sub>0::'a\<in>Y. (if put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1) = v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
-        (if put\<^bsub>y\<^esub> v\<^sub>0 (f v\<^sub>0) = s then 1::\<real> else (0::\<real>))) 
-      = 0")
-    apply presburger
-    apply (simp add: sum.remove)
-    apply (subst sum_nonneg_eq_0_iff)
-       apply (simp)+
-    (* *)
-    apply (rel_auto)
-    using infsum_mult_singleton_1 apply fastforce
-    
-    (* Right is_dist *)
-    apply (simp add: dist_defs expr_defs)
-     apply (rel_auto)
-     apply (simp add: infsum_singleton)
-
-    (* *)
-    apply (rel_auto)
-    apply (subst infsum_mult_singleton_left_1)
-    apply simp
-    by (smt (verit, best) infsum_0 mult_cancel_left1 mult_cancel_right1)
+  apply (simp add: infsum_singleton)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: dist_defs)
+  apply (rel_auto)
+  apply (simp add: infsum_singleton)
+  apply (rule HOL.arg_cong[where f="prel_of_set"])
+  apply (rel_auto)
+  apply (subst infsum_mult_singleton_left_1)
+  apply simp
+  by (smt (verit, best) infsum_0 mult_cancel_left1 mult_cancel_right1)
 
 lemma prel_prob_choice_is_sum_1:
   assumes "0 \<le> r \<and> r \<le> 1"
-  shows "(\<Sum>\<^sub>\<infinity>s::'a. r * set_of_prel P (s\<^sub>1, s) + 
-          ((1::\<real>) - r ) * set_of_prel Q (s\<^sub>1, s)) = (1::\<real>)"
+  shows "(\<Sum>\<^sub>\<infinity>s::'a. r * set_of_prel P (s\<^sub>1, s) + ((1::\<real>) - r ) * set_of_prel Q (s\<^sub>1, s)) = (1::\<real>)"
 proof -
-  have f1: "(\<Sum>\<^sub>\<infinity>s::'a. r  * set_of_prel P (s\<^sub>1, s) + 
-          ((1::\<real>) - r ) * set_of_prel Q (s\<^sub>1, s)) = 
-    (\<Sum>\<^sub>\<infinity>s::'a. r * set_of_prel P (s\<^sub>1, s)) + 
-          (\<Sum>\<^sub>\<infinity>s::'a. ((1::\<real>) - r ) * set_of_prel Q (s\<^sub>1, s))"
+  have f1: "(\<Sum>\<^sub>\<infinity>s::'a. r  * set_of_prel P (s\<^sub>1, s) + ((1::\<real>) - r ) * set_of_prel Q (s\<^sub>1, s)) = 
+    (\<Sum>\<^sub>\<infinity>s::'a. r * set_of_prel P (s\<^sub>1, s)) + (\<Sum>\<^sub>\<infinity>s::'a. ((1::\<real>) - r ) * set_of_prel Q (s\<^sub>1, s))"
       apply (rule infsum_add)
       using assms by (simp add: prel_summable summable_on_cmult_right)+
   also have f2: "... = r * (\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, s)) + 
@@ -507,22 +513,10 @@ qed
 theorem prel_left_one_point: "x := e ; P = prel_of_set (([ x\<^sup>< \<leadsto> e\<^sup>< ] \<dagger> @(set_of_prel P)))\<^sub>e"
   apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
-
   apply (simp add: dist_defs expr_defs)
   apply (rel_auto)
-   apply (simp add: infsum_singleton)
-
-  apply (subst prel_of_set_inject)
-  apply (simp add: dist_defs expr_defs)
-  apply (rel_auto)
-  apply (simp add: infsum_nonneg prel_in_0_1')
-  apply (simp add: infsum_mult_singleton_left_1 prel_in_0_1')
-  apply (simp add: prel_infsum_infsum_mult_singleton_1)
-  apply (simp add: dist_defs expr_defs)
-  apply (auto)
-  using prel_in_0_1' apply blast+
-  apply (simp add: lens_defs)
-  apply (simp add: prel_sum_1)
+  apply (simp add: infsum_singleton)
+  apply (rule HOL.arg_cong[where f="prel_of_set"])
   apply (rel_auto)
   by (simp add: infsum_mult_singleton_left_1)
 
@@ -555,7 +549,7 @@ proof -
   have f0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>s::'a. set_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))) 
     = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (set_of_prel P (s\<^sub>1, v\<^sub>0) * (\<Sum>\<^sub>\<infinity>s::'a. (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))))"
     apply (subst infsum_cmult_right)
-     apply (simp add: infsum_singleton_summable)
+    apply (simp add: infsum_singleton_summable)
     by (simp)
   then have f1: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (set_of_prel P (s\<^sub>1, v\<^sub>0) * 1))"
     by (simp add: infsum_singleton)
@@ -563,17 +557,27 @@ proof -
     using f0 prel_sum_1 by force
 qed 
 
-(*
+
 term "prel_of_set (\<lbrakk> ($x\<^sup>< = e) \<rbrakk>\<^sub>\<I>\<^sub>e)"
+
+(* This realed function is not a distribution *)
+(*
+lemma "is_final_distribution (\<lbrakk> ($x\<^sup>< = e\<^sup><) \<rbrakk>\<^sub>\<I>\<^sub>e)"
+  apply (expr_auto)
+  apply (simp add: dist_defs)
+  apply (auto)
+*)
+
+(*
 theorem prel_right_one_point: "P ; prel_of_set (\<lbrakk> ($x\<^sup>< = e\<^sup><) \<rbrakk>\<^sub>\<I>\<^sub>e) 
     = prel_of_set (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(set_of_prel P)))\<^sub>e"
   apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_set_inverse)
-
    apply (simp add: dist_defs expr_defs)
    apply (auto)
   sorry
 *)
+
 (* This is not a valid law.
 theorem prel_right_one_point: "P ; x := e = prel_of_set (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(set_of_prel P)))\<^sub>e"
   apply (simp add: prel_defs expr_defs)
@@ -674,7 +678,7 @@ lemma passign_pif_simp:
     apply (smt (verit) DiffE mult_eq_0_iff singleton_iff sum.not_neutral_contains_not_neutral)
 *)
 
-subsubsection \<open> Substitutions \<close>
+subsection \<open> Substitutions \<close>
 
 term "[ x \<leadsto> f ]"
 term "(if\<^sub>p b then c else d)"
