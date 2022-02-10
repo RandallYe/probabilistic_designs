@@ -194,11 +194,11 @@ term "((set_of_prel P))"
 term "(r * @(set_of_prel P) + (1 - r) * @(set_of_prel  Q))\<^sub>e"
 
 (* probabilistic choice *)
-abbreviation "pchoice_f P r Q \<equiv> (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
+abbreviation "pchoice_f P r Q \<equiv> (r * P + (1 - r) * Q)\<^sub>e"
 
 definition pchoice :: "('s, 's) prel \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
-[prel_defs]: "pchoice P r Q = prel_of_set (pchoice_f P r Q)"
+[prel_defs]: "pchoice P r Q = prel_of_set (pchoice_f (set_of_prel P) r (set_of_prel Q))"
 
 (* definition pchoice' :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
@@ -215,6 +215,16 @@ translations
 term "if\<^sub>p 0.5 then P else Q"
 term "if\<^sub>p R then P else Q"
 term "if\<^sub>p R then P else Q = if\<^sub>p R then P else Q"
+
+text \<open> The definition @{text "lift_pre"} below lifts a real-valued function @{text r} over the initial 
+state to over the initial and final states. In the definition of @{term "pchoice"}, we use a general 
+function for the weight @{text r}, which is @{text "'s \<times> 's \<Rightarrow> \<real>"}. However, now we only consider 
+the probabilistic choice whose weight is only over the initial state. Then @{text "lift_pre"} is 
+useful to lift a such function to a more general function used in @{term "pchoice"}.
+\<close>
+abbreviation lift_pre where "lift_pre r \<equiv> (\<lambda>(s, s'). r s)"
+notation lift_pre ("_\<^sup>\<Up>")
+expr_ctr lift_pre
 
 (* conditional choice *)
 definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where 
@@ -233,15 +243,15 @@ term "
 thm "pred_seq_hom"
 
 abbreviation "pcomp_f P Q \<equiv> 
-  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> @(set_of_prel Q)))\<^sub>e" 
+  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
 
 definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (infixl ";\<^sub>p" 59) where
-[prel_defs]: "pcomp P Q = prel_of_set (pcomp_f P Q)"
+[prel_defs]: "pcomp P Q = prel_of_set (pcomp_f (set_of_prel P) (set_of_prel Q))"
 
-abbreviation "pparallel_f P Q \<equiv> (\<^bold>\<N> (@(set_of_prel P) * @(set_of_prel Q))\<^sub>e)"
+abbreviation "pparallel_f P Q \<equiv> (\<^bold>\<N> (P * Q)\<^sub>e)"
 
 definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
-[prel_defs]: "pparallel P Q = prel_of_set (pparallel_f P Q)"
+[prel_defs]: "pparallel P Q = prel_of_set (pparallel_f (set_of_prel P) (set_of_prel Q))"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts
