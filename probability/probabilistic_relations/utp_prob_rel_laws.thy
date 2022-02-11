@@ -568,6 +568,7 @@ lemma prel_is_dist_pparallel:
   assumes "is_final_distribution q"
   shows "is_final_distribution (pparallel_f p q)"
   apply (simp add: dist_defs expr_defs, auto)
+  sledgehammer
   sorry
 
 subsection \<open> Conversion from a set of realed functions to @{text "prel"} and then back to the set \<close>
@@ -900,16 +901,16 @@ lemma passign_pif_simp:
 *)
 subsubsection \<open> Probabilistic choice \<close>
 
-lemma prel_pchoice_commute: "if\<^sub>p r then P else Q = if\<^sub>p 1 - r then Q else P"
+theorem prel_pchoice_commute: "if\<^sub>p r then P else Q = if\<^sub>p 1 - r then Q else P"
   apply (simp add: prel_defs)
   apply (rule HOL.arg_cong[where f="prel_of_set"])
   by (auto)
 
-lemma prel_pchoice_zero: "if\<^sub>p 0 then P else Q = Q"
+theorem prel_pchoice_zero: "if\<^sub>p 0 then P else Q = Q"
   apply (simp add: prel_defs)
   by (simp add: SEXP_def set_of_prel_inverse)
 
-lemma prel_pchoice_zero': 
+theorem prel_pchoice_zero': 
   fixes w\<^sub>1 :: "'a \<Rightarrow> \<real>"
   assumes "`w\<^sub>1 = 0`"
   shows "P \<oplus>\<^bsub>w\<^sub>1\<^sup>\<Up>\<^esub> Q = Q"
@@ -922,11 +923,11 @@ proof -
     by (simp add: set_of_prel_inverse)
 qed
 
-lemma prel_pchoice_one: "if\<^sub>p 1 then P else Q = P"
+theorem prel_pchoice_one: "if\<^sub>p 1 then P else Q = P"
   apply (simp add: prel_defs)
   by (simp add: SEXP_def set_of_prel_inverse)
 
-lemma prel_pchoice_assoc:
+theorem prel_pchoice_assoc:
   fixes w\<^sub>1 :: "'a \<Rightarrow> \<real>"
   assumes "`0 \<le> w\<^sub>1 \<and> w\<^sub>1 \<le> 1`"
   assumes "`0 \<le> w\<^sub>2 \<and> w\<^sub>2 \<le> 1`"
@@ -1041,7 +1042,7 @@ next
        apply (simp add: prel_is_dist)+
   qed
 *)
-
+(*
 lemma prel_pchoice_assoc:
   assumes "((1 - w\<^sub>1) * (1 - w\<^sub>2))\<^sub>e = (1 - r\<^sub>2)\<^sub>e" "(w\<^sub>1)\<^sub>e = (r\<^sub>1 * r\<^sub>2)\<^sub>e"
   shows "if\<^sub>p w\<^sub>1 then P else (if\<^sub>p w\<^sub>2 then Q else R) = if\<^sub>p r\<^sub>2 then (if\<^sub>p r\<^sub>1 then P else Q) else R"
@@ -1052,7 +1053,7 @@ lemma prel_pchoice_assoc:
   using assms prel_is_dist_pchoice sledgehammer
   apply (subst prel_set_conv_pchoice)
   by (auto)
-
+*)
 
 subsubsection \<open> Parallel composition \<close>
 

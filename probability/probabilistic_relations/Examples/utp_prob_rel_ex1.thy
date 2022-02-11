@@ -123,7 +123,7 @@ lemma dwta_attack_status:
   apply (simp add: prel_left_one_point)
   apply (simp add: passigns_def pchoice_def)
   apply (simp add: prel_set_conv_assign)
-  apply (subst prel_set_conv_pchoice)
+  apply (subst prel_set_conv_pchoice')
   apply (simp add: assms)
   apply (metis prel_is_dist prel_set_conv_assign)
   apply (metis prel_is_dist prel_set_conv_assign)
@@ -160,6 +160,27 @@ lemma dwta_simp: "dwta = prel_of_set (
   apply (simp)
   apply (rule HOL.arg_cong[where f="prel_of_set"])
   by (rel_auto)
+
+lemma "set_of_prel dwta ;\<^sub>p (\<lbrakk>r\<^sup>< = C\<rbrakk>\<^sub>\<I>\<^sub>e) = (6/10)\<^sub>e"
+  apply (simp add: dwta_simp)
+  apply (subst prel_of_set_inverse)
+  apply (simp add: dist_defs expr_defs lens_defs)
+   apply (simp add: dwta_infsum_sum)
+   apply (subst sum.subset_diff[where A="UNIV" and B="{\<lparr>r\<^sub>v = C, a\<^sub>v = S\<rparr>, \<lparr>r\<^sub>v = C, a\<^sub>v = F\<rparr>, 
+      \<lparr>r\<^sub>v = D, a\<^sub>v = S\<rparr>, \<lparr>r\<^sub>v = D, a\<^sub>v = F\<rparr>}"])
+  apply (simp add: dwta_state_finite)+
+  apply (subst sum_nonneg_eq_0_iff)
+  using dwta_state_finite apply blast
+  apply auto[1]
+   apply (smt (z3) Attacker.exhaust DWTA_state.surjective DiffD2 Status.exhaust insertCI old.unit.exhaust)
+  apply (rel_auto)
+  apply (simp add: dwta_infsum_sum)
+  apply (subst sum.subset_diff[where A="UNIV" and B="{\<lparr>r\<^sub>v = C, a\<^sub>v = S\<rparr>, \<lparr>r\<^sub>v = C, a\<^sub>v = F\<rparr>}"])
+  apply (simp add: dwta_state_finite)+
+  apply (subst sum_nonneg_eq_0_iff)
+  using dwta_state_finite apply blast
+   apply auto[1]
+  by auto
 
 subsubsection \<open> x \<close>
 alphabet state =

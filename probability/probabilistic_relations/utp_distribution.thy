@@ -47,9 +47,12 @@ text \<open> Normalisation of a real-valued expression. \<close>
 (* If e is not summable, the infinite summation will be equal to 0 based on the definition of infsum,
 then this definition here will have a problem (divide-by-zero). How to deal with it??
 *)
-
-definition dist_norm::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>\<N> _") where
+(*
+definition dist_norm::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>N _") where
 [dist_defs]: "dist_norm e = (e / (\<Sum>\<^sub>\<infinity> s. \<guillemotleft>e\<guillemotright> s))\<^sub>e"
+*)
+definition dist_norm::"(real, 's \<times> 's) expr \<Rightarrow> (real, 's \<times> 's) expr" ("\<^bold>N _") where
+[dist_defs]: "dist_norm P = (P / (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P)))\<^sub>e"
 
 (*
 lemma sum_larger: "`e \<le> infsum \<guillemotleft>e\<guillemotright> UNIV`"

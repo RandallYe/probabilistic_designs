@@ -16,14 +16,18 @@ named_theorems prel_defs
 
 (* suggestion: typedef 0 \<le> p \<le> 1*)
 
+(* Real-valued functions whose domain is cartesian product of initial and final states. *)
+type_synonym ('s\<^sub>1, 's\<^sub>2) rfrel = "'s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>"
+type_synonym 's rfhrel = "('s, 's) rfrel"
+
+(* The final states of a program characterised by f is a distribution *)
+abbreviation "is_final_distribution f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry f) s\<^sub>1))"
+
 (* typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). is_prob s}"
   morphisms set_of_prel prel_of_set
   using is_prob_def taut_def by force
 *)
-(* The final states of a program characterised by f is a distribution *)
-abbreviation "is_final_distribution f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry f) s\<^sub>1))"
-
-typedef ('s\<^sub>1, 's\<^sub>2) prel = "{f::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). is_final_distribution f}"
+typedef ('s\<^sub>1, 's\<^sub>2) prel = "{f::('s\<^sub>1, 's\<^sub>2) rfrel. is_final_distribution f}"
   morphisms set_of_prel prel_of_set
   apply (simp add: dist_defs taut_def)
   apply (rule_tac x = "\<lambda>(a,b). if b = c then 1 else 0" in exI)
@@ -242,13 +246,18 @@ term "
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel Q)))\<^sub>e"
 thm "pred_seq_hom"
 
-abbreviation "pcomp_f P Q \<equiv> 
-  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
+abbreviation pcomp_f :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>)" (infixl ";\<^sub>p" 59) where 
+"pcomp_f P Q \<equiv> (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
 
-definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (infixl ";\<^sub>p" 59) where
+definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (*(infixl ";\<^sub>p" 59)*) where
 [prel_defs]: "pcomp P Q = prel_of_set (pcomp_f (set_of_prel P) (set_of_prel Q))"
 
-abbreviation "pparallel_f P Q \<equiv> (\<^bold>\<N> (P * Q)\<^sub>e)"
+abbreviation pparallel_f :: "('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>)"
+  where "pparallel_f P Q \<equiv> ((P * Q) / (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q)))\<^sub>e"
+(*
+abbreviation pparallel_f :: "('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>)"
+  where "pparallel_f P Q \<equiv> (\<^bold>N (P * Q)\<^sub>e)"
+*)
 
 definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
 [prel_defs]: "pparallel P Q = prel_of_set (pparallel_f (set_of_prel P) (set_of_prel Q))"
