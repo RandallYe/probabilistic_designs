@@ -246,14 +246,14 @@ term "
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel Q)))\<^sub>e"
 thm "pred_seq_hom"
 
-abbreviation pcomp_f :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>)" (infixl ";\<^sub>p" 59) where 
+abbreviation pcomp_f :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>)" (infixl ";\<^sub>f" 59) where 
 "pcomp_f P Q \<equiv> (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
 
 definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (*(infixl ";\<^sub>p" 59)*) where
 [prel_defs]: "pcomp P Q = prel_of_set (pcomp_f (set_of_prel P) (set_of_prel Q))"
 
 abbreviation pparallel_f :: "('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>)"
-  where "pparallel_f P Q \<equiv> ((P * Q) / (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q)))\<^sub>e"
+  where "pparallel_f P Q \<equiv> ((P * Q) / (\<Sum>\<^sub>\<infinity> s'. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> Q)))\<^sub>e"
 (*
 abbreviation pparallel_f :: "('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>)"
   where "pparallel_f P Q \<equiv> (\<^bold>N (P * Q)\<^sub>e)"

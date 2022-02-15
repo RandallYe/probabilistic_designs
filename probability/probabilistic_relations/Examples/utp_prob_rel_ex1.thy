@@ -161,7 +161,7 @@ lemma dwta_simp: "dwta = prel_of_set (
   apply (rule HOL.arg_cong[where f="prel_of_set"])
   by (rel_auto)
 
-lemma "set_of_prel dwta ;\<^sub>p (\<lbrakk>r\<^sup>< = C\<rbrakk>\<^sub>\<I>\<^sub>e) = (6/10)\<^sub>e"
+lemma "set_of_prel dwta ;\<^sub>f (\<lbrakk>r\<^sup>< = C\<rbrakk>\<^sub>\<I>\<^sub>e) = (6/10)\<^sub>e"
   apply (simp add: dwta_simp)
   apply (subst prel_of_set_inverse)
   apply (simp add: dist_defs expr_defs lens_defs)

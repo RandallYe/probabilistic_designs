@@ -140,6 +140,12 @@ lemma infsum_mult_subset_right:
   apply (rule infsum_cong_neutral)
   by simp+
 
+lemma infsum_not_zero_summable:
+  assumes "infsum f A = x"
+  assumes "x \<noteq> 0"
+  shows "f summable_on A"
+  using assms(1) assms(2) infsum_not_exists by blast
+
 subsection \<open> Laws of type @{type prel} \<close>
 lemma prel_is_dist: "is_final_distribution (set_of_prel (P::'a phrel))"
   using set_of_prel by force
@@ -387,6 +393,7 @@ lemma prel_is_dist_assign: "is_final_distribution (passigns_f \<sigma>)"
   apply (rel_auto)
   by (simp add: infsum_singleton)
 
+subsubsection \<open> Probabilistic choice \<close>
 text \<open>If @{text r} is a real-valued function over the initial state, the probabilistic choice of 
 @{text p} and @{text q} (both are distributions of the final states) with weight @{text r} is also 
 a distribution of the final state. \<close>
@@ -425,6 +432,7 @@ lemma prel_is_dist_pchoice':
     apply (simp add: assms(3) prel_prob_sum1_summable(3) summable_on_cmult_right)
   by (simp add: assms(2) assms(3) prel_prob_sum1_summable(2))
 
+subsubsection \<open> Sequential composition \<close>
 lemma prel_infsum_1_finite_subset:
   assumes "is_final_distribution p"
   shows "\<forall>S::\<bbbP> \<real>. open S \<longrightarrow> (1::\<real>) \<in> S \<longrightarrow> 
@@ -442,11 +450,144 @@ proof -
     by (simp add: eventually_finite_subsets_at_top)
 qed
 
-term "sequentially"
-term "at_top"
-term "principal"
-term "finite_subsets_at_top"
+lemma prel_abs_summable_on_product:
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "(\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) abs_summable_on 
+          Sigma (UNIV) (\<lambda>v\<^sub>0. {s'. q(v\<^sub>0, s') > (0::real)})"
+  apply (subst abs_summable_on_Sigma_iff)
+  apply (rule conjI)
+  apply (auto)
+proof -
+  fix x::"'a"
 
+  have f1: "(\<lambda>xa::'a. \<bar>p (s\<^sub>1, x) * q (x, xa)\<bar>) = (\<lambda>xa::'a. p (s\<^sub>1, x) * q (x, xa))"
+    apply (subst abs_of_nonneg)
+    by (simp add: assms(1) assms(2) prel_prob_sum1_summable(1))+
+  have f2: "(\<lambda>xa::'a. p (s\<^sub>1, x) * q (x, xa)) summable_on {s'::'a. (0::\<real>) < q (x, s')}"
+    apply (rule summable_on_cmult_right)
+    apply (rule summable_on_subset_banach[where A="UNIV"])
+    using assms(1) assms(2) prel_prob_sum1_summable(3) apply metis
+    by (simp)
+  show "(\<lambda>xa::'a. \<bar>p (s\<^sub>1, x) * q (x, xa)\<bar>) summable_on {s'::'a. (0::\<real>) < q (x, s')}"
+    using f1 f2 by presburger
+next
+  have f1: "(\<lambda>x::'a. \<bar>\<Sum>\<^sub>\<infinity>y::'a\<in>{s'::'a. (0::\<real>) < q (x, s')}. \<bar>p (s\<^sub>1, x) * q (x, y)\<bar>\<bar>) =
+      (\<lambda>x::'a. \<Sum>\<^sub>\<infinity>y::'a\<in>{s'::'a. (0::\<real>) < q (x, s')}. p (s\<^sub>1, x) * q (x, y))"
+    apply (subst abs_of_nonneg)
+    apply (subst abs_of_nonneg)
+    apply (simp add: assms(1) assms(2) prel_prob_sum1_summable(1))+
+     apply (simp add: assms(1) assms(2) infsum_nonneg prel_prob_sum1_summable(1))
+    apply (subst abs_of_nonneg)
+    by (simp add: assms(1) assms(2) prel_prob_sum1_summable(1))+
+  then have f2: "... = (\<lambda>x::'a. p (s\<^sub>1, x) * (\<Sum>\<^sub>\<infinity>y::'a\<in>{s'::'a. (0::\<real>) < q (x, s')}. q (x, y)))"
+    using infsum_cmult_right' by fastforce
+  have f3: "... = (\<lambda>x::'a. p (s\<^sub>1, x))"
+    apply (rule ext)
+    proof -
+      fix x
+      have f31: "(\<Sum>\<^sub>\<infinity>y::'a\<in>{s'::'a. (0::\<real>) < q (x, s')}. q (x, y)) = 
+        (\<Sum>\<^sub>\<infinity>y::'a\<in>{s'::'a. (0::\<real>) < q (x, s')} \<union> {s'::'a. (0::\<real>) = q (x, s')}. q (x, y))"
+        apply (rule infsum_cong_neutral)
+        by force+
+      then have f32: "... = (\<Sum>\<^sub>\<infinity>y::'a. q (x, y))"
+        by (smt (verit, del_insts) assms(2) infsum_cong infsum_mult_subset_right mult_cancel_left1 
+              prel_prob_sum1_summable(1))
+      then have f33: "... = 1"
+        by (simp add: assms(2) prel_prob_sum1_summable(2))
+      then show "p (s\<^sub>1, x) * (\<Sum>\<^sub>\<infinity>y::'a\<in>{s'::'a. (0::\<real>) < q (x, s')}. q (x, y)) = p (s\<^sub>1, x)"
+        using f31 f32 by auto
+    qed
+  have f4: "infsum (\<lambda>x::'a. \<Sum>\<^sub>\<infinity>y::'a\<in>{s'::'a. (0::\<real>) < q (x, s')}. p (s\<^sub>1, x) * q (x, y)) UNIV = 
+      infsum (\<lambda>x::'a. p (s\<^sub>1, x)) UNIV"
+    using f2 f3 by presburger
+  then have f5: "... = 1"
+    by (simp add: assms(1) prel_prob_sum1_summable(2))
+    
+  have f6: "(\<lambda>x::'a. \<Sum>\<^sub>\<infinity>y::'a\<in>{s'::'a. (0::\<real>) < q (x, s')}. p (s\<^sub>1, x) * q (x, y)) summable_on UNIV"
+    using f4 f5 infsum_not_exists by fastforce
+    
+  show "(\<lambda>x::'a. \<bar>\<Sum>\<^sub>\<infinity>y::'a\<in>{s'::'a. (0::\<real>) < q (x, s')}. \<bar>p (s\<^sub>1, x) * q (x, y)\<bar>\<bar>) summable_on UNIV"
+    using f1 f6 by presburger
+qed
+
+lemma prel_product_summable_on_sigma_possible_sets:
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "(\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) summable_on 
+          Sigma (UNIV) (\<lambda>v\<^sub>0. {s'. q(v\<^sub>0, s') > (0::real)})"
+  apply (subst summable_on_iff_abs_summable_on_real)
+  using prel_abs_summable_on_product assms(1) assms(2) by fastforce
+
+lemma Sigma_Un_distrib2:
+  shows "Sigma A (\<lambda>s. B s) \<union> Sigma A (\<lambda>s. C s) = Sigma A (\<lambda>s. (B s \<union> C s))"
+  apply (simp add: Sigma_def)
+  by (auto)
+
+lemma prel_Sigma_UNIV_divide:
+  assumes "is_final_distribution q"
+  shows "Sigma (UNIV) (\<lambda>v\<^sub>0. {s'. q(v\<^sub>0, s') > (0::real)}) \<union> (Sigma (UNIV) (\<lambda>v\<^sub>0. {s'. q(v\<^sub>0, s') = (0::real)})) 
+    = Sigma (UNIV) (\<lambda>v\<^sub>0. UNIV)"
+  apply (simp add: Sigma_Un_distrib2)
+  apply (auto)
+  by (metis antisym_conv2 assms prel_prob_sum1_summable(1))
+
+lemma prel_product_summable_on_sigma_impossible_sets:
+  shows "(\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) summable_on (Sigma (UNIV) (\<lambda>v\<^sub>0. {s'. q(v\<^sub>0, s') = (0::real)}))"
+  apply (simp add: summable_on_def)
+  apply (rule_tac x = "0" in exI)
+  apply (rule has_sum_0)
+  by force
+
+lemma prel_product_summable_on_UNIV:
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "(\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) summable_on Sigma (UNIV) (\<lambda>v\<^sub>0. UNIV)"
+proof -
+  let ?A1 = "Sigma (UNIV) (\<lambda>v\<^sub>0. {s'. q(v\<^sub>0, s') > (0::real)})"
+  let ?A2 = "Sigma (UNIV) (\<lambda>v\<^sub>0. {s'. q(v\<^sub>0, s') = (0::real)})"
+  let ?f = "(\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
+
+  have "?f summable_on (?A1 \<union> ?A2)"
+    apply (rule summable_on_Un_disjoint)
+    apply (simp add: assms(1) assms(2) prel_product_summable_on_sigma_possible_sets)
+    apply (simp add: prel_product_summable_on_sigma_impossible_sets)
+    by fastforce
+  then show ?thesis
+    by (simp add: assms(2) prel_Sigma_UNIV_divide)
+qed
+(*
+  apply (simp add: summable_on_def)
+proof -
+  obtain x where Px: "infsum (\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) 
+    (Sigma (UNIV) (\<lambda>v\<^sub>0. {s'. q(v\<^sub>0, s') > (0::real)})) = x"
+    using prel_summable_on_product assms(1) assms(2) by blast
+  have "has_sum (\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) UNIV 
+    (infsum (\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) 
+    (Sigma (UNIV) (\<lambda>v\<^sub>0. {s'. q(v\<^sub>0, s') > (0::real)})))"
+  show "\<exists>x::\<real>. has_sum (\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) UNIV x"
+    apply (rule_tac x = "x" in exI)
+    using Px apply (auto)
+*)
+
+lemma prel_product_summable_on_UNIV_2:
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+(*
+  shows "(\<lambda>x::'a \<times> 'a. case x of (v\<^sub>0::'a, s::'a) \<Rightarrow> p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) summable_on UNIV \<times> UNIV"
+*)
+  shows " (\<lambda>(s::'a, v\<^sub>0::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) summable_on UNIV \<times> UNIV"
+    apply (subst product_swap[symmetric])
+    apply (subst summable_on_reindex)
+   apply simp
+proof -
+  have f0: "(\<lambda>(s::'a, v\<^sub>0::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<circ> prod.swap = (\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
+    by (simp add: comp_def)
+  show "(\<lambda>(s::'a, v\<^sub>0::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<circ> prod.swap summable_on UNIV \<times> UNIV"
+    using assms(1) assms(2) f0 prel_product_summable_on_UNIV by fastforce
+qed
+
+(*
 lemma prel_infsum_over_pair_subset_mult_1:
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
@@ -474,6 +615,9 @@ proof -
     apply (rule finite_image_set2'')
     apply (smt (verit) f0 someI)
     by (smt (verit) f1 someI)
+  have f3: "(\<Sum>x::'a \<times> 'a\<in>Y. case x of (s::'a, v\<^sub>0::'a) \<Rightarrow> p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))
+      = (\<Sum>(s, v\<^sub>0) \<in> Y. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
+    by meson
   show "\<exists>X::'a rel. finite X \<and> (\<forall>Y::'a rel. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
       (\<Sum>(s::'a, v\<^sub>0::'a)\<in>Y. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<in> S)"
     (* v\<^sub>0 is chosen from f0, then s is chosen from f1 with its initial state v\<^sub>0. *)
@@ -483,6 +627,19 @@ proof -
       in exI)
     apply (auto)
     using f2 apply blast
+  proof -
+    fix Y :: "'a rel"
+    assume "finite Y"
+    (* (\<Sum>x\<in>?A. sum (?g x) ?B) = (\<Sum>(x, y)\<in>?A \<times> ?B. ?g x y) *)
+    have "(\<Sum>x::'a \<times> 'a\<in>Y. case x of (s::'a, v\<^sub>0::'a) \<Rightarrow> p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))
+      = (\<Sum>(s, v\<^sub>0) \<in> Y. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
+      by meson
+    then have "... = (\<Sum>(s, v\<^sub>0) \<in> (
+    let A=({(s, v\<^sub>0). v\<^sub>0 = (SOME x. x \<in> Range Y) \<and> 
+          s \<in> (SOME Xq::\<bbbP> 'a. finite Xq \<and> (\<forall>Yq::\<bbbP> 'a. finite Yq \<and> Xq \<subseteq> Yq \<longrightarrow> 
+            (\<Sum>s::'a\<in>Yq. q (v\<^sub>0, s)) \<in> S))})
+        in A \<union> (Y - A)). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
+      apply (subst sum.cartesian_product)
 (*
   proof -
     assume a11: "\<exists>Xp::\<bbbP> 'a. finite Xp \<and> (\<forall>Yp::\<bbbP> 'a. finite Yp \<and> Xp \<subseteq> Yp \<longrightarrow> (\<Sum>s::'a\<in>Yp. p (s\<^sub>1, s)) \<in> S)"
@@ -526,50 +683,104 @@ proof -
   qed *)
     sorry
 qed
+*)
 
 lemma prel_infsum_pcomp_swap:
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
   shows "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. \<Sum>\<^sub>\<infinity>s::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
   apply (rule infsum_swap_banach)
-  apply (simp add: summable_on_def)
-  apply (rule_tac x = "1" in exI)
-  by (smt (verit, best) assms(1) assms(2) case_prod_unfold has_sum_infsum infsum_cong 
-      infsum_not_exists prel_infsum_over_pair_subset_mult_1)
+  using assms(1) assms(2) prel_product_summable_on_UNIV_2 by fastforce
+
+lemma prel_infsum_pcomp_sum_1:
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) = 1"
+  apply (simp add: assms prel_infsum_pcomp_swap)
+  apply (simp add: infsum_cmult_right')
+  by (simp add: assms prel_prob_sum1_summable)
 
 lemma prel_is_dist_pcomp: 
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
   shows "is_final_distribution (pcomp_f p q)"
-    apply (simp add: dist_defs expr_defs, auto)
+  apply (simp add: dist_defs expr_defs, auto)
     apply (simp add: assms(1) assms(2) infsum_nonneg prel_prob_sum1_summable(1))
+   defer
    apply (simp_all add: lens_defs)
-   apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * 1)")
-    apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * 1) = 1")
-     apply (simp)
-    apply (simp add: assms(1) assms(2) infsum_nonneg prel_prob_sum1_summable(2))
-   apply (rule infsum_mono)
-(*
-     apply (subst summable_on_iff_abs_summable_on_real)
-    apply (simp add: abs_summable_product)
-*)
-     defer
-  apply (smt (verit, del_insts) assms(1) prel_prob_sum1_summable(3) summable_on_cong)
-    apply (simp add: assms(1) assms(2) mult_right_le_one_le prel_prob_sum1_summable(1))
-   apply (simp add: assms prel_infsum_pcomp_swap)
-   apply (subst infsum_cmult_right)
-    apply (simp add: assms(2) prel_prob_sum1_summable(3))
-   apply (simp add: assms(2) prel_prob_sum1_summable(2))
-   apply (simp add: assms(1) prel_prob_sum1_summable(2))
-  sorry
+   apply (simp add: assms(1) assms(2) prel_infsum_pcomp_sum_1)
+proof (rule ccontr)
+  fix s\<^sub>1::"'a" and s::"'a"
+  let ?f = "\<lambda>s. (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
+  assume a1: " \<not> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<le> (1::\<real>)"
+  then have f0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) > 1"
+    by force
+  have f1: "(\<lambda>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) summable_on UNIV"
+    apply (rule infsum_not_zero_summable[where x = 1])
+    by (simp add: assms(1) assms(2) prel_infsum_pcomp_sum_1)+
+  have f2: "(\<Sum>\<^sub>\<infinity>ss::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, ss)) = 
+    (\<Sum>\<^sub>\<infinity>ss::'a\<in>{s} \<union> {ss. ss \<noteq> s}. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, ss))"
+    by (metis (mono_tags, lifting) CollectI DiffD2 UNIV_I UnCI infsum_cong_neutral insert_iff)
+  also have f3: "... = (\<Sum>\<^sub>\<infinity>ss::'a\<in>{s}. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, ss)) + 
+    (\<Sum>\<^sub>\<infinity>ss::'a\<in>{ss. ss \<noteq> s}. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, ss))"
+    apply (rule infsum_Un_disjoint)
+    apply simp
+    using f1 summable_on_subset_banach apply blast
+    by simp
+  also have f4: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) + 
+    (\<Sum>\<^sub>\<infinity>ss::'a\<in>{ss. ss \<noteq> s}. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, ss))"
+    by simp
+  also have f5: "... > 1"
+    by (smt (verit, del_insts) a1 assms(1) assms(2) infsum_nonneg mult_nonneg_nonneg 
+          prel_prob_sum1_summable(1))
+  have f6: "(\<Sum>\<^sub>\<infinity>ss::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, ss)) > 1"
+    using calculation f5 by presburger
+  show "False"
+    using prel_infsum_pcomp_sum_1 f6 assms(1) assms(2) by fastforce
+qed
+
+subsubsection \<open> Parallel Composition \<close>
+lemma prel_is_dist_pparallel: 
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "(\<lambda>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')) summable_on UNIV"
+  apply (simp add: summable_on_def)
+    apply (simp add: has_sum_def)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+proof -
+  fix x::"\<real>" and S::"\<bbbP> \<real>"
+  assume a1: "open S"
+  assume a2: "x \<in> S"
+  have f0: "\<forall>S::\<bbbP> \<real>. open S \<longrightarrow> (1::\<real>) \<in> S \<longrightarrow> 
+    (\<exists>X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> (\<Sum>s::'a\<in>Y. p (s\<^sub>1, s)) \<in> S))"
+    using assms(1) by (simp add: prel_infsum_1_finite_subset)
+  show "\<exists>X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> (\<Sum>s'::'a\<in>Y. p (s\<^sub>1, s') * q (s\<^sub>1, s')) \<in> S)"
+  qed
 
 lemma prel_is_dist_pparallel: 
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
   shows "is_final_distribution (pparallel_f p q)"
   apply (simp add: dist_defs expr_defs, auto)
-  sledgehammer
+    apply (simp add: assms(1) assms(2) infsum_nonneg prel_prob_sum1_summable(1))
+   apply (simp add: lens_defs)
+   apply (subgoal_tac "p (s\<^sub>1, s) * q (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0) * q (s\<^sub>1, v\<^sub>0))")
+    apply (smt (verit, del_insts) assms(1) assms(2) divide_le_eq_1 mult_nonneg_nonneg prel_prob_sum1_summable(1))
+  defer
+   apply (simp add: lens_defs)
+  defer
+proof -
+  fix s\<^sub>1 s
+  show "p (s\<^sub>1, s) * q (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0) * q (s\<^sub>1, v\<^sub>0))"
+      apply (rule finite_sum_le_has_sum) 
   sorry
+next
+  fix s\<^sub>1
+  show "(\<Sum>\<^sub>\<infinity>s::'b. (p (s\<^sub>1, s) * q (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>s'::'b. p (s\<^sub>1, s') * q (s\<^sub>1, s')))) = (1::\<real>)"
+    sorry
+qed
 
 subsection \<open> Conversion from a set of realed functions to @{text "prel"} and then back to the set \<close>
 lemma prel_set_conv_assign: "set_of_prel (prel_of_set (passigns_f \<sigma>)) = passigns_f \<sigma>"
