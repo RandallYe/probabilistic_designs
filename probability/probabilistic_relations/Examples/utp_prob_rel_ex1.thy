@@ -76,10 +76,10 @@ term "\<lbrakk> r\<^sup>> = C \<and> a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e"
 term "(r := C)::DWTA_state phrel"
 
 (*
-lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = $a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
+lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_rfrel (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = $a\<^sup>< \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: prel_defs expr_defs)
   apply (rel_auto)
-  apply (subst prel_of_set_inject)
+  apply (subst prel_of_rfrel_inject)
     apply (simp add: dist_defs expr_defs)
     apply (simp add: infsum_singleton)
    apply (simp add: dist_defs expr_defs)
@@ -87,9 +87,9 @@ lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_set (\<
 *)
 
 lemma dwta_scomp_simp: 
-  "(((r := C)::(DWTA_state, DWTA_state) prel); (a := S)) = prel_of_set (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
+  "(((r := C)::(DWTA_state, DWTA_state) prel); (a := S)) = prel_of_rfrel (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: passign_comp)
-  apply (rule HOL.arg_cong[where f="prel_of_set"])
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   by (rel_auto)
 
 lemma dwta_infsum_two_instances: "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
@@ -117,7 +117,7 @@ lemma dwta_infsum_two_instances': "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
 lemma dwta_attack_status:
   assumes "0 \<le> p \<and> p \<le> (1::\<real>)"
   shows "((r := \<guillemotleft>attacker\<guillemotright>)::(DWTA_state, DWTA_state) prel) ; (if\<^sub>p ( \<guillemotleft>p\<guillemotright>) then (a := S) else (a := F))
-    = prel_of_set (       \<guillemotleft>p\<guillemotright> * \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 
+    = prel_of_rfrel (       \<guillemotleft>p\<guillemotright> * \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 
                      (1 - \<guillemotleft>p\<guillemotright>)* \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e
                   )\<^sub>e"
   apply (simp add: prel_left_one_point)
@@ -127,10 +127,10 @@ lemma dwta_attack_status:
   apply (simp add: assms)
   apply (metis prel_is_dist prel_set_conv_assign)
   apply (metis prel_is_dist prel_set_conv_assign)
-  apply (rule HOL.arg_cong[where f="prel_of_set"])
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   by (rel_auto)
 
-lemma dwta_simp: "dwta = prel_of_set (
+lemma dwta_simp: "dwta = prel_of_rfrel (
      3/10 * \<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 
      3/10 * \<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e + 
      6/50 * \<lbrakk> $r\<^sup>> = D \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 
@@ -142,7 +142,7 @@ lemma dwta_simp: "dwta = prel_of_set (
   apply (subst dwta_attack_status[where p = "((3/10)::\<real>)" and attacker = D])
   apply (simp)
   apply (simp add: prel_defs)
-  apply (subst prel_of_set_inverse)
+  apply (subst prel_of_rfrel_inverse)
   apply (simp add: dist_defs expr_defs lens_defs)
   apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
    (1/2) * (if r\<^sub>v s = C \<and> a\<^sub>v s = S then 1::\<real> else (0::\<real>)) +
@@ -150,7 +150,7 @@ lemma dwta_simp: "dwta = prel_of_set (
   apply (simp)
   apply (subst dwta_infsum_two_instances'[where rr=C and p="1/2" and q="1/2"])
   apply (simp)
-  apply (subst prel_of_set_inverse)
+  apply (subst prel_of_rfrel_inverse)
   apply (simp add: dist_defs expr_defs lens_defs)
   apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
    (3/10) * (if r\<^sub>v s = D \<and> a\<^sub>v s = S then 1::\<real> else (0::\<real>)) +
@@ -158,12 +158,12 @@ lemma dwta_simp: "dwta = prel_of_set (
   apply (simp)
   apply (subst dwta_infsum_two_instances'[where rr=D and p="3/10" and q="7/10"])
   apply (simp)
-  apply (rule HOL.arg_cong[where f="prel_of_set"])
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   by (rel_auto)
 
 lemma "set_of_prel dwta ;\<^sub>f (\<lbrakk>r\<^sup>< = C\<rbrakk>\<^sub>\<I>\<^sub>e) = (6/10)\<^sub>e"
   apply (simp add: dwta_simp)
-  apply (subst prel_of_set_inverse)
+  apply (subst prel_of_rfrel_inverse)
   apply (simp add: dist_defs expr_defs lens_defs)
    apply (simp add: dwta_infsum_sum)
    apply (subst sum.subset_diff[where A="UNIV" and B="{\<lparr>r\<^sub>v = C, a\<^sub>v = S\<rparr>, \<lparr>r\<^sub>v = C, a\<^sub>v = F\<rparr>, 

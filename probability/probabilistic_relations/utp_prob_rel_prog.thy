@@ -16,7 +16,7 @@ named_theorems prel_defs
 
 (* suggestion: typedef 0 \<le> p \<le> 1*)
 
-(* Real-valued functions whose domain is cartesian product of initial and final states. *)
+(* Real-valued functions whose domain is Cartesian product of initial and final states. *)
 type_synonym ('s\<^sub>1, 's\<^sub>2) rfrel = "'s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>"
 type_synonym 's rfhrel = "('s, 's) rfrel"
 
@@ -24,11 +24,12 @@ type_synonym 's rfhrel = "('s, 's) rfrel"
 abbreviation "is_final_distribution f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry f) s\<^sub>1))"
 
 (* typedef ('s\<^sub>1, 's\<^sub>2) prel = "{s::('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>). is_prob s}"
-  morphisms set_of_prel prel_of_set
+  morphisms rfrel_of_prel prel_of_rfrel
   using is_prob_def taut_def by force
 *)
+\<comment> \<open>A question here: can we use existing PMFs as types for prel? Why a new type here. \<close>
 typedef ('s\<^sub>1, 's\<^sub>2) prel = "{f::('s\<^sub>1, 's\<^sub>2) rfrel. is_final_distribution f}"
-  morphisms set_of_prel prel_of_set
+  morphisms rfrel_of_prel prel_of_rfrel
   apply (simp add: dist_defs taut_def)
   apply (rule_tac x = "\<lambda>(a,b). if b = c then 1 else 0" in exI)
   apply (auto)
@@ -41,34 +42,34 @@ typedef ('s\<^sub>1, 's\<^sub>2) prel = "{f::('s\<^sub>1, 's\<^sub>2) rfrel. is_
   by (auto)
 
 (*
-  prel_of_set_cases:
+  prel_of_rfrel_cases:
     (\<And>y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>.
-        (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) = prel_of_set y \<Longrightarrow> y \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> ?P::\<bool>) \<Longrightarrow>
+        (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) = prel_of_rfrel y \<Longrightarrow> y \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> ?P::\<bool>) \<Longrightarrow>
     ?P
-  prel_of_set_induct:
+  prel_of_rfrel_induct:
     (\<And>y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>.
-        y \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> (?P::(?'s\<^sub>1, ?'s\<^sub>2) prel \<Rightarrow> \<bool>) (prel_of_set y)) \<Longrightarrow>
+        y \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> (?P::(?'s\<^sub>1, ?'s\<^sub>2) prel \<Rightarrow> \<bool>) (prel_of_rfrel y)) \<Longrightarrow>
     ?P (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel)
-  prel_of_set_inject:
+  prel_of_rfrel_inject:
     (?x::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow>
-    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> (prel_of_set ?x = prel_of_set ?y) = (?x = ?y)
-  prel_of_set_inverse:
-    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_dist s} \<Longrightarrow> set_of_prel (prel_of_set ?y) = ?y
-  set_of_prel: set_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s}
-  set_of_prel_cases:
+    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow> (prel_of_rfrel ?x = prel_of_rfrel ?y) = (?x = ?y)
+  prel_of_rfrel_inverse:
+    (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_dist s} \<Longrightarrow> rfrel_of_prel (prel_of_rfrel ?y) = ?y
+  rfrel_of_prel: rfrel_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s}
+  rfrel_of_prel_cases:
     (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow>
-    (\<And>x::(?'s\<^sub>1, ?'s\<^sub>2) prel. ?y = set_of_prel x \<Longrightarrow> ?P::\<bool>) \<Longrightarrow> ?P
-  set_of_prel_induct:
+    (\<And>x::(?'s\<^sub>1, ?'s\<^sub>2) prel. ?y = rfrel_of_prel x \<Longrightarrow> ?P::\<bool>) \<Longrightarrow> ?P
+  rfrel_of_prel_induct:
     (?y::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<in> {s::?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>. is_prob s} \<Longrightarrow>
-    (\<And>x::(?'s\<^sub>1, ?'s\<^sub>2) prel. (?P::(?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> \<bool>) (set_of_prel x)) \<Longrightarrow> ?P ?y
-  set_of_prel_inject: (set_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) = set_of_prel (?y::(?'s\<^sub>1, ?'s\<^sub>2) prel)) = (?x = ?y)
-  set_of_prel_inverse: prel_of_set (set_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel)) = ?x
+    (\<And>x::(?'s\<^sub>1, ?'s\<^sub>2) prel. (?P::(?'s\<^sub>1 \<times> ?'s\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> \<bool>) (rfrel_of_prel x)) \<Longrightarrow> ?P ?y
+  rfrel_of_prel_inject: (rfrel_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel) = rfrel_of_prel (?y::(?'s\<^sub>1, ?'s\<^sub>2) prel)) = (?x = ?y)
+  rfrel_of_prel_inverse: prel_of_rfrel (rfrel_of_prel (?x::(?'s\<^sub>1, ?'s\<^sub>2) prel)) = ?x
 *)
-find_theorems "prel.set_of_prel"
-term "prel_of_set"
-term "set_of_prel"
-thm "prel_of_set_inverse"
-thm "set_of_prel"
+find_theorems "prel.rfrel_of_prel"
+term "prel_of_rfrel"
+term "rfrel_of_prel"
+thm "prel_of_rfrel_inverse"
+thm "rfrel_of_prel"
 
 type_synonym 's phrel = "('s, 's) prel"
 
@@ -92,7 +93,7 @@ text \<open> Reachable states of @{text P} from an initial state @{text s} are s
 that have probability @{text "P (s, s')"} larger than 0. 
 \<close>
 definition reachable_states :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> 's\<^sub>1 \<Rightarrow> 's\<^sub>2 set" where
-[prel_defs]: "reachable_states P s = {s'. (curry (set_of_prel P)) s s' > 0}"
+[prel_defs]: "reachable_states P s = {s'. (curry (rfrel_of_prel P)) s s' > 0}"
 
 (*
 text \<open> A deadlock state has no reachable states from it. \<close>
@@ -108,20 +109,19 @@ subsection \<open> Probabilistic programming \<close>
 (*
 (* deadlock: zero and not a distribution *)
 definition pzero :: "('s\<^sub>1, 's\<^sub>2) prel" ("0\<^sub>p") where
-[prel_defs]: "pzero = prel_of_set (\<lambda> s. 0)"
+[prel_defs]: "pzero = prel_of_rfrel (\<lambda> s. 0)"
 
 lemma deadlock_always: "`@(deadlock_state pzero)`"
   apply (simp add: prel_defs)
-  by (simp add: is_prob_def prel_of_set_inverse)
+  by (simp add: is_prob_def prel_of_rfrel_inverse)
 *)
 
-(* suggest by simon: bundle: notation here *)
-(* ok *)
+subsubsection \<open> Skip \<close>
 (* The purpose of this abbreviation is to make later reference to this function inside pskip easier. *)
 abbreviation "pskip\<^sub>_f \<equiv> \<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
 
 definition pskip :: "'s phrel" ("II\<^sub>p") where
-[prel_defs]: "pskip = prel_of_set (pskip\<^sub>_f)"
+[prel_defs]: "pskip = prel_of_rfrel (pskip\<^sub>_f)"
 
 adhoc_overloading
   uskip pskip
@@ -158,10 +158,11 @@ term "1/2"
 term "a - {}"
 term "f o g"
 
+subsubsection \<open> Assignment \<close>
 abbreviation "passigns_f \<sigma> \<equiv> \<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
 
 definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prel" where 
-[prel_defs]: "passigns \<sigma> = prel_of_set (passigns_f \<sigma>)"
+[prel_defs]: "passigns \<sigma> = prel_of_rfrel (passigns_f \<sigma>)"
 
 adhoc_overloading
   uassigns passigns
@@ -171,7 +172,7 @@ term "(s := e)::'s rel"
 (* assignment *)
 (*
 definition passign :: "('a \<Longrightarrow> 's) \<Rightarrow> ('a, 's) expr \<Rightarrow> 's phrel" (*(infix ":=\<^sub>p" 162)*) where
-[prel_defs]: "passign x e = prel_of_set (\<lbrakk> \<lbrakk>(x := e)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
+[prel_defs]: "passign x e = prel_of_rfrel (\<lbrakk> \<lbrakk>(x := e)\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 syntax 
   "_passign" :: "logic \<Rightarrow> logic \<Rightarrow> logic" (infix ":=\<^sub>p" 30) 
@@ -194,19 +195,19 @@ term "(x := ($x + 1))::'s rel"
 term "(\<^bold>v\<^sup>> := $\<^bold>v\<^sup><)::'s phrel"
 term "($\<^bold>v\<^sup>> = $\<^bold>v\<^sup><)"
 
-term "((set_of_prel P))"
-term "(r * @(set_of_prel P) + (1 - r) * @(set_of_prel  Q))\<^sub>e"
+term "((rfrel_of_prel P))"
+term "(r * @(rfrel_of_prel P) + (1 - r) * @(rfrel_of_prel  Q))\<^sub>e"
 
-(* probabilistic choice *)
+subsubsection \<open> Probabilistic choice \<close>
 abbreviation "pchoice_f P r Q \<equiv> (r * P + (1 - r) * Q)\<^sub>e"
 
 definition pchoice :: "('s, 's) prel \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
-[prel_defs]: "pchoice P r Q = prel_of_set (pchoice_f (set_of_prel P) r (set_of_prel Q))"
+[prel_defs]: "pchoice P r Q = prel_of_rfrel (pchoice_f (rfrel_of_prel P) r (rfrel_of_prel Q))"
 
 (* definition pchoice' :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[prel_defs]: "pchoice' r P Q = prel_of_set (r * @(set_of_prel P) + (1 - r) * @(set_of_prel Q))\<^sub>e"
+[prel_defs]: "pchoice' r P Q = prel_of_rfrel (r * @(rfrel_of_prel P) + (1 - r) * @(rfrel_of_prel Q))\<^sub>e"
 *)
 
 syntax 
@@ -232,27 +233,28 @@ expr_ctr lift_pre
 
 (* conditional choice *)
 definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where 
-"pcond b P Q \<equiv> prel_of_set (if b then @(set_of_prel P) else @(set_of_prel Q))\<^sub>e"
+"pcond b P Q \<equiv> prel_of_rfrel (if b then @(rfrel_of_prel P) else @(rfrel_of_prel Q))\<^sub>e"
 
-(* sequential composition *)
-term "(set_of_prel (P::('s phrel)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
+subsubsection \<open> Sequential composition \<close>
+term "(rfrel_of_prel (P::('s phrel)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
 term "\<^bold>v\<^sup>>"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. (P\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup>>\<rbrakk>) * (Q\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup><\<rbrakk>))\<^sub>e"
-term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (set_of_prel (P::'s phrel))"
+term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (rfrel_of_prel (P::'s phrel))"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e"
 term "(\<exists> v\<^sub>0. [ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>P\<rbrakk>\<^sub>P \<and> [ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>Q\<rbrakk>\<^sub>P)\<^sub>e"
 term "if True then a else b"
 term " 
-  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(set_of_prel Q)))\<^sub>e"
+  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_prel Q)))\<^sub>e"
 thm "pred_seq_hom"
 
 abbreviation pcomp_f :: "('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>) \<Rightarrow> ('s \<times> 's \<Rightarrow> \<real>)" (infixl ";\<^sub>f" 59) where 
 "pcomp_f P Q \<equiv> (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
 
 definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (*(infixl ";\<^sub>p" 59)*) where
-[prel_defs]: "pcomp P Q = prel_of_set (pcomp_f (set_of_prel P) (set_of_prel Q))"
+[prel_defs]: "pcomp P Q = prel_of_rfrel (pcomp_f (rfrel_of_prel P) (rfrel_of_prel Q))"
 
-abbreviation pparallel_f :: "('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>)"
+subsubsection \<open> Parallel composition \<close>
+abbreviation pparallel_f :: "('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>)" (infixl "\<parallel>\<^sub>f" 58)
   where "pparallel_f P Q \<equiv> ((P * Q) / (\<Sum>\<^sub>\<infinity> s'. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> Q)))\<^sub>e"
 (*
 abbreviation pparallel_f :: "('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>) \<Rightarrow> ('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<real>)"
@@ -260,7 +262,7 @@ abbreviation pparallel_f :: "('s\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> \<rea
 *)
 
 definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
-[prel_defs]: "pparallel P Q = prel_of_set (pparallel_f (set_of_prel P) (set_of_prel Q))"
+[prel_defs]: "pparallel P Q = prel_of_rfrel (pparallel_f (rfrel_of_prel P) (rfrel_of_prel Q))"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts
