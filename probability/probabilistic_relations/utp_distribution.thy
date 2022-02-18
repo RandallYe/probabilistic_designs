@@ -51,24 +51,18 @@ then this definition here will have a problem (divide-by-zero). How to deal with
 definition dist_norm::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>N _") where
 [dist_defs]: "dist_norm e = (e / (\<Sum>\<^sub>\<infinity> s. \<guillemotleft>e\<guillemotright> s))\<^sub>e"
 *)
-definition dist_norm::"(real, 's \<times> 's) expr \<Rightarrow> (real, 's \<times> 's) expr" ("\<^bold>N _") where
+definition dist_norm::"(real, 's\<^sub>1 \<times> 's\<^sub>2) expr \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr" ("\<^bold>N _") where
 [dist_defs]: "dist_norm P = (P / (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P)))\<^sub>e"
 
+definition dist_norm_alpha::"('v \<Longrightarrow> 's\<^sub>2) \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr" ("\<^bold>N\<^sub>\<alpha> _ _") where
+[dist_defs]: "dist_norm_alpha x P = (P / (\<Sum>\<^sub>\<infinity> v. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
+
+expr_ctr dist_norm_alpha dist_norm
+
+definition uniform_dist where
+[dist_defs]: "uniform_dist x A = \<^bold>N\<^sub>\<alpha> x (\<lbrakk>\<lbrakk>\<Union> v \<in> A. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e)"
+
 (*
-lemma sum_larger: "`e \<le> infsum \<guillemotleft>e\<guillemotright> UNIV`"
-  apply (simp add: infsum_def)
-  sorry
-
-lemma norm_is_prob: 
-  assumes "`e \<ge> 0`"
-  shows "is_prob (\<^bold>\<N> e)"
-  apply (simp add: dist_defs)
-  using assms 
-  sorry
-
-thm "dist_norm_def"
-thm "is_sum_1_def"
-
 alphabet state = 
   n :: nat
   m :: nat
@@ -87,11 +81,6 @@ term "(0+f)\<^sub>e"
 term "($x + @g)\<^sub>e"
 term "($n\<^sup>> = $n\<^sup>< + 1)\<^sub>e"
 term "(\<lbrakk>($n\<^sup>> = $n\<^sup>< + 1)\<^sub>e\<rbrakk>\<^sub>\<I>)"
-
-lemma "is_dist ((1/2)^($n+$m))\<^sub>e"
-  apply (simp add: is_dist_def is_prob_def is_sum_1_def)
-  apply (auto)
-  apply (simp add: power_le_one)
-  sledgehammer
 *)
+
 end

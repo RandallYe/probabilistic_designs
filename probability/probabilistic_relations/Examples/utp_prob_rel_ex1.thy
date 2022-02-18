@@ -120,7 +120,7 @@ lemma dwta_attack_status:
     = prel_of_rfrel (       \<guillemotleft>p\<guillemotright> * \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e + 
                      (1 - \<guillemotleft>p\<guillemotright>)* \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e
                   )\<^sub>e"
-  apply (simp add: prel_left_one_point)
+  apply (simp add: prel_seqcomp_left_one_point)
   apply (simp add: passigns_def pchoice_def)
   apply (simp add: prel_set_conv_assign)
   apply (subst prel_set_conv_pchoice')
@@ -161,7 +161,7 @@ lemma dwta_simp: "dwta = prel_of_rfrel (
   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   by (rel_auto)
 
-lemma "set_of_prel dwta ;\<^sub>f (\<lbrakk>r\<^sup>< = C\<rbrakk>\<^sub>\<I>\<^sub>e) = (6/10)\<^sub>e"
+lemma "rfrel_of_prel dwta ;\<^sub>f (\<lbrakk>r\<^sup>< = C\<rbrakk>\<^sub>\<I>\<^sub>e) = (6/10)\<^sub>e"
   apply (simp add: dwta_simp)
   apply (subst prel_of_rfrel_inverse)
   apply (simp add: dist_defs expr_defs lens_defs)
@@ -186,6 +186,11 @@ subsubsection \<open> x \<close>
 alphabet state =
   x :: int
 
+term "x"
+term "x\<^sup><"
+term "x\<^sup>>"
+term "$x"
+term "$x\<^sup><"
 find_theorems name: "state."
 
 

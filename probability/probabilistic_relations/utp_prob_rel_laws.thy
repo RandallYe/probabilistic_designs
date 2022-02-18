@@ -68,6 +68,30 @@ lemma infsum_singleton_1:
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if v\<^sub>0 = c then (m::\<real>) else 0)) = m"
   by (smt (verit, del_insts) infsum_cong infsum_singleton)
 
+lemma infsum_constant_finite_states:
+  assumes "finite {s. b s}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if b v\<^sub>0 then (m::\<real>) else 0)) = m * card {s. b s}"
+  apply (rule infsumI)
+  apply (simp add: has_sum_def)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+  apply (rule_tac x = "{v. b v}" in exI)
+  apply (auto)
+  using assms apply force
+proof -
+  fix S::"\<bbbP> \<real>" and Y::"\<bbbP> 'a"
+  assume a1: "m * real (card (Collect b)) \<in> S"
+  assume a2: "finite Y" 
+  assume a3: " {v::'a. b v} \<subseteq> Y"
+  have "(\<Sum>v\<^sub>0::'a\<in>Y. if b v\<^sub>0 then m else (0::\<real>)) = (\<Sum>v\<^sub>0::'a\<in>{v::'a. b v}. if b v\<^sub>0 then m else (0::\<real>))"
+    by (smt (verit, best) DiffD2 a2 a3 mem_Collect_eq sum.mono_neutral_cong_right)
+  moreover have "... = m * card {s. b s}"
+    by auto
+  ultimately show "(\<Sum>v\<^sub>0::'a\<in>Y. if b v\<^sub>0 then m else (0::\<real>)) \<in> S"
+    using a1 by presburger
+qed
+
 lemma infsum_singleton_cond_unique:
   assumes "\<exists>! v. b v"
   shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if b v\<^sub>0 then (m::\<real>) else 0)) = m"
@@ -646,6 +670,154 @@ proof (rule ccontr)
     using prel_infsum_pcomp_sum_1 f6 assms(1) assms(2) by fastforce
 qed
 
+subsubsection \<open> Normalisation \<close>
+lemma prel_is_dist_normalisation:
+  assumes "\<forall>s. p s \<ge> 0"
+  assumes "\<forall>s. \<exists>s'. p (s, s') > 0"
+  assumes "\<forall>s. (\<lambda>v\<^sub>0. p (s, v\<^sub>0)) summable_on UNIV"
+  shows "is_final_distribution (\<^bold>N p)"
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (simp add: assms infsum_nonneg)
+  apply (smt (verit, best) UNIV_I assms(1) divide_le_eq_1 infsum_geq_element infsum_not_zero_summable)
+proof -
+  fix s\<^sub>1::"'a"
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0)) \<ge> p (s\<^sub>1, (SOME s'. p (s\<^sub>1, s') > 0))"
+    apply (rule infsum_geq_element)
+    using assms(1) apply blast
+    using assms(3) apply simp
+    by auto
+  have f2: "... > 0"
+    by (smt (verit, best) assms(2) f1 someI_ex)
+  have f3: "(\<Sum>\<^sub>\<infinity>s::'b. p (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0))) = 
+        (\<Sum>\<^sub>\<infinity>s::'b. (p (s\<^sub>1, s) * (1 / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0)))))"
+    by auto
+  also have f4: "... = (\<Sum>\<^sub>\<infinity>s::'b. p (s\<^sub>1, s)) * (1 / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0)))"
+    by (metis infsum_cmult_left')
+  also have f5: "... = 1"
+    using f2 by auto
+  thus "(\<Sum>\<^sub>\<infinity>s::'b. p (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0))) = (1::\<real>)"
+    using calculation by presburger
+qed
+
+(*
+lemma prel_is_dist_normalisation:
+  assumes "\<forall>s. p s \<ge> 0"
+  assumes "\<forall>s. \<exists>s'. p (s, s') > 0"
+  assumes "\<forall>s. (\<lambda>v\<^sub>0. p (s, v\<^sub>0)) summable_on UNIV"
+  assumes "wb_lens x"
+  shows "is_final_distribution (\<^bold>N\<^sub>\<alpha> x p)"
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (simp add: assms infsum_nonneg)
+proof -
+  fix s\<^sub>1::"'a" and s::"'b"
+  have f1: "\<exists>v. put\<^bsub>x\<^esub> s v = s"
+    apply (rule_tac x = "get\<^bsub>x\<^esub> s" in exI)
+    by (simp add: assms(4))
+  have f2: "p (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v::'c. p (s\<^sub>1, put\<^bsub>x\<^esub> s v))"
+    sledgehammer
+  show "p (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>v::'c. p (s\<^sub>1, put\<^bsub>x\<^esub> s v)) \<le> 1"
+next
+  fix s\<^sub>1::"'a"
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0)) \<ge> p (s\<^sub>1, (SOME s'. p (s\<^sub>1, s') > 0))"
+    apply (rule infsum_geq_element)
+    using assms(1) apply blast
+    using assms(3) apply simp
+    by auto
+  have f2: "... > 0"
+    by (smt (verit, best) assms(2) f1 someI_ex)
+  have f3: "(\<Sum>\<^sub>\<infinity>s::'b. p (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0))) = 
+        (\<Sum>\<^sub>\<infinity>s::'b. (p (s\<^sub>1, s) * (1 / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0)))))"
+    by auto
+  also have f4: "... = (\<Sum>\<^sub>\<infinity>s::'b. p (s\<^sub>1, s)) * (1 / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0)))"
+    by (metis infsum_cmult_left')
+  also have f5: "... = 1"
+    using f2 by auto
+  thus "(\<Sum>\<^sub>\<infinity>s::'b. p (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0))) = (1::\<real>)"
+    using calculation by presburger
+qed
+*)
+
+lemma prel_is_dist_uniform:
+  assumes "finite (A::'b set)"
+  assumes "vwb_lens x"
+  assumes "A \<noteq> {}"
+  shows "is_final_distribution (uniform_dist x A)"
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (simp add: infsum_nonneg)
+  apply (smt (verit) divide_le_eq_1 infsum_0 infsum_geq_element infsum_not_exists)
+  apply (rel_auto)
+proof -
+  fix s\<^sub>1::"'a"
+  let ?f = "\<lambda>s. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 1::\<real> else (0::\<real>)) /
+          (\<Sum>\<^sub>\<infinity>v::'b. if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v then 1::\<real> else (0::\<real>))"
+  have f0: "\<forall>s. ((\<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s) \<longrightarrow> 
+      (((1::\<real>) / (card {v. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v})) = ((1::\<real>) / (card A))))"
+    apply (auto)
+    apply (simp add: assms(2))
+    apply (subgoal_tac "{v::'b. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s\<^sub>1 v} = A")
+    apply (simp)
+    apply (subst set_eq_iff)
+    apply (auto)
+  proof (rule ccontr)
+    fix xa::"'b" and xb::"'b" and  xaa::"'b"
+    assume a1: "xa \<in> A"
+    assume a2: "xaa \<in> A"
+    assume a3: "put\<^bsub>x\<^esub> s\<^sub>1 xaa = put\<^bsub>x\<^esub> s\<^sub>1 xb"
+    assume a4: "\<not> xb \<in> A"
+    from a2 a4 have "xaa \<noteq> xb"
+      by auto
+    then have "put\<^bsub>x\<^esub> s\<^sub>1 xaa \<noteq> put\<^bsub>x\<^esub> s\<^sub>1 xb"
+      using assms(2) by (meson vwb_lens_wb wb_lens_weak weak_lens.view_determination)
+    thus "False"
+      using a3 by blast
+  qed
+  have f0': "finite {put\<^bsub>x\<^esub> s\<^sub>1 xa | xa. xa \<in> A}"
+    apply (rule finite_image_set)
+    using assms(1) by auto
+  have f0'': "finite {s. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s}"
+    using f0' by (smt (verit, del_insts) Collect_cong)
+  thm "inj_on_iff_eq_card"
+  have ff0: "inj_on (\<lambda>xa. put\<^bsub>x\<^esub> s\<^sub>1 xa) A"
+    by (meson assms(2) inj_onI vwb_lens_wb wb_lens_def weak_lens.view_determination)
+  then have ff1: "card ((\<lambda>xa. put\<^bsub>x\<^esub> s\<^sub>1 xa) ` A ) = card A"
+    using card_image by blast
+  have ff2: "{s. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s} = ((\<lambda>xa. put\<^bsub>x\<^esub> s\<^sub>1 xa) ` A )"
+    by blast
+  have f1: "(\<Sum>\<^sub>\<infinity>s::'a. ?f s) = (\<Sum>\<^sub>\<infinity>s::'a. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 1::\<real> else (0::\<real>)) 
+      / (card {v. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v}))"
+    apply (subst infsum_constant_finite_states)
+    apply (subst finite_Collect_bex)
+    apply (simp add: assms(1))
+    apply (auto)
+    apply (subgoal_tac "\<forall>xa. (put\<^bsub>x\<^esub> s\<^sub>1 y = put\<^bsub>x\<^esub> s xa) \<longrightarrow> y = xa")
+    apply (smt (verit, ccfv_SIG) assms(1) mem_Collect_eq rev_finite_subset subset_iff)
+    using weak_lens.view_determination vwb_lens_wb wb_lens_weak assms(2) by metis
+  also have f2: "... = (\<Sum>\<^sub>\<infinity>s::'a. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 
+                ((1::\<real>) / (card {v. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v}))
+              else (0::\<real>)))"
+    apply (rule infsum_cong)
+    by simp
+  also have f3: "... = (\<Sum>\<^sub>\<infinity>s::'a. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 
+                ((1::\<real>) / (card A)) else (0::\<real>)))"
+    apply (rule infsum_cong)
+    using f0 by presburger
+  also have f4: "... = ((1::\<real>) / (card A)) * (card {s. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s})"
+    apply (rule infsum_constant_finite_states)
+    using f0'' by blast
+  also have f5: "... = ((1::\<real>) / (card A)) * (card A)"
+    using ff1 ff2 by presburger
+  also have f6: "... = 1"
+    by (simp add: assms(1) assms(3))
+  show "(\<Sum>\<^sub>\<infinity>s::'a.
+          (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 1::\<real> else (0::\<real>)) /
+          (\<Sum>\<^sub>\<infinity>v::'b. if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v then 1::\<real> else (0::\<real>))) =
+       (1::\<real>)"
+    using calculation f6 by presburger
+qed
+
 subsubsection \<open> Parallel Composition \<close>
 text \<open> We should consider two cases: 
   @{text "\<exists>s'. p (s\<^sub>1, s') > 0 \<and> q (s\<^sub>1, s') > 0"}
@@ -653,6 +825,9 @@ or
   @{text "\<not>\<exists>s'. p (s\<^sub>1, s') > 0 \<and> q (s\<^sub>1, s') > 0"}
 \<close>
 
+text \<open> We use the comparison test (@{url "https://en.wikipedia.org/wiki/Direct_comparison_test"}, 
+more tests here @{url "https://en.wikipedia.org/wiki/Convergence_tests"})  to 
+prove the convergence of this product of two functions. \<close>
 lemma prel_joint_prob_summable_on_product: 
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
@@ -1206,13 +1381,13 @@ lemma prel_pchoice_assoc:
 
 subsubsection \<open> Parallel composition \<close>
 
-lemma prel_parallel_assoc:
+theorem prel_parallel_assoc:
   "(P \<parallel> Q) \<parallel> R = P \<parallel> (Q \<parallel> R)"
   apply (simp add: prel_defs)
   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   oops
 
-lemma prel_parallel_commute:
+theorem prel_parallel_commute:
   fixes P::"'a phrel"
   shows "P \<parallel> Q = Q \<parallel> P"
   apply (simp add: prel_defs)
