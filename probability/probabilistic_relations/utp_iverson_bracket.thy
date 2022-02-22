@@ -51,7 +51,7 @@ definition nat_of_real_1 :: "real \<Rightarrow> nat" where
 expr_ctr iverson_bracket
 
 lemma iverson_bracket_mono: "\<lbrakk> (P)\<^sub>u \<sqsupseteq> (Q)\<^sub>u \<rbrakk> \<Longrightarrow> \<lbrakk>P\<rbrakk>\<^sub>\<I> \<le> \<lbrakk>Q\<rbrakk>\<^sub>\<I>"
-  by (expr_auto add:  Collect_mono_iff le_funI ref_by_def)
+  by (expr_auto add:  Collect_mono_iff le_funI ref_by_set_def)
 
 term "\<lbrakk>P\<rbrakk>\<^sub>\<I>"
 term "(0.5*\<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"

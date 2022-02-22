@@ -59,9 +59,10 @@ definition dist_norm_alpha::"('v \<Longrightarrow> 's\<^sub>2) \<Rightarrow> (re
 
 expr_ctr dist_norm_alpha dist_norm
 
-definition uniform_dist where
+definition uniform_dist:: "('b \<Longrightarrow> 's) \<Rightarrow> \<bbbP> 'b \<Rightarrow> (real, 's \<times> 's) expr" (infix "\<^bold>\<U>" 48) where
 [dist_defs]: "uniform_dist x A = \<^bold>N\<^sub>\<alpha> x (\<lbrakk>\<lbrakk>\<Union> v \<in> A. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e)"
 
+term "x \<^bold>\<U> A"
 (*
 alphabet state = 
   n :: nat
