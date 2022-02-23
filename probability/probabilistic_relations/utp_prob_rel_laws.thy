@@ -22,7 +22,48 @@ lemma finite_image_set2'':
   apply auto
   using assms(1) assms(2) by blast
 
+
+lemma card_1_singleton:
+  assumes "\<exists>!x. P x"
+  shows "card {x. P x} = Suc (0::\<nat>)"
+  using assms card_1_singleton_iff by fastforce
+
+lemma card_0_singleton:
+  assumes "\<not>(\<exists>x. P x)"
+  shows "card {x. P x} = (0::\<nat>)"
+  using assms by auto
+
+lemma card_0_false:
+  shows "card {x. False} = (0::\<real>)"
+  by simp
+
 subsection \<open> Laws of @{text infsum} \<close>
+lemma has_sum_cdiv_left:
+  fixes f :: "'a \<Rightarrow> \<real>"
+  assumes \<open>has_sum f A a\<close>
+  shows "has_sum (\<lambda>x. f x / c) A (a / c)"
+  apply (simp only : divide_inverse)
+  using assms has_sum_cmult_left by blast
+
+lemma infsum_cdiv_left:
+  fixes f :: "'a \<Rightarrow> \<real>"
+  assumes \<open>c \<noteq> 0 \<Longrightarrow> f summable_on A\<close>
+  shows "infsum (\<lambda>x. f x / c) A = infsum f A / c"
+  apply (simp only : divide_inverse)
+  using infsum_cmult_left' by blast
+
+lemma summable_on_cdiv_left:
+  fixes f :: "'a \<Rightarrow> \<real>"
+  assumes \<open>f summable_on A\<close>
+  shows "(\<lambda>x. f x / c) summable_on A"
+  using assms summable_on_def has_sum_cdiv_left by blast
+
+lemma summable_on_cmult_left':
+  fixes f :: "'a \<Rightarrow> \<real>"
+  assumes \<open>c \<noteq> 0\<close>
+  shows "(\<lambda>x. f x / c) summable_on A \<longleftrightarrow> f summable_on A"
+  apply (simp only : divide_inverse)
+  by (simp add: assms summable_on_cmult_left')
 
 lemma infsum_geq_element:
   fixes f :: "'a \<Rightarrow> \<real>"
@@ -213,6 +254,17 @@ lemma infsum_not_zero_summable:
   assumes "x \<noteq> 0"
   shows "f summable_on A"
   using assms(1) assms(2) infsum_not_exists by blast
+
+lemma infsum_mult_subset_left_summable: 
+  assumes "P summable_on UNIV"
+  shows "(\<lambda>v\<^sub>0::'a. ((if b v\<^sub>0 then (m::\<real>) else 0) * (P v\<^sub>0))) summable_on UNIV"
+  apply (subgoal_tac "(\<lambda>v\<^sub>0. (if b v\<^sub>0 then (m::\<real>) else 0) * (P v\<^sub>0)) summable_on UNIV
+    \<longleftrightarrow> (\<lambda>x::'a. m * P x) summable_on {x. b x}")
+  apply (metis assms subset_UNIV summable_on_cmult_right summable_on_subset_banach)
+  apply (rule summable_on_cong_neutral)
+  apply blast
+  apply simp
+  by auto
 
 subsection \<open> Laws of type @{type prel} \<close>
 lemma prel_is_dist: "is_final_distribution (rfrel_of_prel (P::'a phrel))"
@@ -1530,22 +1582,55 @@ theorem uniform_dist_altdef':
   shows "rfrel_of_prel (prel_of_rfrel (x \<^bold>\<U> A)) = (\<lbrakk>\<lbrakk>\<Union> v \<in> A. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e / card \<guillemotleft>A\<guillemotright>)\<^sub>e"
   by (metis assms(1) assms(2) assms(3) prel_set_conv_uniform_dist uniform_dist_altdef)
 
-term "(\<lambda>v. if \<guillemotleft>v\<guillemotright> \<in> \<guillemotleft>A\<guillemotright> then 
-      (((1)/card (\<guillemotleft>A\<guillemotright>)) * ([ x\<^sup>< \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> @(rfrel_of_prel P)))
-      else 0
-    )\<^sub>e"
-
 theorem prel_uniform_dist_left:
-  assumes "finite (A::'b set)"
+  assumes "finite (A::'a set)"
   assumes "vwb_lens x"
   assumes "A \<noteq> {}"
-  shows "(prel_of_rfrel (x \<^bold>\<U> A)) ; P = P"
+  shows "(prel_of_rfrel (x \<^bold>\<U> A)) ; P = 
+    prel_of_rfrel ((\<Sum>v \<in> \<guillemotleft>A\<guillemotright>. (([ x\<^sup>< \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> @(rfrel_of_prel P)))) / card (\<guillemotleft>A\<guillemotright>))\<^sub>e"
   apply (simp add: prel_defs)
   apply (subst uniform_dist_altdef')
-     apply (simp_all add: assms)
+  apply (simp_all add: assms)
   apply (expr_auto)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   apply (rel_auto)
-  oops
+proof -
+  fix a and b :: "'b"
+  let ?fl_1 = "\<lambda>v\<^sub>0. (if \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0 then 1::\<real> else (0::\<real>))"
+  let ?fl_2 = "\<lambda>v\<^sub>0. rfrel_of_prel P (v\<^sub>0, b) / real (card A)"
+
+  have "finite {put\<^bsub>x\<^esub> a xa | xa. xa \<in> A}"
+    apply (rule finite_image_set)
+    using assms(1) by auto
+  then have finite_states: "finite {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}"
+    by (smt (verit, del_insts) Collect_cong)
+
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?fl_1 v\<^sub>0 * rfrel_of_prel P (v\<^sub>0, b) / real (card A))
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?fl_1 v\<^sub>0 * ?fl_2 v\<^sub>0)"
+    by auto
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. ?fl_2 v\<^sub>0)"
+    apply (subst infsum_mult_subset_left)
+    by simp
+  also have "... = (\<Sum> v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. ?fl_2 v\<^sub>0)"
+    apply (rule infsum_finite)
+    by (simp add: finite_states)
+  also have fl: "... = (\<Sum> v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. rfrel_of_prel P (v\<^sub>0, b)) / real (card A)"
+    by (metis (mono_tags, lifting) sum.cong sum_divide_distrib)
+
+  have inj_on_A: "inj_on (\<lambda>xa. put\<^bsub>x\<^esub> a xa) A"
+    by (meson assms(2) inj_onI vwb_lens_wb wb_lens_def weak_lens.view_determination)
+
+  have frl: "(\<Sum> v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. rfrel_of_prel P (v\<^sub>0, b)) 
+    = (\<Sum>v::'a\<in>A. rfrel_of_prel P (put\<^bsub>x\<^esub> a v, b))"
+    apply (rule sum.reindex_cong[where l = "(\<lambda>xa. put\<^bsub>x\<^esub> a xa)"])
+    apply (simp add: inj_on_A)
+     apply blast
+    by simp
+
+  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?fl_1 v\<^sub>0 * rfrel_of_prel P (v\<^sub>0, b) / real (card A)) = 
+        (\<Sum>v::'a\<in>A. rfrel_of_prel P (put\<^bsub>x\<^esub> a v, b)) / real (card A)"
+    using calculation fl frl by presburger
+qed
 
 subsubsection \<open> Parallel composition \<close>
 

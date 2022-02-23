@@ -82,21 +82,21 @@ lemma record_update_simp:
   apply (metis DWTA_state.select_convs(2) DWTA_state.surjective DWTA_state.update_convs(2))
   by (simp add: assms)
 
-lemma card_1_singleton:
-  assumes "\<exists>!x. P x"
-  shows "card {x. P x} = Suc (0::\<nat>)"
-  using assms card_1_singleton_iff by fastforce
+lemma record_neq_p_c:
+  assumes "a\<^sub>1 \<noteq> a\<^sub>2 \<or> b\<^sub>1 \<noteq> b\<^sub>2"
+  assumes "r\<^sub>1\<lparr>p\<^sub>v := a\<^sub>1, c\<^sub>v := b\<^sub>1\<rparr> = r\<^sub>1\<lparr>p\<^sub>v := a\<^sub>2, c\<^sub>v := b\<^sub>2\<rparr>"
+  shows "False"
+  by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(1) DWTA_state.update_convs(2) assms(1) assms(2))
 
-lemma card_0_singleton:
-  assumes "\<not>(\<exists>x. P x)"
-  shows "card {x. P x} = (0::\<nat>)"
-  using assms by auto
-
-lemma card_0_false:
-  shows "card {x. False} = (0::\<real>)"
-  by simp
-
-find_theorems name:"fun_eq_iff"
+text \<open> Below we illustrate the simplification of INIT using two ways: 
+\begin{itemize}
+  \item @{text "INIT_simp"}: without @{thm "prel_uniform_dist_left"}. 
+        We need to deal with infinite summation and cardinality.
+  \item @{text "INIT_simp'"}: with @{thm "prel_uniform_dist_left"}.
+        We mainly deal with conditional and propositional logic.
+\end{itemize}
+1) 
+\<close>
 lemma INIT_simp: "INIT = prel_of_rfrel ((\<lbrakk>p\<^sup>> \<in> {0, 1, 2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0, 1, 2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = m\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) / 9)\<^sub>e"
   apply (simp add: INIT_def INIT_p_def INIT_c_def)
   apply (simp add: prel_defs)
@@ -169,6 +169,91 @@ proof -
   show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state. ?lhs_1 v\<^sub>0 / (9::\<real>)) = ?rhs / (9::\<real>) "
     apply (simp only: fr fl)
     using ff1 calculation fl by linarith
+qed
+
+lemma conditionals_combined:
+  assumes "b\<^sub>1 \<and> b\<^sub>2 = False"
+  shows "(if b\<^sub>1 then aa else 0::\<real>) + (if b\<^sub>2 then aa else 0) = (if b\<^sub>1 \<or> b\<^sub>2 then aa else 0)"
+  by (simp add: assms)
+
+lemma INIT_simp': "INIT = prel_of_rfrel ((\<lbrakk>p\<^sup>> \<in> {0, 1, 2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0, 1, 2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = m\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) / 9)\<^sub>e"
+  apply (simp add: INIT_def INIT_p_def INIT_c_def)
+  apply (simp add: prel_uniform_dist_left)
+  apply (simp add: uniform_dist_altdef')
+  apply (expr_auto add: rel)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (simp only: fun_eq_iff)
+  apply (rule allI)
+proof -
+  fix x :: "DWTA_state \<times> DWTA_state"
+  let ?lhs = "((if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> 
+            fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x then 1::\<real> else (0::\<real>)) /
+        (3::\<real>) +
+        ((if fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or>
+             fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x
+          then 1::\<real> else (0::\<real>)) /
+         (3::\<real>) +
+         (if fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> 
+            fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x then 1::\<real> else (0::\<real>)) /
+         (3::\<real>))) /
+       (3::\<real>)"
+  let ?rhs = "(if p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+       (if c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+       (if m\<^sub>v (snd x) = m\<^sub>v (fst x) then 1::\<real> else (0::\<real>)) /
+       (9::\<real>)"
+  let ?rhs_1 = "(if (p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>)) \<and>
+       (c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>)) \<and>
+       (m\<^sub>v (snd x) = m\<^sub>v (fst x)) then 1::\<real> else (0::\<real>)) / (9::\<real>)"
+  have rhs_1: "?rhs = ?rhs_1"
+    by force
+  have lhs_1: "?lhs = ((if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
+         then 1::\<real> else (0::\<real>)) +
+        (if fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or>
+             fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x
+          then 1::\<real> else (0::\<real>)) +
+         (if fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
+          then 1::\<real> else (0::\<real>))) / (9::\<real>)"
+    by force
+  have "((if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
+         then 1::\<real> else (0::\<real>)) +
+        (if fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or>
+             fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x
+          then 1::\<real> else (0::\<real>)) +
+         (if fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
+          then 1::\<real> else (0::\<real>))) = 
+      (if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
+          fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x 
+          then 1::\<real> else (0::\<real>)) + (if fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
+          then 1::\<real> else (0::\<real>))"
+    apply (simp add: conditionals_combined)
+    apply auto
+    by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(1) DWTA_state.update_convs(2) One_nat_def one_neq_zero)+
+  also have lhs_2: "... =  
+      (if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
+          fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
+          fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
+          then 1::\<real> else (0::\<real>))"
+    apply (simp add: conditionals_combined)
+    apply auto
+    using record_neq_p_c apply (metis zero_neq_numeral)+
+    using record_neq_p_c by (metis n_not_Suc_n numeral_2_eq_2)+
+
+  have lhs_rhs: "(if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
+          fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
+          fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
+          then 1::\<real> else (0::\<real>)) = (if (p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>)) \<and>
+       (c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>)) \<and>
+       (m\<^sub>v (snd x) = m\<^sub>v (fst x)) then 1::\<real> else (0::\<real>))"
+    apply (rule if_cong)
+    apply (rule iffI)
+    apply (rule conjI)+
+    apply (smt (z3) DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(1) DWTA_state.update_convs(2))
+    apply (smt (z3) DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(1) DWTA_state.update_convs(2))
+    apply (metis record_update_simp)
+    by simp+
+  show "?lhs = ?rhs "
+    apply (simp only: lhs_1 rhs_1)
+    using calculation lhs_2 lhs_rhs by presburger
 qed
 
 end
