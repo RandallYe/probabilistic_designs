@@ -16,9 +16,11 @@ alphabet DWTA_state =
   c :: nat
   m :: nat
 
+term "p"
 term "p\<^sup>>"
 term "p\<^sup><"
 term "$p\<^sup>>"
+term "$p"
 
 term "\<^bold>N \<lbrakk>p\<^sup>> \<in> {0, 1, 2} \<and> c\<^sup>> = c\<^sup>< \<and> m\<^sup>> = m\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e"
 term "\<^bold>N\<^sub>\<alpha> x (\<lbrakk>p\<^sup>> \<in> {0, 1, 2} \<and> c\<^sup>> = c\<^sup>< \<and> m\<^sup>> = m\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e)"
@@ -26,9 +28,48 @@ term "((\<^bold>N\<^sub>\<alpha> p (\<lbrakk>p\<^sup>> \<in> {0, 1, 2}\<rbrakk>\
 
 term "(prel_of_rfrel (p \<^bold>\<U> {0, 1, 2}))"
 
+subsection \<open> Definitions \<close>
 definition INIT_p :: "DWTA_state phrel" where 
 "INIT_p = prel_of_rfrel (p \<^bold>\<U> {0, 1, 2})"
 
+definition INIT_c :: "DWTA_state phrel" where 
+"INIT_c = prel_of_rfrel (c \<^bold>\<U> {0, 1, 2})"
+
+definition INIT:: "DWTA_state phrel" where 
+"INIT = INIT_p ; INIT_c"
+
+term "(x)\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr>"
+find_theorems name:"DWTA_state"
+record x = i :: nat
+
+thm "DWTA_state.select_convs"
+thm "DWTA_state.surjective"
+thm "DWTA_state.update_convs"
+
+term "($c\<^sup>< = $p\<^sup><)\<^sub>e"
+term " (if c\<^sup>< = p\<^sup>< then II\<^sub>p else II)"
+term "m := ((c + 1) mod 3) :: DWTA_state phrel"
+term "(if\<^sub>p 1/2 then m := (($c + 1) mod 3) else m := (($c + 2) mod 3))"
+term "(m := ($c + 1) mod 3) :: DWTA_state phrel "
+
+(*
+definition MHA:: "DWTA_state phrel" where
+"MHA = pcond (c\<^sup>< = p\<^sup><)\<^sub>e (if\<^sub>p 1/2 then (m := ($c + 1) mod 3) else (m := ($c + 2) mod 3)) (m := 3 - $c - $p)"
+*)
+
+definition MHA:: "DWTA_state phrel" where
+"MHA = (if\<^sub>c c\<^sup>< = p\<^sup>< then 
+          (if\<^sub>p 1/2 then (m := ($c + 1) mod 3) else (m := ($c + 2) mod 3)) 
+        else 
+          (m := 3 - $c - $p)
+      ) ; II" (* No Change Strategy *)
+
+thm "MHA_def"
+
+definition IMHA where 
+"IMHA = INIT ; MHA"
+
+subsection \<open> @{text "INIT"} \<close>
 lemma infsum_alt_3: 
   "(\<Sum>\<^sub>\<infinity>v::\<nat>. if v = (0::\<nat>) \<or> Suc (0::\<nat>) = v \<or> v = (2::\<nat>) then 1::\<real> else (0::\<real>)) = (3::\<real>)"
   apply (simp add: infsum_constant_finite_states)
@@ -45,9 +86,6 @@ lemma INIT_p_simp:
   apply (rel_auto)
   by (simp_all add: infsum_alt_3)
 
-definition INIT_c :: "DWTA_state phrel" where 
-"INIT_c = prel_of_rfrel (c \<^bold>\<U> {0, 1, 2})"
-
 lemma INIT_c_simp: 
   "INIT_c = prel_of_rfrel ((\<lbrakk>p\<^sup>> = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0, 1, 2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = m\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) / 3)\<^sub>e"
   apply (simp add: INIT_c_def)
@@ -56,16 +94,6 @@ lemma INIT_c_simp:
   apply (rel_auto)
   by (simp_all add: infsum_alt_3)
 
-definition INIT:: "DWTA_state phrel" where 
-"INIT = INIT_p ; INIT_c"
-
-term "(x)\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr>"
-find_theorems name:"DWTA_state"
-record x = i :: nat
-
-thm "DWTA_state.select_convs"
-thm "DWTA_state.surjective"
-thm "DWTA_state.update_convs"
 
 (*
 lemma "\<lbrakk>r1\<lparr>c\<^sub>v := a\<rparr> = r2\<lparr>c\<^sub>v := b\<rparr>\<rbrakk> \<Longrightarrow> (a = b)"
@@ -256,4 +284,11 @@ proof -
     using calculation lhs_2 lhs_rhs by presburger
 qed
 
+subsection \<open> @{text "MHA"} \<close>
+lemma MHA_simp: "MHA = prel_of_rfrel (
+      (\<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> \<lbrakk>m := (c + 1) mod 3\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>\<^sub>e / 2) + 
+      (\<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> \<lbrakk>m := (c + 2) mod 3\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>\<^sub>e / 2) + 
+      (\<lbrakk>c\<^sup>< \<noteq> p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> \<lbrakk>m := 3 - c - p\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>\<^sub>e)
+    )\<^sub>e"
+  apply (simp only: MHA_def)
 end

@@ -267,7 +267,7 @@ lemma infsum_mult_subset_left_summable:
   by auto
 
 subsection \<open> Laws of type @{type prel} \<close>
-lemma prel_is_dist: "is_final_distribution (rfrel_of_prel (P::'a phrel))"
+lemma prel_is_dist: "is_final_distribution (rfrel_of_prel (P::('a, 'b) prel))"
   using rfrel_of_prel by force
 
 lemma prel_prob_sum1_summable:
@@ -583,6 +583,19 @@ lemma prel_is_dist_pchoice':
     apply (simp add: assms(3) prel_prob_sum1_summable(3) summable_on_cmult_right)
   by (simp add: assms(2) assms(3) prel_prob_sum1_summable(2))
 
+subsubsection \<open> Conditional choice \<close>
+
+lemma prel_is_dist_pcond: 
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "is_final_distribution (pcond_f p (\<lambda>(s, s'). b s) q)"
+  apply (simp add: dist_defs expr_defs, auto)
+  using assms(1) prel_prob_sum1_summable(1) apply blast
+  using assms(1) prel_prob_sum1_summable(1) apply blast
+  using assms(2) prel_prob_sum1_summable(1) apply blast
+  using assms(2) prel_prob_sum1_summable(1) apply blast
+  by (smt (verit, best) assms(1) assms(2) curry_conv infsum_cong is_dist_def is_sum_1_def)
+ 
 subsubsection \<open> Sequential composition \<close>
 
 lemma prel_cond_prob_abs_summable_on_product:
@@ -1094,6 +1107,15 @@ proof -
      apply (simp add: assms(1) convex_bound_le f1 f2)
 *)
 
+lemma prel_set_conv_pcond: 
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "rfrel_of_prel (prel_of_rfrel (pcond_f p (\<lambda>(s, s'). b s) q)) = (pcond_f p (\<lambda>(s, s'). b s) q)"
+  apply (subst prel_of_rfrel_inverse)
+  apply (simp)
+  using assms(1) assms(2) prel_is_dist_pcond apply blast
+  by simp
+
 lemma prel_set_conv_seqcomp: 
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
@@ -1446,30 +1468,30 @@ proof -
   have f5: "\<forall>s. ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * ((1::\<real>) - (w\<^sub>2\<^sup>\<Up>) s) = (1 - (r\<^sub>2\<^sup>\<Up>) s)"
     using assms(4) by (simp add: taut_def)
   have f6: "pchoice_f (rfrel_of_prel P) (w\<^sub>1\<^sup>\<Up>)
-    (\<lambda>\<s>::'a \<times> 'a. (w\<^sub>2\<^sup>\<Up>) \<s> * rfrel_of_prel Q \<s> + ((1::\<real>) - (w\<^sub>2\<^sup>\<Up>) \<s>) * rfrel_of_prel R \<s>) = 
-    (\<lambda>s::'a \<times> 'a. (w\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + 
+    (\<lambda>\<s>::'a \<times> 'b. (w\<^sub>2\<^sup>\<Up>) \<s> * rfrel_of_prel Q \<s> + ((1::\<real>) - (w\<^sub>2\<^sup>\<Up>) \<s>) * rfrel_of_prel R \<s>) = 
+    (\<lambda>s::'a \<times> 'b. (w\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + 
         ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * ((w\<^sub>2\<^sup>\<Up>) s * rfrel_of_prel Q s + ((1::\<real>) - (w\<^sub>2\<^sup>\<Up>) s) * rfrel_of_prel R s))"
     using SEXP_def by blast
-  then have f7: "... = (\<lambda>s::'a \<times> 'a. (w\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + 
+  then have f7: "... = (\<lambda>s::'a \<times> 'b. (w\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + 
         ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * (w\<^sub>2\<^sup>\<Up>) s * rfrel_of_prel Q s + ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * ((1::\<real>) - (w\<^sub>2\<^sup>\<Up>) s) * rfrel_of_prel R s)" 
     apply (simp add: distrib_left)
     by (simp add: add.assoc mult.commute mult.left_commute)
-  then have f8: "... = (\<lambda>s::'a \<times> 'a. (w\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + 
+  then have f8: "... = (\<lambda>s::'a \<times> 'b. (w\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + 
         ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * (w\<^sub>2\<^sup>\<Up>) s * rfrel_of_prel Q s + (1 - (r\<^sub>2\<^sup>\<Up>) s) * rfrel_of_prel R s)"
     using f5 by fastforce
   have f5': "\<forall>s. (r\<^sub>2\<^sup>\<Up>) s * (r\<^sub>1\<^sup>\<Up>) s = (w\<^sub>1\<^sup>\<Up>) s"
     using assms(5) by (simp add: taut_def)
   have f5'': "\<forall>s. (r\<^sub>2\<^sup>\<Up>) s * ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) = ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * (w\<^sub>2\<^sup>\<Up>) s"
     by (smt (verit, best) f5 f5' mult_cancel_left1 right_diff_distrib')
-  have f9: "pchoice_f (\<lambda>s::'a \<times> 'a. (r\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) * rfrel_of_prel Q s) (r\<^sub>2\<^sup>\<Up>) (rfrel_of_prel R) 
-    =  (\<lambda>s::'a \<times> 'a. (r\<^sub>2\<^sup>\<Up>) s * ((r\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) * rfrel_of_prel Q s) + 
+  have f9: "pchoice_f (\<lambda>s::'a \<times> 'b. (r\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) * rfrel_of_prel Q s) (r\<^sub>2\<^sup>\<Up>) (rfrel_of_prel R) 
+    =  (\<lambda>s::'a \<times> 'b. (r\<^sub>2\<^sup>\<Up>) s * ((r\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) * rfrel_of_prel Q s) + 
       ((1::\<real>) - (r\<^sub>2\<^sup>\<Up>) s) * rfrel_of_prel R s)"
     using SEXP_def by blast
-  then have f10: "... = (\<lambda>s::'a \<times> 'a. (r\<^sub>2\<^sup>\<Up>) s * (r\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + (r\<^sub>2\<^sup>\<Up>) s * ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) * rfrel_of_prel Q s + 
+  then have f10: "... = (\<lambda>s::'a \<times> 'b. (r\<^sub>2\<^sup>\<Up>) s * (r\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + (r\<^sub>2\<^sup>\<Up>) s * ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) * rfrel_of_prel Q s + 
       ((1::\<real>) - (r\<^sub>2\<^sup>\<Up>) s) * rfrel_of_prel R s)"
     apply (simp add: distrib_left)
     by (simp add: add.assoc mult.commute mult.left_commute)
-  then have f11: "... = (\<lambda>s::'a \<times> 'a. (w\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + 
+  then have f11: "... = (\<lambda>s::'a \<times> 'b. (w\<^sub>1\<^sup>\<Up>) s * rfrel_of_prel P s + 
         ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * (w\<^sub>2\<^sup>\<Up>) s * rfrel_of_prel Q s + (1 - (r\<^sub>2\<^sup>\<Up>) s) * rfrel_of_prel R s)"
     using f5' f5'' by fastforce
   show ?thesis
@@ -1477,7 +1499,7 @@ proof -
     apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
     apply (subst prel_set_conv_pchoice)
     using assms(2) apply (simp add: taut_def)
-    apply (simp add: prel_is_dist)+
+      apply (simp add: prel_is_dist)+
     apply (subst prel_set_conv_pchoice)
     using assms(3) apply (simp add: taut_def)
     apply (simp add: prel_is_dist)+

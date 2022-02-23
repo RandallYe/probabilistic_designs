@@ -155,10 +155,11 @@ term "((rfrel_of_prel P))"
 term "(r * @(rfrel_of_prel P) + (1 - r) * @(rfrel_of_prel  Q))\<^sub>e"
 
 subsubsection \<open> Probabilistic choice \<close>
-abbreviation pchoice_f ("(_ \<oplus>\<^sub>f\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where 
+abbreviation pchoice_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel" 
+("(_ \<oplus>\<^sub>f\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where 
 "pchoice_f P r Q \<equiv> (r * P + (1 - r) * Q)\<^sub>e"
 
-definition pchoice :: "('s, 's) prel \<Rightarrow> 's rfhrel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [prel_defs]: "pchoice P r Q = prel_of_rfrel (pchoice_f (rfrel_of_prel P) r (rfrel_of_prel Q))"
 
@@ -188,9 +189,23 @@ abbreviation lift_pre where "lift_pre r \<equiv> (\<lambda>(s, s'). r s)"
 notation lift_pre ("_\<^sup>\<Up>")
 expr_ctr lift_pre
 
+subsubsection \<open> Conditional choice \<close>
 (* conditional choice *)
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel" 
+("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
+"pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
+
 definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where 
-"pcond b P Q \<equiv> prel_of_rfrel (if b then @(rfrel_of_prel P) else @(rfrel_of_prel Q))\<^sub>e"
+[prel_defs]: "pcond b P Q \<equiv> prel_of_rfrel (pcond_f (rfrel_of_prel P) b (rfrel_of_prel Q))"
+
+syntax 
+  "_pcond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>c (_)/ then (_)/ else (_))" [0, 61, 60] 60) 
+
+translations
+  "_pcond b P Q" == "CONST pcond (b)\<^sub>e P Q"
+  "_pcond b P Q" <= "_pcond (b)\<^sub>e P Q"
+
+term "if\<^sub>c True then P else Q"
 
 subsubsection \<open> Sequential composition \<close>
 term "(rfrel_of_prel (P::('s phrel)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
