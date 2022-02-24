@@ -1076,10 +1076,30 @@ lemma prel_set_conv_pchoice:
   by (simp)
 
 lemma prel_set_conv_pchoice': 
+  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> 1"
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "rfrel_of_prel (prel_of_rfrel (pchoice_f p [(r\<^sup>\<Up>)]\<^sub>e q)) = pchoice_f p [(r\<^sup>\<Up>)]\<^sub>e q"
+  apply (subst prel_of_rfrel_inverse)
+  apply (simp)
+  using assms prel_is_dist_pchoice apply blast
+  by (simp)
+
+lemma prel_set_conv_pchoice_c: 
   assumes "0 \<le> r \<and> r \<le> 1"
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
   shows "rfrel_of_prel (prel_of_rfrel (pchoice_f p (\<lambda>s. r) q)) = (pchoice_f p (\<lambda>s. r) q)"
+  apply (subst prel_of_rfrel_inverse)
+  apply (simp)
+  using assms prel_is_dist_pchoice' apply blast
+  by (simp)
+
+lemma prel_set_conv_pchoice_c': 
+  assumes "0 \<le> r \<and> r \<le> 1"
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "rfrel_of_prel (prel_of_rfrel (pchoice_f p [(\<lambda>s. r)]\<^sub>e q)) = (pchoice_f p [(\<lambda>s. r)]\<^sub>e q)"
   apply (subst prel_of_rfrel_inverse)
   apply (simp)
   using assms prel_is_dist_pchoice' apply blast
@@ -1110,7 +1130,7 @@ proof -
 lemma prel_set_conv_pcond: 
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
-  shows "rfrel_of_prel (prel_of_rfrel (pcond_f p (\<lambda>(s, s'). b s) q)) = (pcond_f p (\<lambda>(s, s'). b s) q)"
+  shows "rfrel_of_prel (prel_of_rfrel (pcond_f p (b\<^sup>\<Up>) q)) = (pcond_f p (b\<^sup>\<Up>) q)"
   apply (subst prel_of_rfrel_inverse)
   apply (simp)
   using assms(1) assms(2) prel_is_dist_pcond apply blast
@@ -1572,6 +1592,14 @@ lemma prel_pchoice_assoc:
   apply (subst prel_set_conv_pchoice)
   by (auto)
 *)
+
+subsubsection \<open> Conditional choice \<close>
+lemma prel_pcond_altdef: 
+  shows "if\<^sub>c b then P else Q = prel_of_rfrel (\<lbrakk>b\<rbrakk>\<^sub>\<I> * @(rfrel_of_prel P) + \<lbrakk>\<not>b\<rbrakk>\<^sub>\<I>\<^sub>e * @(rfrel_of_prel Q))\<^sub>e"
+  apply (simp add: prel_defs)
+  apply (expr_auto)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  by auto
 
 subsubsection \<open> Normalisation \<close>
 theorem uniform_dist_altdef:

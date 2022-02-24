@@ -121,9 +121,10 @@ lemma dwta_attack_status:
                      (1 - \<guillemotleft>p\<guillemotright>)* \<lbrakk> $r\<^sup>> = \<guillemotleft>attacker\<guillemotright> \<and> $a\<^sup>> = F \<rbrakk>\<^sub>\<I>\<^sub>e
                   )\<^sub>e"
   apply (simp add: prel_seqcomp_left_one_point)
+  apply (simp add: pchoice_def)
   apply (simp add: passigns_def pchoice_def)
   apply (simp add: prel_set_conv_assign)
-  apply (subst prel_set_conv_pchoice')
+  apply (subst prel_set_conv_pchoice_c)
   apply (simp add: assms)
   apply (metis prel_is_dist prel_set_conv_assign)
   apply (metis prel_is_dist prel_set_conv_assign)
