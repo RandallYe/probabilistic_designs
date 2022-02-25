@@ -910,7 +910,7 @@ proof -
        (1::\<real>)"
     using calculation by presburger
 qed
-
+(* TODO: If A is empty. *)
 lemma uniform_dist_is_uniform:
   assumes "finite (A::'b set)"
   assumes "vwb_lens x"
