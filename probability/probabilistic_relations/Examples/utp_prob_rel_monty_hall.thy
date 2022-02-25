@@ -516,12 +516,17 @@ next
     apply (erule conjE)+
     apply (rule conjI)
     apply (metis DWTA_state.select_convs(1) mod_Suc_le_divisor numeral_2_eq_2 numeral_3_eq_3)
-      apply (rule conjI)
-       apply (metis DWTA_state.select_convs(2) mod_Suc_le_divisor numeral_2_eq_2 numeral_3_eq_3)
-      apply (rule conjI)
-       apply (metis DWTA_state.select_convs(3))
-      apply (rule conjI)
-       apply (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2))
+    apply (rule conjI)
+    apply (metis DWTA_state.select_convs(2) mod_Suc_le_divisor numeral_2_eq_2 numeral_3_eq_3)
+    apply (rule conjI)
+    apply (metis DWTA_state.select_convs(3))
+    apply (rule conjI)
+    apply (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2))
+    defer
+    apply (metis DWTA_state.surjective DWTA_state.update_convs(3))
+    apply (smt (verit, best) Collect_empty_eq DWTA_state.select_convs(1) DWTA_state.select_convs(2) 
+        DWTA_state.select_convs(3) DWTA_state.surjective DWTA_state.update_convs(3) card_eq_0_iff 
+        less_2_cases less_numeral_extra(3) order_le_less)
   proof -
     assume a1: "m\<^sub>v (snd x) = Suc (c\<^sub>v (snd x)) mod (3::\<nat>)"
     assume a2: "c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>)"
@@ -553,6 +558,7 @@ next
         m\<^sub>v = m\<^sub>v (fst x)\<rparr>) mod (3::\<nat>)\<rparr> = snd x"
       using calculation by presburger
   qed
+
 (* lhs_2 *)
   have lhs_2_f0: "(\<lambda>v\<^sub>0. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_p v\<^sub>0 * ?m_2_mod v\<^sub>0) = 
       (\<lambda>v\<^sub>0. (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) \<and>  c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) \<and> m\<^sub>v v\<^sub>0 = m\<^sub>v (fst x) \<and> c\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 \<and> 
@@ -565,6 +571,60 @@ next
           "{s::DWTA_state. p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v (fst x) \<and> c\<^sub>v s = p\<^sub>v s}"])
     apply (simp add: lhs_1_set_A_finite)
     by blast
+
+  have lhs_2_infsum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_p v\<^sub>0 * ?m_2_mod v\<^sub>0)
+    = ?rhs_1_2"
+    apply (simp only: lhs_2_f0)
+    apply (subst infsum_constant_finite_states)
+    apply (rule rev_finite_subset[where B=
+          "{s::DWTA_state. p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v (fst x) \<and> c\<^sub>v s = p\<^sub>v s}"])
+    apply (simp add: lhs_1_set_A_finite)
+    apply (blast)
+    apply (simp add: if_bool_eq_conj)
+    apply (rule conjI)
+    apply (rule impI)
+    apply (rule card_1_singleton)
+    apply (rule ex_ex1I)
+    apply (rule_tac x = "\<lparr>p\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), 
+      c\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), m\<^sub>v = m\<^sub>v (fst x) \<rparr>" in exI)
+    apply (erule conjE)+
+    apply (rule conjI)
+    apply (metis DWTA_state.select_convs(1) mod_Suc_le_divisor numeral_2_eq_2 numeral_3_eq_3)
+    apply (rule conjI)
+    apply (metis DWTA_state.select_convs(2) mod_Suc_le_divisor numeral_2_eq_2 numeral_3_eq_3)
+    apply (rule conjI)
+    apply (metis DWTA_state.select_convs(3))
+    apply (rule conjI)
+    apply (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2))
+    defer
+    apply (metis DWTA_state.surjective DWTA_state.update_convs(3))
+    apply (smt (verit, best) Collect_empty_eq DWTA_state.select_convs(1) DWTA_state.select_convs(2) 
+        DWTA_state.select_convs(3) DWTA_state.surjective DWTA_state.update_convs(3) card_eq_0_iff 
+        less_2_cases less_numeral_extra(3) order_le_less)
+  proof -
+    assume a1: "m\<^sub>v (snd x) = Suc (Suc (c\<^sub>v (snd x))) mod (3::\<nat>)"
+    assume a2: "c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>)"
+    assume a3: "p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>)"
+    assume a4: "c\<^sub>v (snd x) = p\<^sub>v (snd x)"
+
+    have "\<lparr>p\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), c\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), m\<^sub>v = m\<^sub>v (fst x)\<rparr>
+        \<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v \<lparr>p\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), c\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), m\<^sub>v = m\<^sub>v (fst x)\<rparr>)) mod (3::\<nat>)\<rparr>
+      = \<lparr>p\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), c\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), m\<^sub>v = m\<^sub>v (fst x)\<rparr>
+        \<lparr>m\<^sub>v := Suc (Suc (Suc (m\<^sub>v (snd x)) mod (3::\<nat>)) mod (3::\<nat>)) mod (3::\<nat>)\<rparr>"
+      by (metis DWTA_state.select_convs(2) DWTA_state.unfold_congs(3) mod_Suc_eq)
+    also have "... = \<lparr>p\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), c\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), m\<^sub>v = m\<^sub>v (fst x)\<rparr>
+        \<lparr>m\<^sub>v := (m\<^sub>v (snd x))\<rparr>"
+      by (simp add: a1 mod_Suc_eq)
+    also have "... = \<lparr>p\<^sub>v = c\<^sub>v (snd x), c\<^sub>v = c\<^sub>v (snd x), m\<^sub>v = (m\<^sub>v (snd x))\<rparr>"
+      by (smt (z3) DWTA_state.update_convs(3) Suc_mod_eq_add3_mod_numeral a1 a3 a4 
+          add_cancel_left_left divmod_algorithm_code(3) divmod_algorithm_code(4) mod_Suc mod_add_self1 
+          numeral_1_eq_Suc_0 numeral_2_eq_2 one_mod_two_eq_one plus_1_eq_Suc snd_divmod)
+    also have "... = snd x"
+      by (simp add: a4)
+    then show "\<lparr>p\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), c\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), m\<^sub>v = m\<^sub>v (fst x)\<rparr>
+        \<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v \<lparr>p\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), c\<^sub>v = Suc (m\<^sub>v (snd x)) mod (3::\<nat>), m\<^sub>v = m\<^sub>v (fst x)\<rparr>)) mod (3::\<nat>)\<rparr> = snd x"
+      using calculation by presburger
+  qed
 
 (* lhs_3 *)
   have lhs_3_f0: "(\<lambda>v\<^sub>0. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_n_p v\<^sub>0 * ?m_3_c_p v\<^sub>0) = 
@@ -592,20 +652,79 @@ next
     apply (simp add: lhs_3_set_A_finite)
     by blast
 
-  have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+  have lhs_3_infsum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_n_p v\<^sub>0 * ?m_3_c_p v\<^sub>0)
+    = ?rhs_1_3"
+    apply (simp only: lhs_3_f0)
+    apply (subst infsum_constant_finite_states)
+    apply (rule rev_finite_subset[where B=
+          "{s::DWTA_state. p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v (fst x) \<and> \<not>c\<^sub>v s = p\<^sub>v s}"])
+    apply (simp add: lhs_3_set_A_finite)
+    apply (blast)
+    apply (simp add: if_bool_eq_conj)
+    apply (rule conjI)
+    apply (rule impI)
+    apply (rule card_1_singleton)
+    apply (rule ex_ex1I)
+    apply (rule_tac x = "\<lparr>p\<^sub>v = (3::\<nat>) - (m\<^sub>v (snd x)) - c\<^sub>v (snd x), 
+      c\<^sub>v = (3::\<nat>) - (m\<^sub>v (snd x)) - p\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (fst x) \<rparr>" in exI)
+    apply (erule conjE)+
+    apply (rule conjI)
+    apply fastforce
+    apply (rule conjI)
+    apply fastforce
+    apply (rule conjI)
+    apply (simp)
+    apply (rule conjI)
+    apply fastforce
+    defer
+    apply (metis DWTA_state.surjective DWTA_state.update_convs(3))
+    apply (smt (verit, best) Collect_empty_eq DWTA_state.select_convs(1) DWTA_state.select_convs(2) 
+        DWTA_state.select_convs(3) DWTA_state.surjective DWTA_state.update_convs(3) card_eq_0_iff 
+        less_2_cases less_numeral_extra(3) order_le_less)
+  proof -
+    assume a1: "m\<^sub>v (snd x) = (3::\<nat>) - (c\<^sub>v (snd x) + p\<^sub>v (snd x))"
+    assume a2: "c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>)"
+    assume a3: "p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>)"
+    assume a4: "\<not> c\<^sub>v (snd x) = p\<^sub>v (snd x)"
+
+    have f0: "(3::\<nat>) - (((3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x)) + ((3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x)))
+        = (2 * m\<^sub>v (snd x)) + p\<^sub>v (snd x) + c\<^sub>v (snd x) - 3"
+      using a1 a2 a3 diff_zero by fastforce
+    also have f1: "... = 3 - p\<^sub>v (snd x) - c\<^sub>v (snd x)"
+      using a1 a2 a3 a4 by auto
+    have lhs_0: "\<lparr>p\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x), c\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (fst x)\<rparr>
+      \<lparr>m\<^sub>v := (3::\<nat>) - (c\<^sub>v \<lparr>p\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x), c\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (fst x)\<rparr> +
+        p\<^sub>v \<lparr>p\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x), c\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (fst x)\<rparr>)\<rparr>
+      = \<lparr>p\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x), c\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (fst x)\<rparr>
+      \<lparr>m\<^sub>v := (3::\<nat>) - (((3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x)) + ((3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x)))\<rparr>"
+      by force
+    have lhs_1: "... = \<lparr>p\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x), c\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (fst x)\<rparr>
+        \<lparr>m\<^sub>v := 3 - p\<^sub>v (snd x) - c\<^sub>v (snd x)\<rparr>"
+      using f0 f1 by presburger
+    have lhs_2: "... = \<lparr>p\<^sub>v = p\<^sub>v (snd x), c\<^sub>v = c\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (snd x)\<rparr>"
+      using DWTA_state.update_convs(3) a1 a2 a3 a4 add.commute add.right_neutral by fastforce
+    have lhs_3: "... = snd x"
+      by (simp add: a4)
+    show "\<lparr>p\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x), c\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (fst x)\<rparr>
+      \<lparr>m\<^sub>v := (3::\<nat>) - (c\<^sub>v \<lparr>p\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x), c\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (fst x)\<rparr> +
+        p\<^sub>v \<lparr>p\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - c\<^sub>v (snd x), c\<^sub>v = (3::\<nat>) - m\<^sub>v (snd x) - p\<^sub>v (snd x), m\<^sub>v = m\<^sub>v (fst x)\<rparr>)\<rparr> = snd x"
+      using lhs_0 lhs_1 lhs_2 lhs_3 by presburger
+  qed
+
+  have lhs_1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
           ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 *
           (?lhs_c_p v\<^sub>0 * ?m_1_mod v\<^sub>0 / (18::\<real>) +
            ?lhs_c_p v\<^sub>0 * ?m_2_mod v\<^sub>0 / (18::\<real>) +
            ?lhs_c_n_p v\<^sub>0 * ?m_3_c_p v\<^sub>0 / (9::\<real>)))"
     apply (rule infsum_cong)
     by (simp add: add_divide_distrib)
-  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+  also have lhs_2: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
           ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_p v\<^sub>0 * ?m_1_mod v\<^sub>0 / (18::\<real>) +
           ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_p v\<^sub>0 * ?m_2_mod v\<^sub>0 / (18::\<real>) +
           ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_n_p v\<^sub>0 * ?m_3_c_p v\<^sub>0 / (9::\<real>))"
     apply (rule infsum_cong)
     by simp
-  also have "... = 
+  also have lhs_3: "... = 
     (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_p v\<^sub>0 * ?m_1_mod v\<^sub>0 / (18::\<real>)) +
     (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_p v\<^sub>0 * ?m_2_mod v\<^sub>0 / (18::\<real>)) +
     (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_n_p v\<^sub>0 * ?m_3_c_p v\<^sub>0 / (9::\<real>))"
@@ -623,7 +742,7 @@ next
     apply (rule summable_on_cdiv_left)
     using lhs_2_summable apply blast
     by meson
-  also have "... = 
+  also have lhs_4: "... = 
     (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_p v\<^sub>0 * ?m_1_mod v\<^sub>0) / (18::\<real>) +
     (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_p v\<^sub>0 * ?m_2_mod v\<^sub>0) / (18::\<real>) +
     (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state. ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 * ?lhs_c_n_p v\<^sub>0 * ?m_3_c_p v\<^sub>0) / (9::\<real>)"
@@ -634,7 +753,8 @@ next
     apply (subst infsum_cdiv_left)
     using lhs_3_summable apply blast
     by simp
-  show "?lhs = ?rhs"
+  then show "?lhs = ?rhs"
+    using calculation lhs_1_infsum lhs_2_infsum lhs_3_infsum rhs_1_1 rhs_1_2 rhs_1_3 by presburger
 qed
 
 end
