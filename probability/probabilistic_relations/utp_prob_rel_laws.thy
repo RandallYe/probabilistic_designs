@@ -37,6 +37,11 @@ lemma card_0_false:
   shows "card {x. False} = (0::\<real>)"
   by simp
 
+lemma conditional_conds_conj: "\<forall>s. (if b\<^sub>1 s then (1::\<real>) else (0::\<real>)) * (if b\<^sub>2 s then (1::\<real>) else (0::\<real>)) = 
+    (if b\<^sub>1 s \<and> b\<^sub>2 s then 1 else 0)"
+  apply (rule allI)
+  by force
+
 subsection \<open> Laws of @{text infsum} \<close>
 lemma has_sum_cdiv_left:
   fixes f :: "'a \<Rightarrow> \<real>"
