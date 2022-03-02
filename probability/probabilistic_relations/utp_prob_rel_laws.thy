@@ -260,6 +260,11 @@ lemma infsum_not_zero_summable:
   shows "f summable_on A"
   using assms(1) assms(2) infsum_not_exists by blast
 
+lemma infsum_not_zero_is_summable:
+  assumes "infsum f A \<noteq> 0"
+  shows "f summable_on A"
+  using assms infsum_not_exists by blast
+
 lemma infsum_mult_subset_left_summable: 
   assumes "P summable_on UNIV"
   shows "(\<lambda>v\<^sub>0::'a. ((if b v\<^sub>0 then (m::\<real>) else 0) * (P v\<^sub>0))) summable_on UNIV"
@@ -725,6 +730,35 @@ lemma prel_infsum_pcomp_sum_1:
   apply (simp add: assms prel_cond_prob_infsum_pcomp_swap)
   apply (simp add: infsum_cmult_right')
   by (simp add: assms prel_prob_sum1_summable)
+
+lemma prel_infsum_pcomp_summable:
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "(\<lambda>s::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))) summable_on UNIV"
+  apply (rule infsum_not_zero_is_summable)
+  by (simp add: assms(1) assms(2) prel_infsum_pcomp_sum_1)
+
+lemma prel_infsum_pcomp_lessthan_1:
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "\<forall>s::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<le> 1"
+proof (rule allI, rule ccontr)
+  fix s::"'a"
+  assume a1: "\<not> ((\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<le> 1)"
+  then have f0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) > 1"
+    by simp
+  have "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) = (\<Sum>\<^sub>\<infinity>s::'a\<in>{s}\<union>(-{s}). \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
+    by force
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) + (\<Sum>\<^sub>\<infinity>s::'a\<in>(-{s}). \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
+    apply (subst infsum_Un_disjoint)
+    apply simp
+    apply (rule summable_on_subset_banach[where A="UNIV"])
+    by (simp_all add: prel_infsum_pcomp_summable assms(1) assms(2))
+  also have "... > 1"
+    by (smt (verit, del_insts) assms(1) assms(2) f0 infsum_nonneg mult_nonneg_nonneg prel_prob_sum1_summable(1))
+  then show "False"
+    using prel_infsum_pcomp_sum_1 assms(1) assms(2) calculation by fastforce
+  qed
 
 lemma prel_is_dist_pcomp: 
   assumes "is_final_distribution p"
@@ -1343,15 +1377,13 @@ theorem prel_right_one_point: "P ; prel_of_rfrel (\<lbrakk> ($x\<^sup>< = e\<^su
   sorry
 *)
 
-(* This is not a valid law.
+(* This is not a valid law. *)
+(*
 theorem prel_right_one_point: "P ; x := e = prel_of_rfrel (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(rfrel_of_prel P)))\<^sub>e"
-  apply (simp add: prel_defs expr_defs)
-  apply (subst prel_of_rfrel_inverse)
-
-  apply (simp add: dist_defs expr_defs)
-  apply (rel_auto)
-   apply (simp add: infsum_singleton)
-
+  apply (simp add: prel_defs)
+  apply (simp add: prel_set_conv_assign)
+  apply (expr_auto add: rel)
+  apply (simp add: infsum_mult_subset_right)
   apply (subst prel_of_rfrel_inject)
   apply (simp add: dist_defs expr_defs)
   apply (rel_auto)
@@ -1442,6 +1474,36 @@ lemma passign_pif_simp:
     defer
     apply (smt (verit) DiffE mult_eq_0_iff singleton_iff sum.not_neutral_contains_not_neutral)
 *)
+
+theorem prel_seqcomp_assoc: "P ; (Q ; R) = (P ; Q) ; R"
+  apply (simp add: prel_defs)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (subst prel_of_rfrel_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (simp add: infsum_nonneg prel_in_0_1')
+  apply (subst prel_infsum_pcomp_lessthan_1)
+  apply (simp add: prel_is_dist)+
+  apply (simp add: prel_infsum_pcomp_sum_1 prel_is_dist)
+  apply (subst prel_of_rfrel_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (simp add: infsum_nonneg prel_in_0_1')
+  apply (subst prel_infsum_pcomp_lessthan_1)
+  apply (simp add: prel_is_dist)+
+  apply (simp add: prel_infsum_pcomp_sum_1 prel_is_dist)
+  apply (expr_auto)
+proof -
+  fix a and b :: "'a"
+  let ?q = "\<lambda>(v\<^sub>0, b). (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b))"
+  
+  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rfrel_of_prel P (a, v\<^sub>0) *
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b))) =
+       (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel P (a, v\<^sub>0') * rfrel_of_prel Q (v\<^sub>0', v\<^sub>0)) 
+          * rfrel_of_prel R (v\<^sub>0, b))"
+    sorry
+  qed
+
+  
 subsubsection \<open> Probabilistic choice \<close>
 
 theorem prel_pchoice_commute: "if\<^sub>p r then P else Q = if\<^sub>p 1 - r then Q else P"
