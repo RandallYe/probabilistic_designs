@@ -60,11 +60,14 @@ subsection \<open> Probabilistic programming \<close>
   II, :=\<^sub>p, pif then else, ;, \<parallel> 
 *)
 
-(*
 (* deadlock: zero and not a distribution *)
-definition pzero :: "('s\<^sub>1, 's\<^sub>2) prel" ("0\<^sub>p") where
-[prel_defs]: "pzero = prel_of_rfrel (\<lambda> s. 0)"
+abbreviation zero_f ("0\<^sub>f") where
+  "zero_f \<equiv> (\<lambda> s. 0::\<real>)"
 
+definition pzero :: "('s\<^sub>1, 's\<^sub>2) prel" ("0\<^sub>p") where
+[prel_defs]: "pzero = prel_of_rfrel zero_f"
+
+(*
 lemma deadlock_always: "`@(deadlock_state pzero)`"
   apply (simp add: prel_defs)
   by (simp add: is_prob_def prel_of_rfrel_inverse)

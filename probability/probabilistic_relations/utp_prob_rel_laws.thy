@@ -89,6 +89,15 @@ proof -
     using f0 f1 f2 by auto
 qed
 
+lemma infsum_geq_element':
+  fixes f :: "'a \<Rightarrow> \<real>"
+  assumes "\<forall>s. f s \<ge> 0"
+  assumes "f summable_on A"
+  assumes "s \<in> A"
+  assumes "infsum f A = x"
+  shows "f s \<le> x"
+  by (metis assms(1) assms(2) assms(3) assms(4) infsum_geq_element)
+
 lemma infsum_singleton: 
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if c = v\<^sub>0 then (m::\<real>) else 0)) = m"
   apply (rule infsumI)
@@ -542,6 +551,22 @@ proof -
     by (simp add: eventually_finite_subsets_at_top)
 qed
 
+lemma prel_product_summable:
+  assumes "is_final_distribution p"
+  assumes "\<forall>s. q s \<le> 1 \<and> q s \<ge> 0"
+  shows "(\<lambda>s::'a. p (x, s) * q (s, y)) summable_on UNIV"
+    apply (subst summable_on_iff_abs_summable_on_real)
+    apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s::'a. p (x, s)"])
+    apply (metis assms(1) prel_prob_sum1_summable(3) summable_on_iff_abs_summable_on_real)
+  using assms(2) by (smt (verit) SEXP_def mult_right_le_one_le norm_mult real_norm_def)
+
+lemma prel_product_summable':
+  assumes "is_final_distribution p"
+  assumes "is_final_distribution q"
+  shows "(\<lambda>s::'a. p (x, s) * q (s, y)) summable_on UNIV"
+  apply (rule prel_product_summable)
+  apply (simp add: assms(1))
+  using assms(2) prel_prob_sum1_summable(1) by blast
 
 subsection \<open> @{text "is_final_distribution"} \<close>
 
@@ -1494,16 +1519,68 @@ theorem prel_seqcomp_assoc: "P ; (Q ; R) = (P ; Q) ; R"
 proof -
   fix a and b :: "'a"
   let ?q = "\<lambda>(v\<^sub>0, b). (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b))"
-  
-  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rfrel_of_prel P (a, v\<^sub>0) *
-          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b))) =
-       (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rfrel_of_prel P (a, v\<^sub>0) *
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b)))"
+  let ?lhs' = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.(\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a.  
+      rfrel_of_prel P (a, v\<^sub>0) * rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b)))"
+  let ?rhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
           (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel P (a, v\<^sub>0') * rfrel_of_prel Q (v\<^sub>0', v\<^sub>0)) 
           * rfrel_of_prel R (v\<^sub>0, b))"
-    sorry
-  qed
+  let ?rhs' = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. 
+          rfrel_of_prel P (a, v\<^sub>0') * rfrel_of_prel Q (v\<^sub>0', v\<^sub>0) * rfrel_of_prel R (v\<^sub>0, b)))"
 
-  
+  have lhs_1: "(\<forall>v\<^sub>0::'a. rfrel_of_prel P (a, v\<^sub>0) *
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b))
+      = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. 
+          rfrel_of_prel P (a, v\<^sub>0) * rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b)))"
+    apply (rule allI)
+    by (metis (no_types, lifting) ab_semigroup_mult_class.mult_ac(1) infsum_cmult_right' infsum_cong)
+  then have lhs_eq: "?lhs = ?lhs'"
+    by presburger
+
+  have rhs_1: "(\<forall>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel P (a, v\<^sub>0') * rfrel_of_prel Q (v\<^sub>0', v\<^sub>0)) 
+          * rfrel_of_prel R (v\<^sub>0, b)
+      = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. 
+          rfrel_of_prel P (a, v\<^sub>0') * rfrel_of_prel Q (v\<^sub>0', v\<^sub>0) * rfrel_of_prel R (v\<^sub>0, b)))"
+    apply (rule allI)
+    by (metis (mono_tags, lifting) infsum_cmult_left' infsum_cong)
+  then have rhs_eq: "?rhs = ?rhs'"
+    by presburger
+
+  have lhs_rhs_eq: "?lhs' = ?rhs'"
+    apply (rule infsum_swap_banach)
+    apply (subst summable_on_iff_abs_summable_on_real)
+    apply (subst abs_summable_on_Sigma_iff)
+    apply (rule conjI)
+    apply (auto)
+    apply (subst abs_of_nonneg)
+    apply (simp add: prel_in_0_1')
+    apply (subst mult.assoc)
+    apply (rule summable_on_cmult_right)
+    apply (rule prel_product_summable')
+    apply (simp add: prel_is_dist)+
+    apply (subst abs_of_nonneg)
+    apply (subst abs_of_nonneg)
+    apply (simp add: prel_in_0_1')
+    apply (simp add: infsum_nonneg prel_in_0_1')
+    apply (subst abs_of_nonneg)
+    apply (simp add: prel_in_0_1')
+    apply (subst mult.assoc)
+    apply (subst infsum_cmult_right)
+    apply (rule prel_product_summable')
+    apply (simp add: prel_is_dist)+
+    apply (subst summable_on_iff_abs_summable_on_real)
+    apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s::'a. rfrel_of_prel P (a, s)"])
+    apply (metis prel_summable_on_subset summable_on_iff_abs_summable_on_real)
+    apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>y::'a. rfrel_of_prel Q (x, y) * rfrel_of_prel R (y, b)) \<le> 1")
+    apply (simp add: infsum_nonneg mult_right_le_one_le prel_in_0_1')
+    apply (subst prel_infsum_pcomp_lessthan_1)
+    by (simp add: prel_is_dist)+
+
+  then show "?lhs = ?rhs"
+    using lhs_eq rhs_eq by presburger
+qed
+
 subsubsection \<open> Probabilistic choice \<close>
 
 theorem prel_pchoice_commute: "if\<^sub>p r then P else Q = if\<^sub>p 1 - r then Q else P"
@@ -1669,6 +1746,10 @@ lemma prel_pcond_altdef:
   by auto
 
 subsubsection \<open> Normalisation \<close>
+theorem uniform_dist_empty_zero:  "(x \<^bold>\<U> {}) = 0\<^sub>f"
+  apply (simp add: dist_defs)
+  by (expr_auto)
+
 theorem uniform_dist_altdef:
   assumes "finite (A::'b set)"
   assumes "vwb_lens x"

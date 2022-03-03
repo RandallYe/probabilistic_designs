@@ -62,6 +62,11 @@ expr_ctr dist_norm_alpha dist_norm
 definition uniform_dist:: "('b \<Longrightarrow> 's) \<Rightarrow> \<bbbP> 'b \<Rightarrow> (real, 's \<times> 's) expr" (infix "\<^bold>\<U>" 48) where
 [dist_defs]: "uniform_dist x A = \<^bold>N\<^sub>\<alpha> x (\<lbrakk>\<lbrakk>\<Union> v \<in> A. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e)"
 
+term "(\<Union> v \<in> {}. x := \<guillemotleft>v\<guillemotright>)"
+term "false_pred"
+lemma "(\<Union> v \<in> {}. x := \<guillemotleft>v\<guillemotright>) = false"
+  by (simp add: false_pred_def)
+
 term "x \<^bold>\<U> A"
 (*
 alphabet state = 
