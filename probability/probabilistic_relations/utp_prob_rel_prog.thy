@@ -64,6 +64,9 @@ subsection \<open> Probabilistic programming \<close>
 abbreviation zero_f ("0\<^sub>f") where
   "zero_f \<equiv> (\<lambda> s. 0::\<real>)"
 
+(* This is underspecified and could be assigned an arbitrary value. 
+TODO: How to deal with this?
+*)
 definition pzero :: "('s\<^sub>1, 's\<^sub>2) prel" ("0\<^sub>p") where
 [prel_defs]: "pzero = prel_of_rfrel zero_f"
 

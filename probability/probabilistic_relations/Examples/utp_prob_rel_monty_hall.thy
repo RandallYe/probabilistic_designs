@@ -148,7 +148,7 @@ text \<open> Below we illustrate the simplification of INIT using two ways:
         We mainly deal with conditional and propositional logic.
 \end{itemize}
 1) 
-\<close>
+\<close>                    
 lemma INIT_altdef: "INIT = prel_of_rfrel ((\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = m\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) / 9)\<^sub>e"
   apply (simp add: INIT_def INIT_p_def INIT_c_def zero_to_two)
   apply (simp add: prel_defs)
@@ -1831,4 +1831,616 @@ proof -
     using lhs_1'_infsum lhs_2'_infsum lhs_3'_infsum by linarith
 qed
 
+subsection \<open> Learn the fact (forgetful Monty) \<close>
+
+text \<open> Suppose now that Monty forgets which door has the prize behind it. He just opens either of the 
+doors not chosen by the contestant. 
+If the prize is revealed ($m'=p'$), then obviously the contestant switches their choice to that door. 
+So the contestant will surely win. 
+
+However, if the prize is not revealed ($m' \neq p'$), should the contestant switch?
+\<close>
+
+definition Forgetful_Monty where 
+"Forgetful_Monty = INIT ; (if\<^sub>p 1/2 then (m := ($c + 1) mod 3) else (m := ($c + 2) mod 3))"
+
+(*
+definition Learn_fact where
+"Learn_fact = Forgetful_Monty \<parallel> (if\<^sub>p 1/2 then (m := ($p + 1) mod 3) else (m := ($p + 2) mod 3))"
+*)
+
+definition Learn_fact :: "(DWTA_state, DWTA_state) prel" 
+  where "Learn_fact = Forgetful_Monty \<parallel> (prel_of_rfrel (\<lbrakk>m\<^sup>> \<noteq> p\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e))"
+
+lemma Forgetful_Monty_altdef: "Forgetful_Monty = 
+prel_of_rfrel ((\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = ((c\<^sup>> + 1) mod 3)\<rbrakk>\<^sub>\<I>\<^sub>e) / 18 + 
+               (\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = ((c\<^sup>> + 2) mod 3)\<rbrakk>\<^sub>\<I>\<^sub>e) / 18)\<^sub>e"
+proof -
+  (* have "\<forall>mm. card {s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = mm} = 9" *)
+  have set_states: "\<forall>m. {s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = m}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = m\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = m\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = m\<rparr>,
+      \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = m\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = m\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = m\<rparr>,
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = m\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = m\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = m\<rparr> 
+      }"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)+
+  apply (rule iffI)
+  apply (smt (z3) DWTA_state.surjective DWTA_state.update_convs(1) DWTA_state.update_convs(2) 
+        One_nat_def Suc_1 bot_nat_0.extremum_unique c_def le_Suc_eq lens.simps(1) m_def old.unit.exhaust p_def)
+  by (smt (verit, best) DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(1) 
+        DWTA_state.update_convs(2) One_nat_def bot_nat_0.extremum c_def lens.simps(1) less_one 
+        linorder_not_le m_def order_le_less p_def zero_neq_numeral)
+
+  have card_states: "\<forall>mm. card {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = mm\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = mm\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = mm\<rparr>,
+      \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = mm\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = mm\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = mm\<rparr>,
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = mm\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = mm\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = mm\<rparr> 
+    } = 9"
+    apply (rule allI)
+    using record_neq_p_c by fastforce
+
+  have finite_states: "\<forall>m. finite {s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = m}"
+    using local.set_states by auto
+
+  have summable_on: "\<forall>(m\<^sub>v'::\<nat>) (p\<^sub>v'::\<nat>) c\<^sub>v'::\<nat>. (\<lambda>v\<^sub>0::DWTA_state.
+           (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+           (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
+           ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real>
+             else (0::\<real>)) /
+            (2::\<real>) +
+            (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real>
+             else (0::\<real>)) /
+            (2::\<real>))) summable_on
+       UNIV"
+  proof (rule allI)+
+    fix m\<^sub>v'::"\<nat>" and p\<^sub>v'::"\<nat>" and c\<^sub>v'::"\<nat>"
+    show "(\<lambda>v\<^sub>0::DWTA_state.
+           (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+           (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
+           ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+            (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
+            (2::\<real>))) summable_on
+       UNIV "
+    apply (subst conditional_conds_conj)+
+    apply (simp add: ring_distribs(1))
+    apply (subst conditional_conds_conj)+
+    apply (subst summable_on_add)
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+    using finite_states apply presburger
+    apply fastforce+
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+    using finite_states apply presburger
+    by fastforce+
+  qed
+  (*
+  have "\<forall>(m\<^sub>v'::\<nat>) (p\<^sub>v'::\<nat>) c\<^sub>v'::\<nat>.
+       p\<^sub>v' \<le> (2::\<nat>) \<longrightarrow> c\<^sub>v' \<le> (2::\<nat>) \<longrightarrow>
+       (\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+          (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+          (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
+          ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+           (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>))) /
+       (9::\<real>) * (18::\<real>) = (1::\<real>)"
+proof ((rule allI)+, (rule impI)+)
+  fix m\<^sub>v'::"\<nat>" and p\<^sub>v'::"\<nat>" and c\<^sub>v'::"\<nat>"
+  assume a1: "p\<^sub>v' \<le> (2::\<nat>)"
+  assume a2: "c\<^sub>v' \<le> (2::\<nat>)"
+  have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and> 
+          s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v'\<rparr>} 
+      = (if c\<^sub>v' = 2 then {} else {\<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v'\<rparr>})"
+    apply (auto)
+    apply (metis DWTA_state.select_convs(2) DWTA_state.select_convs(3) DWTA_state.surjective 
+        DWTA_state.update_convs(3) mod_self nat.distinct(1) numeral_2_eq_2 numeral_3_eq_3)
+       apply (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3))
+    apply (simp add: a1 a2)+
+    by (metis a2 le_Suc_eq less_Suc_eq mod_Suc_le_divisor mod_less mod_self numeral_2_eq_2 
+        numeral_3_eq_3 verit_la_disequality)
+
+  have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+         s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v'\<rparr>} = {}"
+    apply (auto)
+    by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) 
+        add_cancel_left_left mod_Suc mod_Suc_eq nat.distinct(1) plus_1_eq_Suc)
+
+  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+          (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+          (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
+          ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+           (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>))) /
+       (9::\<real>) *
+       (18::\<real>) =
+       (1::\<real>)"
+    apply (subst conditional_conds_conj)+
+    apply (simp add: ring_distribs(1))
+    apply (subst conditional_conds_conj)+
+    apply (subst infsum_add)
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+    using finite_states apply presburger
+    apply fastforce+
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+    using finite_states apply presburger
+    apply fastforce+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+    using finite_states apply presburger
+      apply fastforce+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+    using finite_states apply presburger
+    apply fastforce+
+    apply (subst infsum_constant_finite_states)
+    apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+    apply (subst infsum_constant_finite_states)
+     apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+    sledgehammer
+  *)
+  show ?thesis
+  apply (simp add: Forgetful_Monty_def)
+  apply (simp add: INIT_altdef)
+  apply (simp only: pcomp_def passigns_def pchoice_def)
+  apply (simp only: prel_set_conv_assign)
+  apply (subst prel_set_conv_pchoice_c')
+  apply (simp) 
+  apply (simp add: prel_is_dist_assign)+
+  apply (subst prel_of_rfrel_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (subst conditional_conds_conj)+
+  apply (subst infsum_cdiv_left)
+  apply (rule infsum_constant_finite_states_summable)
+  using finite_states apply presburger
+   apply (subst infsum_constant_finite_states)
+  using finite_states apply presburger
+   apply (subst local.set_states)
+   apply (simp add: card_states)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (rel_auto)
+  apply (subst infsum_cdiv_left)
+  using summable_on apply blast
+  using mod_Suc apply force
+  using mod_Suc apply force
+  using mod_Suc apply force
+  proof -
+    fix m\<^sub>v'::"\<nat>" and p\<^sub>v'::"\<nat>" and c\<^sub>v'::"\<nat>"
+    assume a1: "p\<^sub>v' \<le> (2::\<nat>)"
+    assume a2: "c\<^sub>v' \<le> (2::\<nat>)"
+    have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr>} 
+        = {\<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v'\<rparr>}"
+      apply (auto)
+      apply (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3))
+      by (simp add: a1 a2)+
+  
+    have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr>} = {}"
+      apply (auto)
+      by (smt (verit, best) DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) 
+          lessI less_2_cases mod_Suc_eq mod_less mod_self nat.simps(3) numeral_2_eq_2 numeral_3_eq_3 
+          order_le_less)
+  
+    show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+            (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+            (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
+            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
+             (2::\<real>)) / (9::\<real>)) * (18::\<real>) = (1::\<real>)"
+      apply (subst conditional_conds_conj)+
+      apply (simp add: ring_distribs(1))
+      apply (subst conditional_conds_conj)+
+      apply (subst infsum_cdiv_left)
+       apply (rule summable_on_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+          apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+          apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+          apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_constant_finite_states)
+      apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst infsum_constant_finite_states)
+      apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst set_1_eq, subst set_2_eq)
+      by simp
+  next
+    fix m\<^sub>v'::"\<nat>" and p\<^sub>v'::"\<nat>" and c\<^sub>v'::"\<nat>"
+    assume a1: "p\<^sub>v' \<le> (2::\<nat>)"
+    assume a2: "c\<^sub>v' \<le> (2::\<nat>)"
+    have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr>} 
+        = {}"
+      apply (auto)
+      by (smt (verit, best) DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) 
+          lessI less_2_cases mod_Suc_eq mod_less mod_self nat.simps(3) numeral_2_eq_2 numeral_3_eq_3 
+          order_le_less)
+      
+    have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr>} 
+      = {\<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v'\<rparr>}"
+      apply (auto)
+      apply (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3))
+      by (simp add: a1 a2)+
+  
+    show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+            (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+            (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
+            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
+             (2::\<real>) +
+             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
+             (2::\<real>)) /  (9::\<real>)) * (18::\<real>) =  (1::\<real>)"
+      apply (subst conditional_conds_conj)+
+      apply (simp add: ring_distribs(1))
+      apply (subst conditional_conds_conj)+
+      apply (subst infsum_cdiv_left)
+       apply (rule summable_on_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+          apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+          apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+          apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_constant_finite_states)
+      apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst infsum_constant_finite_states)
+       apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst set_1_eq, subst set_2_eq)
+      by simp
+  next
+    fix m\<^sub>v'::"\<nat>" and p\<^sub>v'::"\<nat>" and c\<^sub>v'::"\<nat>" and m\<^sub>v''::"\<nat>"
+    assume a1: "p\<^sub>v' \<le> (2::\<nat>)"
+    assume a2: "c\<^sub>v' \<le> (2::\<nat>)"
+    assume a3: "\<not> m\<^sub>v'' = Suc c\<^sub>v' mod (3::\<nat>)"
+    assume a4: "\<not> m\<^sub>v'' = Suc (Suc c\<^sub>v') mod (3::\<nat>)"
+    have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+      apply (auto)
+      by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a3)
+      
+    have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+      apply (auto)
+      by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a4)
+  
+    show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+            (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+            (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
+            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>)) /
+            (9::\<real>)) =
+         (0::\<real>)"
+      apply (subst conditional_conds_conj)+
+      apply (simp add: ring_distribs(1))
+      apply (subst conditional_conds_conj)+
+      apply (subst infsum_cdiv_left)
+       apply (rule summable_on_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_constant_finite_states)
+      apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst infsum_constant_finite_states)
+       apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst set_1_eq, subst set_2_eq)
+      by simp
+  next
+    fix m\<^sub>v'::"\<nat>" and p\<^sub>v'::"\<nat>" and c\<^sub>v'::"\<nat>" and m\<^sub>v''::"\<nat>"
+    assume a1: "p\<^sub>v' \<le> (2::\<nat>)"
+    assume a2: "\<not> c\<^sub>v' \<le> (2::\<nat>)"
+    have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+      apply (auto)
+      by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a2)
+      
+    have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+      apply (auto)
+      by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a2)
+  
+    show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+            (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+            (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
+            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>)) /
+            (9::\<real>)) = (0::\<real>)"
+      apply (subst conditional_conds_conj)+
+      apply (simp add: ring_distribs(1))
+      apply (subst conditional_conds_conj)+
+      apply (subst infsum_cdiv_left)
+       apply (rule summable_on_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_constant_finite_states)
+      apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst infsum_constant_finite_states)
+       apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst set_1_eq, subst set_2_eq)
+      by simp
+  next
+    fix m\<^sub>v'::"\<nat>" and p\<^sub>v'::"\<nat>" and c\<^sub>v'::"\<nat>" and m\<^sub>v''::"\<nat>"
+    assume a1: "\<not> p\<^sub>v' \<le> (2::\<nat>)"
+    have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+      apply (auto)
+      by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a1)
+      
+    have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
+           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+      apply (auto)
+      by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a1)
+  
+    show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+            (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+            (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
+            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>)) /
+            (9::\<real>)) =
+         (0::\<real>)"
+      apply (subst conditional_conds_conj)+
+      apply (simp add: ring_distribs(1))
+      apply (subst conditional_conds_conj)+
+      apply (subst infsum_cdiv_left)
+       apply (rule summable_on_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_add)
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst summable_on_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_cdiv_left)
+      apply (subst infsum_constant_finite_states_summable)
+      apply (rule rev_finite_subset[where B = "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v')}"])
+      using finite_states apply presburger
+      apply fastforce+
+      apply (subst infsum_constant_finite_states)
+      apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst infsum_constant_finite_states)
+       apply (metis (no_types, lifting) Collect_mono finite_states finite_subset)
+      apply (subst set_1_eq, subst set_2_eq)
+      by simp
+  qed
+qed
+
+lemma "rfrel_of_prel Learn_fact ;\<^sub>f \<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1/2)\<^sub>e"
+proof -
+  have set_states_1: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>,
+      \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>,
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr> 
+      }"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)+
+  apply (rule iffI)
+  apply (smt (verit) DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective 
+      One_nat_def Suc_1 Suc_eq_numeral Suc_eq_plus1 Suc_le_mono add_Suc_right eval_nat_numeral(3) 
+      le_0_eq le_Suc_eq le_add2 lessI less_Suc_eq mod_Suc mod_Suc_le_divisor mod_less 
+      mod_less_eq_dividend mod_self n_not_Suc_n nat.distinct(1) nle_le not_less_eq_eq 
+      numeral_One numeral_eq_one_iff old.unit.exhaust one_add_one one_le_numeral 
+      pred_numeral_simps(2) trans_le_add2)
+    by fastforce
+
+  have card_states_1: "card {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>,
+      \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>,
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr> 
+      } = 9"
+    using record_neq_p_c by fastforce
+
+  have finite_states_1: "finite {s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)}"
+    using local.set_states_1 by auto
+
+have set_states_2: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,
+      \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr> 
+      }"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)+
+  apply (rule iffI)
+  apply (smt (verit) DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective 
+      One_nat_def Suc_1 Suc_eq_numeral Suc_eq_plus1 Suc_le_mono add_Suc_right eval_nat_numeral(3) 
+      le_0_eq le_Suc_eq le_add2 lessI less_Suc_eq mod_Suc mod_Suc_le_divisor mod_less 
+      mod_less_eq_dividend mod_self n_not_Suc_n nat.distinct(1) nle_le not_less_eq_eq 
+      numeral_One numeral_eq_one_iff old.unit.exhaust one_add_one one_le_numeral 
+      pred_numeral_simps(2) trans_le_add2)
+    by fastforce
+
+  have card_states_2: "card {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,
+      \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr> 
+      } = 9"
+    using record_neq_p_c by fastforce
+
+  have finite_states_2: "finite {s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)}"
+    using local.set_states_2 by auto
+
+  have infsum_1: "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
+       (if p\<^sub>v s \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v s \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+       (if m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) then 1::\<real> else (0::\<real>)) / (18::\<real>) +
+       (if p\<^sub>v s \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v s \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+       (if m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) then 1::\<real> else (0::\<real>)) / (18::\<real>)) = (1::\<real>)"
+    apply (subst conditional_conds_conj)+
+    apply (subst infsum_add)
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_states_1 apply blast+
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_states_2 apply blast+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_states_1 apply blast+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_states_2 apply blast+
+    apply (subst infsum_constant_finite_states)
+    using finite_states_1 apply blast+
+    apply (subst infsum_constant_finite_states)
+    using finite_states_2 apply blast+
+    apply (subst set_states_1, subst card_states_1)
+    apply (subst set_states_2, subst card_states_2)
+    by (simp)
+    
+  have Forgetful_Monty_dist: "is_final_distribution (rfrel_of_prel Forgetful_Monty)"
+    apply (simp add: dist_defs Forgetful_Monty_altdef)
+    apply (expr_auto)
+    using prel_in_0_1' apply blast
+    using prel_in_0_1' apply blast
+    apply (subst prel_of_rfrel_inverse)
+    apply (simp add: expr_defs dist_defs)
+    apply (rule infsum_1)
+    apply (auto)
+    by (rule infsum_1)
+
+  show ?thesis
+    apply (simp add: Learn_fact_def pparallel_def)
+    apply (subst prel_set_conv_parallel)
+    apply (simp add: Forgetful_Monty_dist)
+    apply (simp add: dist_defs)
+    apply (expr_auto)
+    using prel_in_0_1' apply blast+
+      apply (simp add: prel_sum_1)
+    apply (rule allI)
+     apply (simp add: Forgetful_Monty_altdef)
+    apply (subst prel_of_rfrel_inverse)
+    apply (simp add: expr_defs dist_defs lens_defs)
+      apply (rule infsum_1)
+     apply (subst prel_of_rfrel_inverse)
+    apply (expr_auto add: dist_defs)
+    
+  apply (subst Forgetful_Monty_altdef)
+  apply 
+                        
 end

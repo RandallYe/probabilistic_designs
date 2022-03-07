@@ -1235,6 +1235,15 @@ term "\<lambda>s. (rfrel_of_prel P) s"
 term "(case \<s> of (\<sigma>::'a, \<rho>::'a) \<Rightarrow> Pair \<sigma>) (v\<^sub>0::'a)"
 term "(x := ($x + 1))::'a phrel"
 
+subsubsection \<open> Deadlock \<close>
+
+(* There are no such laws because 0\<^sub>p can be an arbitrary value.
+theorem pzero_left_zero: "0\<^sub>p ; P = 0\<^sub>p"
+  apply (simp add: prel_defs)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (expr_auto)
+*)
+
 subsubsection \<open> Skip and assignment \<close>
 theorem prel_skip: 
   assumes "wb_lens x"
@@ -1836,6 +1845,8 @@ theorem prel_parallel_assoc:
   "(P \<parallel> Q) \<parallel> R = P \<parallel> (Q \<parallel> R)"
   apply (simp add: prel_defs)
   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (simp add: dist_defs)
+  apply (expr_auto)
   oops
 
 theorem prel_parallel_commute:
