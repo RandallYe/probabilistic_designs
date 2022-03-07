@@ -1850,11 +1850,13 @@ definition Learn_fact where
 *)
 
 definition Learn_fact :: "(DWTA_state, DWTA_state) prel" 
-  where "Learn_fact = Forgetful_Monty \<parallel> (prel_of_rfrel (\<lbrakk>m\<^sup>> \<noteq> p\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e))"
+  where "Learn_fact = prel_of_rfrel ((rfrel_of_prel Forgetful_Monty) \<parallel>\<^sub>f \<lbrakk>m\<^sup>> \<noteq> p\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e)"
 
-lemma Forgetful_Monty_altdef: "Forgetful_Monty = 
-prel_of_rfrel ((\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = ((c\<^sup>> + 1) mod 3)\<rbrakk>\<^sub>\<I>\<^sub>e) / 18 + 
+definition Forgetful_Monty' :: "(DWTA_state, DWTA_state) rfrel" where 
+"Forgetful_Monty' = ((\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = ((c\<^sup>> + 1) mod 3)\<rbrakk>\<^sub>\<I>\<^sub>e) / 18 + 
                (\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = ((c\<^sup>> + 2) mod 3)\<rbrakk>\<^sub>\<I>\<^sub>e) / 18)\<^sub>e"
+
+lemma Forgetful_Monty_altdef: "Forgetful_Monty = prel_of_rfrel Forgetful_Monty'"
 proof -
   (* have "\<forall>mm. card {s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = mm} = 9" *)
   have set_states: "\<forall>m. {s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = m}
@@ -1984,7 +1986,7 @@ proof ((rule allI)+, (rule impI)+)
     sledgehammer
   *)
   show ?thesis
-  apply (simp add: Forgetful_Monty_def)
+  apply (simp add: Forgetful_Monty_def Forgetful_Monty'_def)
   apply (simp add: INIT_altdef)
   apply (simp only: pcomp_def passigns_def pchoice_def)
   apply (simp only: prel_set_conv_assign)
@@ -2334,8 +2336,13 @@ proof ((rule allI)+, (rule impI)+)
   qed
 qed
 
-lemma "rfrel_of_prel Learn_fact ;\<^sub>f \<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1/2)\<^sub>e"
+definition Forgetful_Monty'_learned :: "(DWTA_state, DWTA_state) rfrel" where 
+"Forgetful_Monty'_learned = ((\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = ((c\<^sup>> + 1) mod 3)\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> \<noteq> p\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e) / 12 + 
+               (\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = ((c\<^sup>> + 2) mod 3)\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> \<noteq> p\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e) / 12)\<^sub>e"
+
+lemma Forgetful_Monty_win: "rfrel_of_prel Learn_fact ;\<^sub>f \<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1/2)\<^sub>e"
 proof -
+  \<comment> \<open>Forgetful Monty\<close>
   have set_states_1: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)}
     = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>,
       \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>,
@@ -2361,7 +2368,7 @@ proof -
   have finite_states_1: "finite {s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)}"
     using local.set_states_1 by auto
 
-have set_states_2: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)}
+  have set_states_2: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)}
     = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,
       \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,
       \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr> 
@@ -2412,35 +2419,251 @@ have set_states_2: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^su
     apply (subst set_states_1, subst card_states_1)
     apply (subst set_states_2, subst card_states_2)
     by (simp)
-    
-  have Forgetful_Monty_dist: "is_final_distribution (rfrel_of_prel Forgetful_Monty)"
-    apply (simp add: dist_defs Forgetful_Monty_altdef)
-    apply (expr_auto)
-    using prel_in_0_1' apply blast
-    using prel_in_0_1' apply blast
-    apply (subst prel_of_rfrel_inverse)
-    apply (simp add: expr_defs dist_defs)
-    apply (rule infsum_1)
-    apply (auto)
-    by (rule infsum_1)
 
-  show ?thesis
-    apply (simp add: Learn_fact_def pparallel_def)
-    apply (subst prel_set_conv_parallel)
-    apply (simp add: Forgetful_Monty_dist)
-    apply (simp add: dist_defs)
+  \<comment> \<open>The final statesuf of Forgetful Monty is a distribution\<close>
+  have Forgetful_Monty'_dist: "is_final_distribution (Forgetful_Monty')"
+    apply (simp add: dist_defs Forgetful_Monty'_def)
     apply (expr_auto)
-    using prel_in_0_1' apply blast+
-      apply (simp add: prel_sum_1)
-    apply (rule allI)
-     apply (simp add: Forgetful_Monty_altdef)
+    using infsum_1 by blast
+
+  \<comment> \<open>And so conversion is still itself.\<close>
+  have Forgetful_Monty'': "rfrel_of_prel (prel_of_rfrel Forgetful_Monty') = Forgetful_Monty'"
     apply (subst prel_of_rfrel_inverse)
-    apply (simp add: expr_defs dist_defs lens_defs)
-      apply (rule infsum_1)
-     apply (subst prel_of_rfrel_inverse)
-    apply (expr_auto add: dist_defs)
+    by (simp add: Forgetful_Monty'_dist)+
+
+  \<comment> \<open> Learn a new fact \<close>
+  have set_states_1': "{s::DWTA_state. ((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) 
+      \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)) \<and> \<not> m\<^sub>v s = p\<^sub>v s}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, 
+       \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>,
+       \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,  \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr> 
+      }"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)+
+  apply (rule iffI)
+  apply (smt (verit) DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective 
+      One_nat_def Suc_1 Suc_eq_numeral Suc_eq_plus1 Suc_le_mono add_Suc_right eval_nat_numeral(3) 
+      le_0_eq le_Suc_eq le_add2 lessI less_Suc_eq mod_Suc mod_Suc_le_divisor mod_less 
+      mod_less_eq_dividend mod_self n_not_Suc_n nat.distinct(1) nle_le not_less_eq_eq 
+      numeral_One numeral_eq_one_iff old.unit.exhaust one_add_one one_le_numeral 
+      pred_numeral_simps(2) trans_le_add2)
+  by fastforce
+
+  have card_states_1': "card {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, 
+       \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>,
+       \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,  \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr> 
+      } = 6"
+    using record_neq_p_c by fastforce
+
+  have finite_state_1': "finite {s::DWTA_state. ((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> 
+    m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)) \<and> \<not> m\<^sub>v s = p\<^sub>v s}"
+    apply (rule rev_finite_subset[where B = 
+        "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>))}"])
+    using finite_states_1 apply presburger
+    by fastforce
+
+  have set_states_2': "{s::DWTA_state.  ((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> 
+      m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)) \<and> \<not> m\<^sub>v s = p\<^sub>v s}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,
+      \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, 
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr> 
+      }"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)+
+  apply (rule iffI)
+  apply (smt (verit) DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective 
+      One_nat_def Suc_1 Suc_eq_numeral Suc_eq_plus1 Suc_le_mono add_Suc_right eval_nat_numeral(3) 
+      le_0_eq le_Suc_eq le_add2 lessI less_Suc_eq mod_Suc mod_Suc_le_divisor mod_less 
+      mod_less_eq_dividend mod_self n_not_Suc_n nat.distinct(1) nle_le not_less_eq_eq 
+      numeral_One numeral_eq_one_iff old.unit.exhaust one_add_one one_le_numeral 
+      pred_numeral_simps(2) trans_le_add2)
+    by fastforce
+
+  have card_states_2': "card {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,
+      \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, 
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr> 
+      } = 6"
+    using record_neq_p_c by fastforce
+
+  have finite_state_2': "finite {s::DWTA_state. ((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> 
+    m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)) \<and> \<not> m\<^sub>v s = p\<^sub>v s}"
+    apply (rule rev_finite_subset[where B = 
+        "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>))}"])
+    using finite_states_2 apply presburger
+    by fastforce
+
+  \<comment> \<open> After a new fact is learned, 1/3 states are excluded because these states have its 
+    @{text "m\<^sub>v v\<^sub>0"} equal to @{text  "p\<^sub>v v\<^sub>0"}. \<close>
+  let ?infsum = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+        ((if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+         (if m\<^sub>v v\<^sub>0 = Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>) then 1::\<real> else (0::\<real>)) /
+         (18::\<real>) +
+         (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+         (if m\<^sub>v v\<^sub>0 = Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>) then 1::\<real> else (0::\<real>)) /
+         (18::\<real>)) * (if \<not> m\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)))"
+
+  have infsum_2_3: "?infsum = 2/3"
+    apply (simp add: ring_distribs(2))
+    apply (subst conditional_conds_conj)+
+    apply (subst infsum_add)
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_1' apply blast
+    apply fastforce+
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_2' apply blast
+    apply fastforce+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_1' apply blast
+    apply fastforce+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_2' apply blast
+    apply fastforce+
+    apply (subst infsum_constant_finite_states)
+    using finite_state_1' apply blast
+    apply (subst infsum_constant_finite_states)
+    using finite_state_2' apply blast
+    apply (subst set_states_1', subst card_states_1')
+    apply (subst set_states_2', subst card_states_2')
+    by (simp)
+
+  have Forgetful_Monty''': "(Forgetful_Monty' \<parallel>\<^sub>f \<lbrakk>m\<^sup>> \<noteq> p\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e) = Forgetful_Monty'_learned"
+    apply (simp add: dist_defs Forgetful_Monty'_def Forgetful_Monty'_learned_def)
+    apply (expr_auto)
+    apply (metis One_nat_def Suc_n_not_n mod_Suc one_eq_numeral_iff semiring_norm(86))
+    using mod_Suc apply auto[1]
+    using infsum_2_3 by linarith+
+
+  \<comment> \<open>The final states of the learned program is also a distribution. \<close>
+  have Forgetful_Monty'_learned_dist: "is_final_distribution Forgetful_Monty'_learned"
+    apply (simp add: dist_defs Forgetful_Monty'_learned_def)
+    apply (expr_auto)
+    apply (subst conditional_conds_conj)+
+    apply (subst infsum_add)
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_1' apply blast
+    apply fastforce+
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_2' apply blast
+    apply fastforce+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_1' apply blast
+    apply fastforce+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_2' apply blast
+    apply fastforce+
+    apply (subst infsum_constant_finite_states)
+    using finite_state_1' apply blast
+    apply (subst infsum_constant_finite_states)
+    using finite_state_2' apply blast
+    apply (subst set_states_1', subst card_states_1')
+    apply (subst set_states_2', subst card_states_2')
+    by (simp)
+
+  \<comment> \<open> Win when @{text "c\<^sub>v s = p\<^sub>v s"}  \<close>
+  have set_states_1'': "{s::DWTA_state. (((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) 
+    \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)) \<and> \<not> m\<^sub>v s = p\<^sub>v s) \<and> c\<^sub>v s = p\<^sub>v s}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, 
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>}"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)+
+  apply (rule iffI)
+  apply (smt (verit) DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective 
+      One_nat_def Suc_1 Suc_eq_numeral Suc_eq_plus1 Suc_le_mono add_Suc_right eval_nat_numeral(3) 
+      le_0_eq le_Suc_eq le_add2 lessI less_Suc_eq mod_Suc mod_Suc_le_divisor mod_less 
+      mod_less_eq_dividend mod_self n_not_Suc_n nat.distinct(1) nle_le not_less_eq_eq 
+      numeral_One numeral_eq_one_iff old.unit.exhaust one_add_one one_le_numeral 
+      pred_numeral_simps(2) trans_le_add2)
+  by fastforce
+
+  have card_states_1'': "card {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, 
+    \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 2::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>} = 3"
+    using record_neq_p_c by fastforce
+
+  have finite_state_1'': "finite {s::DWTA_state. (((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> 
+    m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)) \<and> \<not> m\<^sub>v s = p\<^sub>v s) \<and> c\<^sub>v s = p\<^sub>v s}"
+    apply (rule rev_finite_subset[where B = 
+        "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>))}"])
+    using finite_states_1 apply presburger
+    by fastforce
+
+  have set_states_2'': "{s::DWTA_state.  (((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> 
+      m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)) \<and> \<not> m\<^sub>v s = p\<^sub>v s)  \<and> c\<^sub>v s = p\<^sub>v s}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, 
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr> }"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)+
+  apply (rule iffI)
+  apply (smt (verit) DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective 
+      One_nat_def Suc_1 Suc_eq_numeral Suc_eq_plus1 Suc_le_mono add_Suc_right eval_nat_numeral(3) 
+      le_0_eq le_Suc_eq le_add2 lessI less_Suc_eq mod_Suc mod_Suc_le_divisor mod_less 
+      mod_less_eq_dividend mod_self n_not_Suc_n nat.distinct(1) nle_le not_less_eq_eq 
+      numeral_One numeral_eq_one_iff old.unit.exhaust one_add_one one_le_numeral 
+      pred_numeral_simps(2) trans_le_add2)
+    by fastforce
+
+  have card_states_2'': "card {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>,
+      \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr> } = 3"
+    using record_neq_p_c by fastforce
+
+  have finite_state_2'': "finite {s::DWTA_state. (((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> 
+    m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)) \<and> \<not> m\<^sub>v s = p\<^sub>v s) \<and> c\<^sub>v s = p\<^sub>v s}"
+    apply (rule rev_finite_subset[where B = 
+        "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>))}"])
+    using finite_states_2 apply presburger
+    by fastforce
+
+  \<comment> \<open> After learning a new fact, the probability to win is 1/2, and so it doesn't matter if the 
+  contestant chooses to switch or not. \<close>
+  have infsum_1_2: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
+       ((if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+        (if m\<^sub>v v\<^sub>0 = Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>) then 1::\<real> else (0::\<real>)) *
+        (if \<not> m\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) /
+        (12::\<real>) +
+        (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+        (if m\<^sub>v v\<^sub>0 = Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>) then 1::\<real> else (0::\<real>)) *
+        (if \<not> m\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) /
+        (12::\<real>)) *
+       (if c\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>))) * (2::\<real>) = (1::\<real>)"
+    apply (simp add: ring_distribs(2))
+    apply (subst conditional_conds_conj)+
+    apply (subst infsum_add)
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_1'' apply blast+
+    apply (subst summable_on_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_2'' apply blast+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_1'' apply blast+
+    apply (subst infsum_cdiv_left)
+    apply (subst infsum_constant_finite_states_summable)
+    using finite_state_2'' apply blast+
+    apply (subst infsum_constant_finite_states)
+    using finite_state_1'' apply blast+
+    apply (subst infsum_constant_finite_states)
+    using finite_state_2'' apply blast+
+    apply (subst set_states_1'', subst card_states_1'')
+    apply (subst set_states_2'', subst card_states_2'')
+    by (simp)
     
-  apply (subst Forgetful_Monty_altdef)
-  apply 
+  show ?thesis
+    apply (simp add: Learn_fact_def Forgetful_Monty_altdef)
+    apply (subst Forgetful_Monty'')
+    apply (subst Forgetful_Monty''')
+    apply (subst prel_of_rfrel_inverse)
+    using Forgetful_Monty'_learned_dist apply blast
+    apply (simp add: Forgetful_Monty'_learned_def dist_defs)
+    apply (expr_auto)
+    by (simp add: infsum_1_2)
+qed
                         
 end
