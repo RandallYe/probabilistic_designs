@@ -18,9 +18,6 @@ named_theorems prel_defs
 type_synonym ('s\<^sub>1, 's\<^sub>2) rfrel = "(\<real>, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's rfhrel = "('s, 's) rfrel"
 
-(* The final states of a program characterised by f is a distribution *)
-abbreviation "is_final_distribution f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry f) s\<^sub>1))"
-
 \<comment> \<open>A question here: can we use existing PMFs as types for prel? Why a new type here. \<close>
 typedef ('s\<^sub>1, 's\<^sub>2) prel = "{f::('s\<^sub>1, 's\<^sub>2) rfrel. is_final_distribution f}"
   morphisms rfrel_of_prel prel_of_rfrel

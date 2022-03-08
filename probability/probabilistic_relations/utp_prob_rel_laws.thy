@@ -22,7 +22,6 @@ lemma finite_image_set2'':
   apply auto
   using assms(1) assms(2) by blast
 
-
 lemma card_1_singleton:
   assumes "\<exists>!x. P x"
   shows "card {x. P x} = Suc (0::\<nat>)"
@@ -1068,44 +1067,66 @@ text \<open> We use the comparison test (@{url "https://en.wikipedia.org/wiki/Di
 more tests here @{url "https://en.wikipedia.org/wiki/Convergence_tests"})  to 
 prove the convergence of this product of two functions. \<close>
 lemma prel_joint_prob_summable_on_product: 
-  assumes "is_final_distribution p"
-  assumes "is_final_distribution q"
+  assumes "is_final_prob p"
+  assumes "is_final_prob q"
+  assumes "(\<lambda>s'::'a. p (s\<^sub>1, s')) summable_on UNIV \<or> (\<lambda>s'::'a. q (s\<^sub>1, s')) summable_on UNIV"
   shows "(\<lambda>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')) summable_on UNIV"
-  apply (subst summable_on_iff_abs_summable_on_real)
-  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s'::'a. p (s\<^sub>1, s')"])
-  apply (metis assms(1) prel_prob_sum1_summable(3) summable_on_iff_abs_summable_on_real)
-  by (simp add: assms(1) assms(2) mult_right_le_one_le prel_prob_sum1_summable(1))
-
+proof (cases "(\<lambda>s'::'a. p (s\<^sub>1, s')) summable_on UNIV")
+  case True
+  then show ?thesis 
+    apply (subst summable_on_iff_abs_summable_on_real)
+    apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s'::'a. p (s\<^sub>1, s')"])
+    apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+    using assms(3) apply blast
+    apply (simp add: assms(1) assms(2) is_final_prob_altdef)
+    by (simp add: assms(1) assms(2) is_final_prob_altdef mult_right_le_one_le)
+next
+  case False
+  then have "(\<lambda>s'::'a. q (s\<^sub>1, s')) summable_on UNIV"
+    using assms(3) by blast
+  then show ?thesis 
+    apply (subst summable_on_iff_abs_summable_on_real)
+    apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s'::'a. q (s\<^sub>1, s')"])
+    apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+    using assms(3) apply blast
+    apply (simp add: assms(1) assms(2) is_final_prob_altdef)
+    by (simp add: assms(1) assms(2) is_final_prob_altdef mult_left_le_one_le)
+qed
+  
 lemma prel_is_dist_pparallel: 
-  assumes "is_final_distribution p"
-  assumes "is_final_distribution q"
+  assumes "is_final_prob p"
+  assumes "is_final_prob q"
+  assumes "\<forall>s\<^sub>1. (\<lambda>s'::'a. p (s\<^sub>1, s')) summable_on UNIV \<or> (\<lambda>s'::'a. q (s\<^sub>1, s')) summable_on UNIV"
   assumes "\<forall>s\<^sub>1. \<exists>s'::'a. p (s\<^sub>1, s') > 0 \<and> q (s\<^sub>1, s') > 0"
   shows "is_final_distribution (pparallel_f p q)"
-  apply (simp add: dist_defs expr_defs, auto)
-  apply (simp add: assms(1) assms(2) infsum_nonneg prel_prob_sum1_summable(1))
-  apply (simp_all add: lens_defs)
+  apply (expr_auto add: dist_defs)
+  using infsum_nonneg is_final_prob_altdef assms(1) assms(2) 
+  apply (metis (mono_tags, lifting) divide_nonneg_nonneg mult_nonneg_nonneg)
   apply (subgoal_tac "p (s\<^sub>1, s) * q (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (s\<^sub>1, v\<^sub>0))")
-  apply (smt (verit, del_insts) assms(1) assms(2) divide_le_eq_1 mult_nonneg_nonneg prel_prob_sum1_summable(1))
+  apply (smt (verit, del_insts) assms(1) assms(2) divide_le_eq_1 is_final_prob_altdef mult_nonneg_nonneg)
+  apply (rule infsum_geq_element)
+  apply (simp add: assms(1) assms(2) is_final_prob_altdef)
+  apply (subst prel_joint_prob_summable_on_product)
+  apply (simp add: assms(1))
+  apply (simp add: assms(2))
+  using assms(3) apply presburger
+  apply (simp)+
 proof -
-  fix s\<^sub>1 s
-  show "p (s\<^sub>1, s) * q (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (s\<^sub>1, v\<^sub>0))"
-    apply (rule infsum_geq_element)
-    apply (simp add: assms(1) assms(2) prel_prob_sum1_summable(1))
-    apply (simp add: assms(1) assms(2) prel_joint_prob_summable_on_product)
-    by (simp)
-next
   fix s\<^sub>1
   let ?P = "\<lambda>s'. p (s\<^sub>1, s') > 0 \<and> q (s\<^sub>1, s') > 0"
   (* obtain s where Ps: "s = (SOME s'. ?P s')" 
     using assms(3) by blast*)
   have f1: "?P (SOME s'. ?P s')"
     apply (rule someI_ex[where P="?P"])
-    using assms(3) by blast
+    using assms(4) by blast
   have f2: "(\<lambda>s. p (s\<^sub>1, s) * q (s\<^sub>1, s)) (SOME s'. ?P s') \<le> (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s'))"
     apply (rule infsum_geq_element)
-    apply (simp add: assms(1) assms(2) prel_prob_sum1_summable(1))
-     apply (simp add: assms(1) assms(2) prel_joint_prob_summable_on_product)
-    by (simp)
+    apply (simp add: assms(1) assms(2) is_final_prob_altdef)
+    apply (subst prel_joint_prob_summable_on_product)
+    apply (simp add: assms(1))
+    apply (simp add: assms(2))
+    using assms(3) apply presburger
+    by (simp)+
   also have f3: "... > 0"
     by (smt (verit, best) f1 f2 mult_le_0_iff)
   have f4: "(\<Sum>\<^sub>\<infinity>s::'a. (p (s\<^sub>1, s) * q (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')))) =
@@ -1840,7 +1861,229 @@ proof -
 qed
 
 subsubsection \<open> Parallel composition \<close>
+lemma divide_eq: "\<lbrakk>p = q \<and> P = Q\<rbrakk> \<Longrightarrow> (p::\<real>) / P = q / Q"
+  by simp
+ 
+theorem prel_parallel_assoc:
+  assumes "\<forall>s::'a. is_prob ((curry p) s)" 
+          "\<forall>s::'a. is_prob ((curry q) s)" 
+          "\<forall>s::'a. is_prob ((curry r) s)"
+          "\<forall>s::'a. ((curry p) s) summable_on UNIV \<or> 
+                   ((curry q) s) summable_on UNIV \<or> 
+                   ((curry r) s) summable_on UNIV"
+          "\<forall>s::'a. ((\<lambda>s'. p (s, s') * q (s, s')) summable_on UNIV) \<longleftrightarrow> 
+                   ((\<lambda>s'. q (s, s') * r (s, s')) summable_on UNIV)"
+          "\<forall>s::'a. (\<not>(\<lambda>s'. p (s, s') * q (s, s')) summable_on UNIV) \<longleftrightarrow> 
+                   (\<not>(\<lambda>s'. q (s, s') * r (s, s')) summable_on UNIV)"
+  shows "(p \<parallel>\<^sub>f q) \<parallel>\<^sub>f r = p \<parallel>\<^sub>f (q \<parallel>\<^sub>f r)"
+  apply (simp add: dist_defs)
+  apply (simp add: fun_eq_iff)
+  apply (rule allI)+
+  apply (rule divide_eq)
+  apply (expr_auto)
+proof -
+  fix a::"'a"
+  have a1: "\<forall>s. p s \<ge> 0 \<and> p s \<le> 1"
+    using assms(1) by (expr_auto add: dist_defs)
 
+  have a2: "\<forall>s. q s \<ge> 0 \<and> q s \<le> 1"
+    using assms(2) by (expr_auto add: dist_defs)
+
+  have a3: "\<forall>s. r s \<ge> 0 \<and> r s \<le> 1"
+    using assms(3) by (expr_auto add: dist_defs)
+
+  let ?lhs_pq = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0))"
+  let ?rhs_qr = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. q (a, v\<^sub>0) * r (a, v\<^sub>0))"
+  let ?lhs = "?lhs_pq * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq)"
+  
+  let ?rhs = "?rhs_qr * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * (q (a, v\<^sub>0) * r (a, v\<^sub>0)) / ?rhs_qr)"
+
+  have pqr_disj_summable: "(\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0)) summable_on UNIV \<or> (\<lambda>v\<^sub>0::'b. q (a, v\<^sub>0)) summable_on UNIV \<or> 
+        (\<lambda>v\<^sub>0::'b. r (a, v\<^sub>0)) summable_on UNIV"
+    using assms(4) by (smt (verit, best) curry_def summable_on_cong)
+  have pqr_summable: "(\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0)) summable_on UNIV"
+  proof (cases "(\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0)) summable_on UNIV")
+    case True
+    then show ?thesis 
+      apply (subst summable_on_iff_abs_summable_on_real)
+      apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. p (a, s)"])
+      apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+      apply blast
+      using a1 a2 a3 by (smt (verit) SEXP_def mult_right_le_one_le norm_mult real_norm_def)
+  next
+    case False
+    then show ?thesis 
+    proof (cases "(\<lambda>v\<^sub>0::'b. q (a, v\<^sub>0)) summable_on UNIV")
+    case True
+    then show ?thesis 
+      apply (subst summable_on_iff_abs_summable_on_real)
+      apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. q (a, s)"])
+      apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+      apply blast
+      by (smt (verit, ccfv_threshold) a1 a2 a3 abs_of_nonneg dual_order.trans mult.commute 
+          mult_nonneg_nonneg mult_right_le_one_le real_norm_def)
+    next
+      case False
+      assume a11: "\<not> (\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0)) summable_on UNIV"
+      assume a12: "\<not> (\<lambda>v\<^sub>0::'b. q (a, v\<^sub>0)) summable_on UNIV"
+      have "(\<lambda>v\<^sub>0::'b. r (a, v\<^sub>0)) summable_on UNIV"
+        using pqr_disj_summable a11 a12 by fastforce
+      then show ?thesis 
+      apply (subst summable_on_iff_abs_summable_on_real)
+      apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. r (a, s)"])
+      apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+      apply blast
+      by (smt (verit, ccfv_threshold) a1 a2 a3 abs_of_nonneg dual_order.trans mult.commute 
+          mult_nonneg_nonneg mult_right_le_one_le real_norm_def) 
+    qed
+  qed
+
+  show "?lhs = ?rhs"
+  (* From initial state a, p, q, and r can agree on at least one final state *)
+  proof (cases "\<exists>v\<^sub>0. p (a, v\<^sub>0) > 0 \<and> q (a, v\<^sub>0) > 0 \<and> r (a, v\<^sub>0) > 0")
+    case True
+    then have T1: "\<exists>v\<^sub>0. p (a, v\<^sub>0) > 0 \<and> q (a, v\<^sub>0) > 0 \<and> r (a, v\<^sub>0) > 0"
+      by auto
+    then show ?thesis
+     proof (cases "(\<lambda>s'. p (a, s') * q (a, s')) summable_on UNIV")
+      case True
+      then have T2: "(\<lambda>s'. p (a, s') * q (a, s')) summable_on UNIV"
+        by simp
+      then have qr_summable: "(\<lambda>s'. q (a, s') * r (a, s')) summable_on UNIV"
+        using assms(5) by auto
+      have "\<exists>v\<^sub>0. p (a, v\<^sub>0) > 0 \<and> q (a, v\<^sub>0) > 0"
+        using T1 by blast
+      then have infsum_pq_ge_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) > 0"
+        using T2 a1 a2 by (smt (verit, ccfv_threshold) UNIV_I infsum_geq_element 
+            mult_nonneg_nonneg mult_pos_pos)
+      have "\<exists>v\<^sub>0. q (a, v\<^sub>0) > 0 \<and> r (a, v\<^sub>0) > 0"
+        using T1 by blast
+      then have infsum_qr_ge_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. q (a, v\<^sub>0) * r (a, v\<^sub>0)) > 0"
+        using qr_summable a3 a2 by (smt (verit, ccfv_threshold) UNIV_I infsum_geq_element 
+            mult_nonneg_nonneg mult_pos_pos)
+
+      show ?thesis
+        apply (subst mult.assoc[symmetric])
+        apply (subst infsum_cdiv_left)
+        apply (simp add: pqr_summable)
+        apply (subst infsum_cdiv_left)
+         apply (simp add: pqr_summable)
+        apply (subst times_divide_eq_right)+
+        apply (subst nonzero_mult_div_cancel_left)
+        using infsum_pq_ge_0 apply linarith
+        apply (subst nonzero_mult_div_cancel_left)
+        using infsum_qr_ge_0 apply linarith
+        by simp
+    next
+      case False
+      then have qr_not_summable: "\<not>(\<lambda>s'. q (a, s') * r (a, s')) summable_on UNIV"
+        using assms(5) by auto
+      then show ?thesis 
+        by (simp add: False infsum_not_exists)
+    qed
+    
+  next (* p, q, and r has a conflict for each final state. *)
+    case False
+    then have "\<forall>v\<^sub>0. p (a, v\<^sub>0) = 0  \<or> q (a, v\<^sub>0) = 0 \<or> r (a, v\<^sub>0) = 0"
+      apply auto
+      by (metis a1 a2 a3 order_neq_le_trans)
+    then have "\<forall>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) = 0"
+      by simp
+    then show ?thesis 
+      by (simp add: infsum_0)
+  qed
+qed
+
+theorem prel_parallel_assoc':
+  assumes "\<forall>s::'a. is_prob ((curry p) s)" 
+          "\<forall>s::'a. is_prob ((curry q) s)" 
+          "\<forall>s::'a. is_prob ((curry r) s)"
+          "\<forall>s::'a. ((curry q) s) summable_on UNIV"
+        shows "(p \<parallel>\<^sub>f q) \<parallel>\<^sub>f r = p \<parallel>\<^sub>f (q \<parallel>\<^sub>f r)"
+proof -
+  have a1: "\<forall>s. p s \<ge> 0 \<and> p s \<le> 1"
+    using assms(1) by (expr_auto add: dist_defs)
+
+  have a2: "\<forall>s. q s \<ge> 0 \<and> q s \<le> 1"
+    using assms(2) by (expr_auto add: dist_defs)
+
+  have a3: "\<forall>s. r s \<ge> 0 \<and> r s \<le> 1"
+    using assms(3) by (expr_auto add: dist_defs)
+
+  have pq_summable: "\<forall>s. ((\<lambda>s'::'b. p (s, s') * q (s, s')) summable_on UNIV)"
+    proof (rule allI)
+      fix s::"'a"
+      show "(\<lambda>s'::'b. p (s, s') * q (s, s')) summable_on UNIV"
+        apply (subst summable_on_iff_abs_summable_on_real)
+        apply (rule abs_summable_on_comparison_test[where g = "\<lambda>x. q (s, x)"])
+        apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+        using assms(4) apply (metis (no_types, lifting) curry_def summable_on_cong)
+        using a1 a2 a3 by (simp add: mult_left_le_one_le)
+    qed
+
+  have qr_summable: "\<forall>s. ((\<lambda>s'::'b. q (s, s') * r (s, s')) summable_on UNIV)"
+    proof (rule allI)
+      fix s::"'a"
+      show "(\<lambda>s'::'b. q (s, s') * r (s, s')) summable_on UNIV"
+        apply (subst summable_on_iff_abs_summable_on_real)
+        apply (rule abs_summable_on_comparison_test[where g = "\<lambda>x. q (s, x)"])
+        apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+        using assms(4) apply (metis (no_types, lifting) curry_def summable_on_cong)
+        using a1 a2 a3 by (simp add: mult_right_le_one_le)
+    qed
+
+  show ?thesis
+    apply (rule prel_parallel_assoc)
+    apply (simp add: assms(1) assms(2) assms(3))+
+    using assms(4) apply blast
+    by (simp add: pq_summable qr_summable)+
+qed
+
+theorem prel_parallel_assoc'':
+  assumes "\<forall>s::'a. is_prob ((curry p) s)" 
+          "\<forall>s::'a. is_prob ((curry q) s)" 
+          "\<forall>s::'a. is_prob ((curry r) s)"
+          "\<forall>s::'a. ((curry p) s) summable_on UNIV \<and> ((curry r) s) summable_on UNIV"
+  shows "(p \<parallel>\<^sub>f q) \<parallel>\<^sub>f r = p \<parallel>\<^sub>f (q \<parallel>\<^sub>f r)"
+proof -
+  have a1: "\<forall>s. p s \<ge> 0 \<and> p s \<le> 1"
+    using assms(1) by (expr_auto add: dist_defs)
+
+  have a2: "\<forall>s. q s \<ge> 0 \<and> q s \<le> 1"
+    using assms(2) by (expr_auto add: dist_defs)
+
+  have a3: "\<forall>s. r s \<ge> 0 \<and> r s \<le> 1"
+    using assms(3) by (expr_auto add: dist_defs)
+
+  have pq_summable: "\<forall>s. ((\<lambda>s'::'b. p (s, s') * q (s, s')) summable_on UNIV)"
+    proof (rule allI)
+      fix s::"'a"
+      show "(\<lambda>s'::'b. p (s, s') * q (s, s')) summable_on UNIV"
+        apply (subst summable_on_iff_abs_summable_on_real)
+        apply (rule abs_summable_on_comparison_test[where g = "\<lambda>x. p (s, x)"])
+        apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+        using assms(4) apply (metis (no_types, lifting) curry_def summable_on_cong)
+        using a1 a2 a3 by (simp add: mult_right_le_one_le)
+    qed
+
+  have qr_summable: "\<forall>s. ((\<lambda>s'::'b. q (s, s') * r (s, s')) summable_on UNIV)"
+    proof (rule allI)
+      fix s::"'a"
+      show "(\<lambda>s'::'b. q (s, s') * r (s, s')) summable_on UNIV"
+        apply (subst summable_on_iff_abs_summable_on_real)
+        apply (rule abs_summable_on_comparison_test[where g = "\<lambda>x. r (s, x)"])
+        apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+        using assms(4) apply (metis (no_types, lifting) curry_def summable_on_cong)
+        using a1 a2 a3 by (simp add: mult_left_le_one_le)
+    qed
+
+  show ?thesis
+    apply (rule prel_parallel_assoc)
+    apply (simp add: assms(1) assms(2) assms(3))+
+    using assms(4) apply blast
+    by (simp add: pq_summable qr_summable)+
+qed
+(*
 theorem prel_parallel_assoc:
   "(P \<parallel> Q) \<parallel> R = P \<parallel> (Q \<parallel> R)"
   apply (simp add: prel_defs)
@@ -1848,6 +2091,7 @@ theorem prel_parallel_assoc:
   apply (simp add: dist_defs)
   apply (expr_auto)
   oops
+*)
 
 theorem prel_parallel_commute:
   fixes P::"'a phrel"

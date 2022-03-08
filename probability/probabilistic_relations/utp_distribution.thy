@@ -15,17 +15,19 @@ declare [[show_types]]
 
 named_theorems dist_defs
 
+subsection \<open> Probability and distributions \<close>
 definition is_prob:: "(real, 's) expr \<Rightarrow> bool" where
 [dist_defs]: "is_prob e = `0 \<le> e \<and> e \<le> 1`"
 
 definition is_sum_1:: "(real, 's) expr \<Rightarrow> bool" where
 [dist_defs]: "is_sum_1 e = ((\<Sum>\<^sub>\<infinity> s. e s) = (1::\<real>))"
-(*
-"is_sum_1 e = ((\<Sum>s|True. e s) = 1)"
-*)
 
 definition is_dist:: "(real, 's) expr \<Rightarrow> bool" where
 [dist_defs]: "is_dist e = (is_prob e \<and> is_sum_1 e)"
+
+(* The final states of a program characterised by f is a distribution *)
+abbreviation "is_final_distribution f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry f) s\<^sub>1))"
+abbreviation "is_final_prob f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_prob ((curry f) s\<^sub>1))"
 
 (*
 definition prob_prog::"('s\<^sub>1 \<leftrightarrow> 's\<^sub>2) \<Rightarrow> real" where
@@ -88,5 +90,16 @@ term "($x + @g)\<^sub>e"
 term "($n\<^sup>> = $n\<^sup>< + 1)\<^sub>e"
 term "(\<lbrakk>($n\<^sup>> = $n\<^sup>< + 1)\<^sub>e\<rbrakk>\<^sub>\<I>)"
 *)
+
+subsection \<open> Laws \<close>
+lemma is_final_distribution_prob:
+  assumes "is_final_distribution f"
+  shows "is_final_prob f"
+  using assms is_dist_def by blast
+
+lemma is_final_prob_altdef:
+  assumes "is_final_prob f"
+  shows "\<forall>s s'. f (s, s') \<ge> 0 \<and> f (s, s') \<le> 1"
+  by (metis (mono_tags, lifting) SEXP_def assms curry_conv is_prob_def taut_def)
 
 end
