@@ -548,7 +548,7 @@ lemma IMHA_NC_altdef: "IMHA_NC = prel_of_rfrel IMHA_NC_altdef"
   apply (subst infsum_singleton)
   apply (simp)
   apply (rel_auto)
-   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   apply (subst fun_eq_iff, rule allI)
   defer
 proof -

@@ -41,6 +41,11 @@ lemma conditional_conds_conj: "\<forall>s. (if b\<^sub>1 s then (1::\<real>) els
   apply (rule allI)
   by force
 
+lemma conditional_conds_conj': "\<forall>s. (if b\<^sub>1 s then (m::\<real>) else (0::\<real>)) * (if b\<^sub>2 s then (p::\<real>) else (0::\<real>)) = 
+    (if b\<^sub>1 s \<and> b\<^sub>2 s then m * p else 0)"
+  apply (rule allI)
+  by simp
+
 subsection \<open> Laws of @{text infsum} \<close>
 lemma has_sum_cdiv_left:
   fixes f :: "'a \<Rightarrow> \<real>"
@@ -62,7 +67,7 @@ lemma summable_on_cdiv_left:
   shows "(\<lambda>x. f x / c) summable_on A"
   using assms summable_on_def has_sum_cdiv_left by blast
 
-lemma summable_on_cmult_left':
+lemma summable_on_cdiv_left':
   fixes f :: "'a \<Rightarrow> \<real>"
   assumes \<open>c \<noteq> 0\<close>
   shows "(\<lambda>x. f x / c) summable_on A \<longleftrightarrow> f summable_on A"
@@ -170,6 +175,127 @@ proof -
   ultimately show "(\<Sum>v\<^sub>0::'a\<in>Y. if b v\<^sub>0 then m else (0::\<real>)) \<in> S"
     using a1 by presburger
 qed
+
+lemma infsum_constant_finite_states_summable_2:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}"
+  shows "(\<lambda>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0)) summable_on UNIV"
+  apply (subst summable_on_add)
+  apply (simp add: assms(1) infsum_constant_finite_states_summable)
+  by (simp add: assms(2) infsum_constant_finite_states_summable)+
+
+lemma infsum_constant_finite_states_summable_3:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}" "finite {s. b\<^sub>3 s}"
+  shows "(\<lambda>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0) +
+          (if b\<^sub>3 v\<^sub>0 then (p::\<real>) else 0)) summable_on UNIV"
+  apply (subst summable_on_add)+
+  apply (simp add: assms(1) infsum_constant_finite_states_summable)
+  apply (simp add: assms(2) infsum_constant_finite_states_summable)+
+  by (simp add: assms(3) infsum_constant_finite_states_summable)+
+
+lemma infsum_constant_finite_states_summable_cmult_1:
+  assumes "finite {s. b\<^sub>1 s}"
+  shows "(\<lambda>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1) summable_on UNIV"
+  apply (rule summable_on_cmult_left)
+  by (simp add: assms(1) infsum_constant_finite_states_summable)
+
+lemma infsum_constant_finite_states_cmult_1:
+  assumes "finite {s. b\<^sub>1 s}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1) = m * card {s. b\<^sub>1 s} * c\<^sub>1"
+  apply (subst infsum_cmult_left)
+  using assms infsum_constant_finite_states_summable apply blast
+  apply (subst infsum_constant_finite_states)
+  using assms apply blast
+  by auto
+
+lemma infsum_constant_finite_states_summable_cmult_2:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}"
+  shows "(\<lambda>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1 + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0) * c\<^sub>2
+    ) summable_on UNIV"
+  apply (subst summable_on_add)
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(1) infsum_constant_finite_states_summable)
+  apply (rule summable_on_cmult_left)
+  by (simp add: assms(2) infsum_constant_finite_states_summable)+
+
+lemma infsum_constant_finite_states_cmult_2:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. 
+          (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1 + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0) * c\<^sub>2) 
+    = m * card {s. b\<^sub>1 s} * c\<^sub>1 + n * card {s. b\<^sub>2 s} * c\<^sub>2"
+  apply (subst infsum_add)
+  using assms(1) infsum_constant_finite_states_summable_cmult_1 apply blast
+  using assms(2) infsum_constant_finite_states_summable_cmult_1 apply blast
+  apply (subst infsum_constant_finite_states_cmult_1)
+  using assms(1) apply blast
+  apply (subst infsum_constant_finite_states_cmult_1)
+  using assms(2) apply blast
+  by blast
+
+lemma infsum_constant_finite_states_summable_cmult_3:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}" "finite {s. b\<^sub>3 s}"
+  shows "(\<lambda>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1 + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0) * c\<^sub>2 + 
+          (if b\<^sub>3 v\<^sub>0 then (p::\<real>) else 0) * c\<^sub>3
+    ) summable_on UNIV"
+  apply (subst summable_on_add)+
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(1) infsum_constant_finite_states_summable)
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(2) infsum_constant_finite_states_summable)+
+  apply (rule summable_on_cmult_left)
+  by (simp add: assms(3) infsum_constant_finite_states_summable)+
+
+lemma infsum_constant_finite_states_cmult_3:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}" "finite {s. b\<^sub>3 s}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. 
+          (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1 + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0) * c\<^sub>2 + 
+          (if b\<^sub>3 v\<^sub>0 then (p::\<real>) else 0) * c\<^sub>3) 
+    = m * card {s. b\<^sub>1 s} * c\<^sub>1 + n * card {s. b\<^sub>2 s} * c\<^sub>2 + p * card {s. b\<^sub>3 s} * c\<^sub>3"
+  apply (subst infsum_add)
+  using assms(1) assms(2) apply (rule infsum_constant_finite_states_summable_cmult_2)
+  using assms(3) apply (rule infsum_constant_finite_states_summable_cmult_1)
+  apply (subst infsum_constant_finite_states_cmult_1)
+  using assms(3) apply blast
+  apply (subst infsum_constant_finite_states_cmult_2)
+  using assms(1) assms(2) by blast+
+
+lemma infsum_constant_finite_states_summable_cmult_4:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}" "finite {s. b\<^sub>3 s}" "finite {s. b\<^sub>4 s}"
+  shows "(\<lambda>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1 + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0) * c\<^sub>2 + 
+          (if b\<^sub>3 v\<^sub>0 then (p::\<real>) else 0) * c\<^sub>3 + 
+          (if b\<^sub>4 v\<^sub>0 then (q::\<real>) else 0) * c\<^sub>4
+    ) summable_on UNIV"
+  apply (subst summable_on_add)+
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(1) infsum_constant_finite_states_summable)
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(2) infsum_constant_finite_states_summable)+
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(3) infsum_constant_finite_states_summable)+
+  apply (rule summable_on_cmult_left)
+  by (simp add: assms(4) infsum_constant_finite_states_summable)+
+
+lemma infsum_constant_finite_states_4:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}" "finite {s. b\<^sub>3 s}" "finite {s. b\<^sub>4 s}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. 
+          (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1 + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0) * c\<^sub>2 + 
+          (if b\<^sub>3 v\<^sub>0 then (p::\<real>) else 0) * c\<^sub>3+ 
+          (if b\<^sub>4 v\<^sub>0 then (q::\<real>) else 0) * c\<^sub>4) 
+    = m * card {s. b\<^sub>1 s} * c\<^sub>1 + n * card {s. b\<^sub>2 s} * c\<^sub>2 + p * card {s. b\<^sub>3 s} * c\<^sub>3 + q * card {s. b\<^sub>4 s} * c\<^sub>4"
+  apply (subst infsum_add)
+  using assms(1) assms(2) assms(3) apply (rule infsum_constant_finite_states_summable_cmult_3)
+  using assms(4) apply (rule infsum_constant_finite_states_summable_cmult_1)
+  apply (subst infsum_constant_finite_states_cmult_1)
+  using assms(4) apply blast
+  apply (subst infsum_constant_finite_states_cmult_3)
+  using assms(1) assms(2) assms(3) by blast+
 
 lemma infsum_singleton_cond_unique:
   assumes "\<exists>! v. b v"
@@ -1212,6 +1338,39 @@ proof -
      apply (simp add: assms(1) convex_bound_le f1 f2)
 *)
 
+lemma prel_set_conv_pchoice_assigns:
+  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> 1"
+  shows "rfrel_of_prel (if\<^sub>p (r\<^sup>\<Up>) then (x := e) else (y := f)) 
+       = (pchoice_f (\<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e) (r\<^sup>\<Up>)\<^sub>e (\<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e))"
+  apply (simp add: prel_defs)
+  apply (simp add: prel_set_conv_assign)
+  apply (subst prel_set_conv_pchoice)
+  apply (simp add: assms)
+  apply (simp add: prel_is_dist_assign)+
+  by (simp add: SEXP_def)
+
+lemma prel_set_conv_pchoice_assigns_c:
+  assumes "\<forall>s::'a. 0 \<le> r \<and> r \<le> 1"
+  shows "rfrel_of_prel ((x := e) \<oplus>\<^bsub>(\<lambda>s. r)\<^esub> (y := f)) 
+       = (pchoice_f (\<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e) (\<guillemotleft>r\<guillemotright>)\<^sub>e (\<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e))"
+  apply (simp add: prel_defs)
+  apply (simp add: prel_set_conv_assign)
+  apply (subst prel_set_conv_pchoice_c)
+  apply (simp add: assms)
+  apply (simp add: prel_is_dist_assign)+
+  by (simp add: SEXP_def)
+
+lemma prel_set_conv_pchoice_assigns_c':
+  assumes "\<forall>s::'a. 0 \<le> r \<and> r \<le> 1"
+  shows "rfrel_of_prel ((x := e) \<oplus>\<^bsub>[(\<lambda>s. r)]\<^sub>e\<^esub> (y := f)) 
+       = (pchoice_f (\<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e) (\<guillemotleft>r\<guillemotright>)\<^sub>e (\<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e))"
+  apply (simp add: prel_defs)
+  apply (simp add: prel_set_conv_assign)
+  apply (subst prel_set_conv_pchoice_c)
+  apply (simp add: assms)
+  apply (simp add: prel_is_dist_assign)+
+  by (simp add: SEXP_def)
+
 lemma prel_set_conv_pcond: 
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
@@ -1231,13 +1390,14 @@ lemma prel_set_conv_seqcomp:
   by simp
 
 lemma prel_set_conv_parallel: 
-  assumes "is_final_distribution p"
-  assumes "is_final_distribution q"
+  assumes "is_final_prob p"
+  assumes "is_final_prob q"
+  assumes "\<forall>s\<^sub>1. (\<lambda>s'::'a. p (s\<^sub>1, s')) summable_on UNIV \<or> (\<lambda>s'::'a. q (s\<^sub>1, s')) summable_on UNIV"
   assumes "\<forall>s\<^sub>1. \<exists>s'::'a. p (s\<^sub>1, s') > 0 \<and> q (s\<^sub>1, s') > 0"
   shows "rfrel_of_prel (prel_of_rfrel (pparallel_f p q)) = pparallel_f p q"
   apply (subst prel_of_rfrel_inverse)
   apply (simp)
-  using assms(1) assms(2) assms(3) prel_is_dist_pparallel apply blast
+  using assms(1) assms(2) assms(3) assms(4) prel_is_dist_pparallel apply blast
   by simp
 
 lemma prel_set_conv_uniform_dist:
@@ -1767,6 +1927,12 @@ lemma prel_pchoice_assoc:
   by (auto)
 *)
 
+theorem prel_pchoice_assigns:
+  "(if\<^sub>p r then x := e else y := f) = prel_of_rfrel (r * \<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e + (1 - r) * \<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  apply (simp add: prel_defs)
+  apply (simp add: prel_set_conv_assign)
+  by (expr_auto)
+
 subsubsection \<open> Conditional choice \<close>
 lemma prel_pcond_altdef: 
   shows "if\<^sub>c b then P else Q = prel_of_rfrel (\<lbrakk>b\<rbrakk>\<^sub>\<I> * @(rfrel_of_prel P) + \<lbrakk>\<not>b\<rbrakk>\<^sub>\<I>\<^sub>e * @(rfrel_of_prel Q))\<^sub>e"
@@ -1863,7 +2029,46 @@ qed
 subsubsection \<open> Parallel composition \<close>
 lemma divide_eq: "\<lbrakk>p = q \<and> P = Q\<rbrakk> \<Longrightarrow> (p::\<real>) / P = q / Q"
   by simp
- 
+
+theorem prel_parallel_assoc:
+  assumes "\<forall>s s'. p (s, s') > 0" 
+          "\<forall>s s'. q (s, s') > 0" 
+          "\<forall>s s'. r (s, s') > 0"
+  shows "(p \<parallel>\<^sub>f q) \<parallel>\<^sub>f r = p \<parallel>\<^sub>f (q \<parallel>\<^sub>f r)"
+  apply (simp add: dist_defs)
+  apply (simp add: fun_eq_iff)
+  apply (rule allI)+
+  apply (rule divide_eq)
+  apply (expr_auto)
+proof -
+  fix a::"'a"
+  let ?lhs_pq = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0))"
+  let ?rhs_qr = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. q (a, v\<^sub>0) * r (a, v\<^sub>0))"
+  let ?lhs = "?lhs_pq * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq)"
+  
+  let ?rhs = "?rhs_qr * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * (q (a, v\<^sub>0) * r (a, v\<^sub>0)) / ?rhs_qr)"
+
+(*
+  have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?lhs_pq * (p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq))"
+    apply (rule infsum_cmult_right[symmetric])
+*)
+  (*
+  Cases: 
+    1. ?lhs_pq = 0 \<longleftrightarrow> ?rhs_qr = 0
+      - not summable
+      - summable but zero
+    2. \<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) = 0
+    3. ?lhs_pq summable and > 0 \<longleftrightarrow> ?rhs_qr summable and > 0
+      - "(p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq) < r (a, v0)"
+  *)
+
+(*
+  "p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq" summable_on UNIV
+  "p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?rhs_qr" summable_on UNIV
+*)
+  show "?lhs = ?rhs"
+    oops
+
 theorem prel_parallel_assoc:
   assumes "\<forall>s::'a. is_prob ((curry p) s)" 
           "\<forall>s::'a. is_prob ((curry q) s)" 
@@ -2094,11 +2299,54 @@ theorem prel_parallel_assoc:
 *)
 
 theorem prel_parallel_commute:
-  fixes P::"'a phrel"
+  fixes P Q::"('a, 'b) rfrel"
   shows "P \<parallel> Q = Q \<parallel> P"
   apply (simp add: prel_defs)
   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   by (simp add: mult.commute)
+
+theorem prel_parallel_commute':
+  fixes P Q::"('a, 'b) prel"
+  shows "P \<parallel> Q = Q \<parallel> P"
+  apply (simp add: prel_defs)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  by (simp add: mult.commute)
+
+theorem prel_parallel_commute'':
+  fixes P ::"('a, 'b) rfrel" and Q :: "('a, 'b) prel"
+  shows "P \<parallel> Q = Q \<parallel> P"
+  apply (simp add: prel_defs)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  by (simp add: mult.commute)
+
+theorem prel_parallel_commute''':
+  fixes P ::"('a, 'b) prel" and Q :: "('a, 'b) rfrel"
+  shows "P \<parallel> Q = Q \<parallel> P"
+  apply (simp add: prel_defs)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  by (simp add: mult.commute)
+
+text \<open>Any nonzero constant is a left identity in parallel with a distribution. \<close>
+theorem prel_parallel_left_identity:
+  assumes "is_final_distribution Q"
+  assumes "c \<noteq> 0"
+  shows "(\<lambda>s. c) \<parallel> Q = prel_of_rfrel Q"
+  apply (simp add: prel_defs dist_defs)
+  apply (expr_auto)
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms prel_prob_sum1_summable(3))
+  by (simp add: assms prel_prob_sum1_summable(2))
+
+text \<open>Any nonzero constant is a right identity in parallel with a distribution. \<close>
+theorem prel_parallel_right_identity:
+  assumes "is_final_distribution Q"
+  assumes "c \<noteq> 0"
+  shows "Q \<parallel> (\<lambda>s. c) = prel_of_rfrel Q"
+  apply (simp add: prel_defs dist_defs)
+  apply (expr_auto)
+  apply (subst infsum_cmult_left)
+  apply (simp add: assms prel_prob_sum1_summable(3))
+  by (simp add: assms prel_prob_sum1_summable(2))
 
 subsection \<open> Substitutions \<close>
 

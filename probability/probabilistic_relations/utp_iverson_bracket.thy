@@ -277,7 +277,7 @@ proof -
   then *)
   have "\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u = true"
     by (smt (verit, best) Collect_cong SEXP_def UNIV_def iverson_bracket_def iverson_bracket_inv_def 
-        pred_set_def ref_order.order_refl taut_def true_pred_def)
+        pred_set_def pred_ba.order_refl taut_def true_pred_def)
   then show ?thesis
     by (metis pred_UNIV pred_set true_pred_def)
 qed
@@ -299,7 +299,7 @@ qed
 *)
 
 lemma iverson_bracket_approximate_inverse: "`N \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I>\<^sub>e`"
-  by (metis SEXP_def iverson_bracket_inv_def ref_order.order_refl)
+  by (metis SEXP_def iverson_bracket_inv_def pred_ba.order_refl)
 (*
 proof -
   have 1: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u) = `N \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I>`"

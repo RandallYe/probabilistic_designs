@@ -240,17 +240,33 @@ lemma pparallel_f_eq: "pparallel_f P Q = pparallel_f' P Q"
   apply (simp add: dist_defs)
   by (expr_auto)
 
-definition pparallel :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
-[prel_defs]: "pparallel P Q = prel_of_rfrel (pparallel_f (rfrel_of_prel P) (rfrel_of_prel Q))"
+definition pparallel :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
+[prel_defs]: "pparallel P Q = prel_of_rfrel (pparallel_f P Q)"
+
+definition pparallel' :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
+[prel_defs]: "pparallel' P Q = pparallel (rfrel_of_prel P) (rfrel_of_prel Q)"
+
+definition pparallel'' :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
+[prel_defs]: "pparallel'' P Q = pparallel P (rfrel_of_prel Q)"
+
+definition pparallel''' :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
+[prel_defs]: "pparallel''' P Q = pparallel (rfrel_of_prel P) Q"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts
-  parallel_c :: "'a \<Rightarrow> 'a \<Rightarrow> 'c" (infixl "\<parallel>" 58)
+  parallel_c :: "'a \<Rightarrow> 'b \<Rightarrow> 'c" (infixl "\<parallel>" 58)
 
 adhoc_overloading
-  parallel_c pparallel and parallel_c Sublist.parallel
+  parallel_c pparallel and 
+  parallel_c pparallel' and
+  parallel_c pparallel'' and
+  parallel_c pparallel''' and
+  parallel_c Sublist.parallel
 
-term "((P::('s, 's) prel) \<parallel> Q)"
+term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) rfrel))"
+term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) prel))"
+term "((P::('s, 's) prel) \<parallel> (Q::('s, 's) rfrel))"
+term "((P::('s, 's) prel) \<parallel> (Q::('s, 's) prel))"
 term "((P::'s list) \<parallel> Q)"
 term "([] \<parallel> [a])"
 
