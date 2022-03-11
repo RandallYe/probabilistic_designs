@@ -20,18 +20,12 @@ lemma if_div_distrib: "(if a then (bb::\<real>) else c) / d = (if a then (bb / d
 lemma if_div_distrib': "n * (if a then (bb::\<real>) else c) / d = (if a then (n * bb / d) else (n * c /d))"
   by presburger
 
-find_theorems "?x / ?y"
-lemma "x / y = x * ((1::\<real>) / y)"
-  by (simp add: Fields.field_class.field_divide_inverse)
-
 text \<open>This example is from Hehner's paper "a Probability Perspective" 
 \cite[Sect.~Probabilistic programming]{Hehner2011} \<close>
 term "\<lbrakk>(b := e) :: state1 rel\<rbrakk>\<^sub>P"
 term "(b\<^sup>> = f)\<^sub>e"
-lemma b_assign_rel: "\<lbrakk>(b := \<guillemotleft>e\<guillemotright>) :: state1 rel\<rbrakk>\<^sub>P = (b\<^sup>> = \<guillemotleft>e\<guillemotright>)\<^sub>e"
-  by (rel_auto)
 
-lemma b_assign_rel': "\<lbrakk>(b := e) :: state1 rel\<rbrakk>\<^sub>P = (b\<^sup>> = e\<^sup><)\<^sub>e"
+lemma b_assign_rel: "\<lbrakk>(b := e) :: state1 rel\<rbrakk>\<^sub>P = (b\<^sup>> = e\<^sup><)\<^sub>e"
   apply (simp add: expr_defs)
   by (rel_auto)
 
@@ -43,7 +37,7 @@ lemma "(((if\<^sub>p 1/3 then b := False else b := True) \<parallel> (if\<^sub>p
   apply (simp)
   apply (subst prel_set_conv_pchoice_assigns_c')
    apply (simp)
-  apply (simp add: b_assign_rel')
+  apply (simp add: b_assign_rel)
   apply (simp add: pparallel_def)
   apply (expr_auto add: dist_defs)
   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])

@@ -240,17 +240,21 @@ lemma pparallel_f_eq: "pparallel_f P Q = pparallel_f' P Q"
   apply (simp add: dist_defs)
   by (expr_auto)
 
+text \<open> We provide four variants (different combinations of types for their parameters) of parallel 
+composition for convenience and they use a same notation @{text "\<parallel>"}. All of them defines 
+probabilistic programs of type @{typ "('a\<^sub>1, 'a\<^sub>2) prel"}.
+\<close>
 definition pparallel :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" (infixl "\<parallel>\<^sub>p" 58) where
 [prel_defs]: "pparallel P Q = prel_of_rfrel (pparallel_f P Q)"
 
-definition pparallel' :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
-[prel_defs]: "pparallel' P Q = pparallel (rfrel_of_prel P) (rfrel_of_prel Q)"
+definition pparallel_pp :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
+[prel_defs]: "pparallel_pp P Q = pparallel (rfrel_of_prel P) (rfrel_of_prel Q)"
 
-definition pparallel'' :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
-[prel_defs]: "pparallel'' P Q = pparallel P (rfrel_of_prel Q)"
+definition pparallel_fp :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
+[prel_defs]: "pparallel_fp P Q = pparallel P (rfrel_of_prel Q)"
 
-definition pparallel''' :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
-[prel_defs]: "pparallel''' P Q = pparallel (rfrel_of_prel P) Q"
+definition pparallel_pf :: "('s\<^sub>1, 's\<^sub>2) prel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prel" where
+[prel_defs]: "pparallel_pf P Q = pparallel (rfrel_of_prel P) Q"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts
@@ -258,9 +262,9 @@ consts
 
 adhoc_overloading
   parallel_c pparallel and 
-  parallel_c pparallel' and
-  parallel_c pparallel'' and
-  parallel_c pparallel''' and
+  parallel_c pparallel_pp and
+  parallel_c pparallel_fp and
+  parallel_c pparallel_pf and
   parallel_c Sublist.parallel
 
 term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) rfrel))"

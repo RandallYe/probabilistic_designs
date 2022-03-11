@@ -74,6 +74,13 @@ lemma summable_on_cdiv_left':
   apply (simp only : divide_inverse)
   by (simp add: assms summable_on_cmult_left')
 
+lemma not_summable_on_cdiv_left':
+  fixes f :: "'a \<Rightarrow> \<real>"
+  assumes \<open>c \<noteq> 0\<close>
+  shows "\<not>(\<lambda>x. f x / c) summable_on A \<longleftrightarrow> \<not>f summable_on A"
+  apply (simp only : divide_inverse)
+  by (simp add: assms summable_on_cmult_left')
+
 lemma infsum_geq_element:
   fixes f :: "'a \<Rightarrow> \<real>"
   assumes "\<forall>s. f s \<ge> 0"
@@ -2030,44 +2037,121 @@ subsubsection \<open> Parallel composition \<close>
 lemma divide_eq: "\<lbrakk>p = q \<and> P = Q\<rbrakk> \<Longrightarrow> (p::\<real>) / P = q / Q"
   by simp
 
+(*
+lhs_pq=0    rhs_qr=0    pqr=0       result (lhs = rhs)
+T           T           ?           eq
+T           F           T           eq
+T           F           F           !eq
+F           T           T           eq
+F           T           F           !eq
+F           F           ?           eq
+
+lhs_pq = 0: 
+    not p * q summable_on
+        or
+    !s. p * q = 0
+lhs_pq != 0: 
+    p * q summable_on UNIV
+        and
+    not (!s. p * q = 0)
+lhs_qr = 0: 
+    not q * r summable_on
+        or
+    !s. q * r = 0
+lhs_qr != 0: 
+    q * r summable_on UNIV
+        and
+    not (!s. q * r = 0)
+pqr != 0
+    p * q * r summable_on UNIV
+        and
+    not (!s. p * q * r = 0)
+*)
 theorem prel_parallel_assoc:
-  assumes "\<forall>s s'. p (s, s') > 0" 
-          "\<forall>s s'. q (s, s') > 0" 
-          "\<forall>s s'. r (s, s') > 0"
+  assumes 
+    "\<not>(
+      ( \<comment> \<open> infsum p*q UNIV = 0\<close>
+          (\<forall>a. \<not>(\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) summable_on UNIV) 
+        \<or> (\<forall>a v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) = 0)
+      ) \<and>
+      ( \<comment> \<open> infsum q*r UNIV \<noteq> 0\<close>
+          (\<forall>a. (\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) summable_on UNIV) 
+        \<and> (\<forall>a. \<not> (\<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) = 0))
+      ) \<and>
+      (  \<comment> \<open> infsum q*r UNIV \<noteq> 0\<close>
+        (\<forall>a. (\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0)) summable_on UNIV) 
+        \<and> (\<forall>a. \<not> (\<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) = 0))
+      )
+    )"
+    "\<not>(
+      ( \<comment> \<open> infsum q*r UNIV = 0\<close>
+          (\<forall>a. \<not>(\<lambda>v\<^sub>0::'b. q (a, v\<^sub>0) * r (a, v\<^sub>0)) summable_on UNIV) 
+        \<or> (\<forall>a v\<^sub>0::'b. q (a, v\<^sub>0) * r (a, v\<^sub>0) = 0)
+      ) \<and>
+      ( \<comment> \<open> infsum p*q UNIV \<noteq> 0\<close>
+          (\<forall>a. (\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) summable_on UNIV) 
+        \<and> (\<forall>a. \<not> (\<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) = 0))
+      ) \<and>
+      (  \<comment> \<open> infsum q*r UNIV \<noteq> 0\<close>
+        (\<forall>a. (\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0)) summable_on UNIV) 
+        \<and> (\<forall>a. \<not> (\<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) = 0))
+      )
+    )"
   shows "(p \<parallel>\<^sub>f q) \<parallel>\<^sub>f r = p \<parallel>\<^sub>f (q \<parallel>\<^sub>f r)"
   apply (simp add: dist_defs)
   apply (simp add: fun_eq_iff)
   apply (rule allI)+
   apply (rule divide_eq)
   apply (expr_auto)
+  apply (subst mult.assoc[symmetric])
 proof -
   fix a::"'a"
   let ?lhs_pq = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0))"
   let ?rhs_qr = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. q (a, v\<^sub>0) * r (a, v\<^sub>0))"
   let ?lhs = "?lhs_pq * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq)"
   
-  let ?rhs = "?rhs_qr * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * (q (a, v\<^sub>0) * r (a, v\<^sub>0)) / ?rhs_qr)"
+  let ?rhs = "?rhs_qr * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?rhs_qr)"
 
-(*
-  have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?lhs_pq * (p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq))"
-    apply (rule infsum_cmult_right[symmetric])
-*)
-  (*
-  Cases: 
-    1. ?lhs_pq = 0 \<longleftrightarrow> ?rhs_qr = 0
-      - not summable
-      - summable but zero
-    2. \<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) = 0
-    3. ?lhs_pq summable and > 0 \<longleftrightarrow> ?rhs_qr summable and > 0
-      - "(p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq) < r (a, v0)"
-  *)
-
-(*
-  "p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq" summable_on UNIV
-  "p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?rhs_qr" summable_on UNIV
-*)
   show "?lhs = ?rhs"
-    oops
+  proof (cases "?lhs_pq = 0")
+    case True
+    assume T_pq: "?lhs_pq = 0"
+    then have lhs_0: "?lhs = 0"
+      using mult_eq_0_iff by blast
+    then show ?thesis 
+      (* *)
+      proof (cases "?rhs_qr = 0")
+        case True
+        assume T_qr: "?rhs_qr = 0"
+        then have rhs_0: "?rhs = 0"
+          using mult_eq_0_iff by blast
+        then show ?thesis 
+          using lhs_0 by presburger
+      next
+        case False
+        assume F_qr: "\<not>?rhs_qr = 0"
+        from T_pq have "(\<not>(\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) summable_on UNIV)
+          \<or> (\<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) = 0)"
+          sledgehammer
+        from T_pq F_qr assms(1) have "((\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0)) summable_on UNIV) 
+          \<and> (\<not> (\<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) = 0))"
+          sledgehammer
+        then show ?thesis sorry
+      qed
+  next
+    case False
+    then show ?thesis sorry
+  qed
+  
+  proof (cases "(\<lambda>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0)) summable_on UNIV")
+    case True
+    then show ?thesis sorry
+  next
+    case False
+    then show ?thesis 
+    proof (cases "?lhs_pq = 0")
+      
+  qed
 
 theorem prel_parallel_assoc:
   assumes "\<forall>s::'a. is_prob ((curry p) s)" 
@@ -2337,6 +2421,18 @@ theorem prel_parallel_left_identity:
   apply (simp add: assms prel_prob_sum1_summable(3))
   by (simp add: assms prel_prob_sum1_summable(2))
 
+theorem prel_parallel_left_identity':
+  assumes "c \<noteq> 0"
+  shows "(\<lambda>s. c) \<parallel> Q = Q"
+  apply (simp add: prel_defs dist_defs)
+  apply (expr_auto)
+  apply (subst infsum_cmult_right)
+  apply (simp add: prel_summable)
+  apply (simp add: assms)
+  apply (subst prel_sum_1)
+  apply (simp)
+  by (simp add: rfrel_of_prel_inverse)
+
 text \<open>Any nonzero constant is a right identity in parallel with a distribution. \<close>
 theorem prel_parallel_right_identity:
   assumes "is_final_distribution Q"
@@ -2347,6 +2443,18 @@ theorem prel_parallel_right_identity:
   apply (subst infsum_cmult_left)
   apply (simp add: assms prel_prob_sum1_summable(3))
   by (simp add: assms prel_prob_sum1_summable(2))
+
+theorem prel_parallel_right_identity':
+  assumes "c \<noteq> 0"
+  shows "Q \<parallel> (\<lambda>s. c) = Q"
+  apply (simp add: prel_defs dist_defs)
+  apply (expr_auto)
+  apply (subst infsum_cmult_left)
+  apply (simp add: prel_summable)
+  apply (simp add: assms)
+  apply (subst prel_sum_1)
+  apply (simp)
+  by (simp add: rfrel_of_prel_inverse)
 
 subsection \<open> Substitutions \<close>
 
