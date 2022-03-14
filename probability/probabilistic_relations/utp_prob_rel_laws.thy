@@ -47,6 +47,41 @@ lemma conditional_conds_conj': "\<forall>s. (if b\<^sub>1 s then (m::\<real>) el
   by simp
 
 subsection \<open> Laws of @{text infsum} \<close>
+lemma infset_0_not_summable_or_sum_to_zero:
+  assumes "infsum f A = 0"
+  shows "(f summable_on A \<and> has_sum f A 0) \<or> \<not> f summable_on A"
+  by (simp add: assms summable_iff_has_sum_infsum)
+
+lemma infset_0_not_summable_or_zero:
+  assumes "\<forall>s. f s \<ge> (0::\<real>)"
+  assumes "infsum f A = 0"
+  shows "(\<forall>s \<in> A. f s = 0) \<or> \<not> f summable_on A"
+proof (rule ccontr)
+  assume a1: "\<not> ((\<forall>s\<in>A. f s = (0)) \<or> \<not> f summable_on A)"
+  then have f1: "(\<not> (\<forall>s\<in>A. f s = (0))) \<and> f summable_on A"
+    by linarith
+  then have "\<exists>x \<in> A. f x > 0"
+    apply (simp add: Bex_def)
+    apply (auto)
+    apply (rule_tac x = "x" in exI)
+    apply (simp)
+    using assms(1) by (metis order_le_less)
+
+  have ind_ge_0: "infsum f {(SOME x. x \<in>A \<and> f x > 0)} > 0"
+    using a1 assms(1) assms(2) nonneg_infsum_le_0D by force
+
+  have "infsum f {(SOME x. x \<in>A \<and> f x > 0)} \<le> infsum f A"
+    apply (rule infsum_mono2)
+    apply simp
+    using f1 apply blast
+    using a1 assms(1) assms(2) nonneg_infsum_le_0D apply force
+    using assms(1) by blast
+  then have "infsum f A > 0"
+    using ind_ge_0 by linarith
+  then show "False"
+    using assms(2) by simp
+qed
+
 lemma has_sum_cdiv_left:
   fixes f :: "'a \<Rightarrow> \<real>"
   assumes \<open>has_sum f A a\<close>
@@ -2069,7 +2104,11 @@ pqr != 0
 *)
 theorem prel_parallel_assoc:
   assumes 
-    "\<not>(
+    "\<forall>s. (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (s, v\<^sub>0) * q (s, v\<^sub>0)) = 0 \<longrightarrow> 
+         ((\<Sum>\<^sub>\<infinity>v\<^sub>0. q (s, v\<^sub>0) * r (s, v\<^sub>0)) = 0 \<or> (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (s, v\<^sub>0) * q (s, v\<^sub>0) * r (s, v\<^sub>0)) = 0)"
+    "\<forall>s. (\<Sum>\<^sub>\<infinity>v\<^sub>0. q (s, v\<^sub>0) * r (s, v\<^sub>0)) = 0 \<longrightarrow> 
+         ((\<Sum>\<^sub>\<infinity>v\<^sub>0. p (s, v\<^sub>0) * q (s, v\<^sub>0)) = 0 \<or> (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (s, v\<^sub>0) * q (s, v\<^sub>0) * r (s, v\<^sub>0)) = 0)"
+    (*"\<not>(
       ( \<comment> \<open> infsum p*q UNIV = 0\<close>
           (\<forall>a. \<not>(\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) summable_on UNIV) 
         \<or> (\<forall>a v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) = 0)
@@ -2096,7 +2135,7 @@ theorem prel_parallel_assoc:
         (\<forall>a. (\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0)) summable_on UNIV) 
         \<and> (\<forall>a. \<not> (\<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) = 0))
       )
-    )"
+    )"*)
   shows "(p \<parallel>\<^sub>f q) \<parallel>\<^sub>f r = p \<parallel>\<^sub>f (q \<parallel>\<^sub>f r)"
   apply (simp add: dist_defs)
   apply (simp add: fun_eq_iff)
@@ -2108,18 +2147,20 @@ proof -
   fix a::"'a"
   let ?lhs_pq = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0))"
   let ?rhs_qr = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. q (a, v\<^sub>0) * r (a, v\<^sub>0))"
-  let ?lhs = "?lhs_pq * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?lhs_pq)"
-  
-  let ?rhs = "?rhs_qr * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) / ?rhs_qr)"
+  let ?pqr = "(\<lambda>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0))"
+
+  let ?lhs = "?lhs_pq * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq)"
+  let ?rhs = "?rhs_qr * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr)"
 
   show "?lhs = ?rhs"
+  (* 1: pq *)
   proof (cases "?lhs_pq = 0")
     case True
     assume T_pq: "?lhs_pq = 0"
     then have lhs_0: "?lhs = 0"
       using mult_eq_0_iff by blast
     then show ?thesis 
-      (* *)
+      (* 2: qr *)
       proof (cases "?rhs_qr = 0")
         case True
         assume T_qr: "?rhs_qr = 0"
@@ -2130,30 +2171,122 @@ proof -
       next
         case False
         assume F_qr: "\<not>?rhs_qr = 0"
-        from T_pq have "(\<not>(\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) summable_on UNIV)
-          \<or> (\<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) = 0)"
-          sledgehammer
-        from T_pq F_qr assms(1) have "((\<lambda>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0)) summable_on UNIV) 
-          \<and> (\<not> (\<forall>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0) = 0))"
-          sledgehammer
-        then show ?thesis sorry
+        from T_pq F_qr assms(1) have "(\<Sum>\<^sub>\<infinity>v\<^sub>0. ?pqr v\<^sub>0) = 0"
+          by blast
+        then have F_qr_summable: 
+          "((?pqr summable_on UNIV) \<and> has_sum ?pqr UNIV 0) \<or> \<not> ?pqr summable_on UNIV"
+          apply (subst infset_0_not_summable_or_sum_to_zero)
+          by simp+
+        then show ?thesis 
+          (* 3: pqr *)
+          proof (cases "((?pqr summable_on UNIV) \<and> has_sum ?pqr UNIV 0)")
+            case True
+            then have "has_sum (\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) UNIV (0 / ?rhs_qr)"
+              using has_sum_cdiv_left by fastforce
+            then have sum_rhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) = 0"
+              by (simp add: infsumI)
+            have sum_lhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) = 0"
+              by (simp add: T_pq)
+            then show ?thesis 
+              using sum_rhs_pqr_0 by simp
+          next
+            case False
+            then have F_qr_summable_F: "\<not> ?pqr summable_on UNIV"
+              using F_qr_summable by blast
+            (* have "\<not>(\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) summable_on UNIV"
+              apply (subst not_summable_on_cdiv_left') *)
+            have "\<not>(\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) summable_on UNIV"
+              apply (subst not_summable_on_cdiv_left')
+              by (simp add: F_qr F_qr_summable_F)+
+            then have sum_rhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) = 0"
+              using infsum_not_zero_summable by blast
+            then show ?thesis 
+              by (simp add: lhs_0)
+          qed
       qed
   next
     case False
-    then show ?thesis sorry
+    assume F_pq: "\<not>?lhs_pq = 0"
+    then show ?thesis 
+      (* 2: qr *)
+      proof (cases "?rhs_qr = 0")
+        case True
+        assume T_qr: "?rhs_qr = 0"
+        then have rhs_0: "?rhs = 0"
+          using mult_eq_0_iff by blast
+        from T_qr F_pq assms(2) have "(\<Sum>\<^sub>\<infinity>v\<^sub>0. ?pqr v\<^sub>0) = 0"
+          by blast
+        then have F_pq_summable: 
+          "((?pqr summable_on UNIV) \<and> has_sum ?pqr UNIV 0) \<or> \<not> ?pqr summable_on UNIV"
+          apply (subst infset_0_not_summable_or_sum_to_zero)
+          by simp+
+        then show ?thesis 
+          (* 3: pqr *)
+          proof (cases "((?pqr summable_on UNIV) \<and> has_sum ?pqr UNIV 0)")
+            case True
+            then have "has_sum (\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) UNIV (0 / ?lhs_pq)"
+              using has_sum_cdiv_left by fastforce
+            then have sum_lhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) = 0"
+              by (simp add: infsumI)
+            have sum_rhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) = 0"
+              by (simp add: T_qr)
+            then show ?thesis 
+              using sum_lhs_pqr_0 by simp
+          next
+            case False
+            then have F_pq_summable_F: "\<not> ?pqr summable_on UNIV"
+              using F_pq_summable by blast
+            have "\<not>(\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) summable_on UNIV"
+              apply (subst not_summable_on_cdiv_left')
+              by (simp add: F_pq F_pq_summable_F)+
+            then have sum_lhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) = 0"
+              using infsum_not_zero_summable by blast
+            then show ?thesis 
+              by (simp add: rhs_0)
+          qed
+      next
+        case False
+        assume F_qr: "\<not>?rhs_qr = 0"
+        show ?thesis
+        (* 3: pqr *)
+        proof (cases "?pqr summable_on UNIV")
+          case True
+          assume F_pqr: "?pqr summable_on UNIV"
+          have F_lhs_pqr: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?lhs_pq * ?pqr v\<^sub>0 / ?lhs_pq)"
+            apply (subst infsum_cmult_right[symmetric])
+            using F_pqr summable_on_cdiv_left' apply fastforce
+            by simp
+          have F_lhs_pqr': "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0)"
+            by (simp add: F_pq)
+          have F_rhs_pqr: "?rhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?rhs_qr * ?pqr v\<^sub>0 / ?rhs_qr)"
+            apply (subst infsum_cmult_right[symmetric])
+            using F_pqr summable_on_cdiv_left' apply fastforce
+            by simp
+          have F_rhs_pqr': "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0)"
+            by (simp add: F_qr)
+          show ?thesis 
+            using F_lhs_pqr F_lhs_pqr' F_rhs_pqr F_rhs_pqr' by presburger
+        next
+          case False
+          assume F_pqr: "\<not>?pqr summable_on UNIV"
+          have F_lhs_pqr: "\<not>(\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) summable_on UNIV"
+            apply (subst not_summable_on_cdiv_left')
+            by (simp add: F_pq F_pqr)+
+          then have sum_lhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) = 0"
+            using infsum_not_zero_summable by blast
+          have F_rhs_pqr: "\<not>(\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) summable_on UNIV"
+            apply (subst not_summable_on_cdiv_left')
+            by (simp add: F_qr F_pqr)+
+          then have sum_rhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) = 0"
+            using infsum_not_zero_summable by blast
+          then show ?thesis
+            by (simp add: sum_lhs_pqr_0)
+        qed
+      qed
+    qed
   qed
   
-  proof (cases "(\<lambda>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0) * r (a, v\<^sub>0)) summable_on UNIV")
-    case True
-    then show ?thesis sorry
-  next
-    case False
-    then show ?thesis 
-    proof (cases "?lhs_pq = 0")
-      
-  qed
-
-theorem prel_parallel_assoc:
+theorem prel_parallel_assoc_1:
   assumes "\<forall>s::'a. is_prob ((curry p) s)" 
           "\<forall>s::'a. is_prob ((curry q) s)" 
           "\<forall>s::'a. is_prob ((curry r) s)"
