@@ -233,12 +233,295 @@ next
     by linarith
 qed
 
-lemma "rfrel_of_prel (prel_of_rfrel move_right_1) = move_right_1"
-  ap
+lemma move_right_1_dist: "rfrel_of_prel (prel_of_rfrel move_right_1) = move_right_1"
+proof -
+  have summable_1: "(\<lambda>s::robot_local_state. (4::\<real>) * (if bel\<^sub>v s = (0::\<nat>) then 1::\<real> else (0::\<real>)) / (9::\<real>)) 
+        summable_on UNIV"
+    apply (rule summable_on_cdiv_left)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    by (smt (z3) Collect_mono card_0_eq finite.insertI infinite_arbitrarily_large rev_finite_subset 
+      robot_local_state.surjective singleton_conv unit.exhaust)
 
-lemma "(((init \<parallel> scale_door) ; move_right) \<parallel> scale_door) = 
+  have summable_2: "(\<lambda>s::robot_local_state. (4::\<real>) * (if bel\<^sub>v s = Suc (0::\<nat>) then 1::\<real> else (0::\<real>)) / (9::\<real>)) 
+      summable_on UNIV"
+    apply (rule summable_on_cdiv_left)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    by (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+
+  have summable_3: "(\<lambda>s::robot_local_state. (if bel\<^sub>v s = (2::\<nat>) then 1::\<real> else (0::\<real>)) / (9::\<real>)) 
+      summable_on UNIV"
+    apply (rule summable_on_cdiv_left)
+    apply (rule infsum_constant_finite_states_summable)
+    by (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+
+  have sum_1: "(\<Sum>\<^sub>\<infinity>s::robot_local_state. (4::\<real>) * (if bel\<^sub>v s = (0::\<nat>) then 1::\<real> else (0::\<real>)) / (9::\<real>)) = 4/9"
+    apply (subst infsum_cdiv_left)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+    apply (subst infsum_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+    apply (subst infsum_constant_finite_states)
+    apply (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+    apply (simp)
+    apply (subst card_1_singleton_iff)
+    apply (rule_tac x = "\<lparr>bel\<^sub>v = (0::\<nat>)\<rparr>" in exI)
+    by force
+
+have sum_2: "(\<Sum>\<^sub>\<infinity>s::robot_local_state. (4::\<real>) * (if bel\<^sub>v s = Suc (0::\<nat>) then 1::\<real> else (0::\<real>)) / (9::\<real>)) = 4/9"
+    apply (subst infsum_cdiv_left)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+    apply (subst infsum_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+    apply (subst infsum_constant_finite_states)
+    apply (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+    apply (simp)
+    apply (subst card_1_singleton_iff)
+    apply (rule_tac x = "\<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr>" in exI)
+    by force
+
+  have sum_3: "(\<Sum>\<^sub>\<infinity>s::robot_local_state. (if bel\<^sub>v s = (2::\<nat>) then 1::\<real> else (0::\<real>)) / (9::\<real>)) = 1/9"
+    apply (subst infsum_cdiv_left)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+    apply (subst infsum_constant_finite_states)
+    apply (smt (z3) Collect_mono finite.emptyI finite.insertI rev_finite_subset 
+      robot_local_state.equality singleton_conv unit.exhaust)
+    apply (simp)
+    apply (subst card_1_singleton_iff)
+    apply (rule_tac x = "\<lparr>bel\<^sub>v = (2::\<nat>)\<rparr>" in exI)
+  by force
+
+  show ?thesis
+    apply (simp add: move_right_1_def)
+    apply (subst prel_of_rfrel_inverse)
+    apply (expr_auto add: dist_defs)
+    apply (subst infsum_add)
+    apply (subst summable_on_add)
+    apply (simp add: summable_1)
+    apply (simp add: summable_2)
+    apply (simp)
+    apply (simp add: summable_3)
+    apply (subst infsum_add)
+    apply (simp add: summable_1)
+    apply (simp add: summable_2)
+    by (simp add: sum_1 sum_2 sum_3)+
+qed
+
+find_theorems "?a * (?b * ?c)"
+lemma believe_2_sum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
+         (4::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+         ((3::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>)) + (1::\<real>)) /
+         (9::\<real>) +
+         (4::\<real>) * (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+         ((3::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>)) + (1::\<real>)) /
+         (9::\<real>) +
+         (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>)) *
+         ((3::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>)) + (1::\<real>)) /
+         (9::\<real>)) = 8 /3"
+  apply (simp add: ring_distribs(1))
+  apply (subst mult.assoc[symmetric,where b = "3"])
+  apply (subst mult.commute[where b = "3"])
+  apply (subst mult.assoc)
+  apply (subst conditional_conds_conj)+
+proof -
+  let ?f1 = "(\<lambda>v\<^sub>0::robot_local_state. ((12::\<real>) *
+        (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> (bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>)) then 1::\<real> else (0::\<real>)) +
+        (4::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) then 1::\<real> else (0::\<real>))) /
+       (9::\<real>))"
+  let ?f2 = "(\<lambda>v\<^sub>0::robot_local_state. ((12::\<real>) *
+        (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> (bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>)) then 1::\<real> else (0::\<real>)) +
+        (4::\<real>) * (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) then 1::\<real> else (0::\<real>))) /
+       (9::\<real>))"
+  let ?f3 = "(\<lambda>v\<^sub>0::robot_local_state. ((3::\<real>) * (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> (bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>)) then 1::\<real> else (0::\<real>)) +
+      (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>))) /
+     (9::\<real>))"
+  have summable_1: "?f1 summable_on UNIV"
+    apply (rule summable_on_cdiv_left)
+    apply (rule summable_on_add)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, ccfv_SIG) Collect_mono finite.emptyI finite.insertI not_finite_existsD 
+        rev_finite_subset robot_local_state.equality singleton_conv unit.exhaust)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    by (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+  have summable_2: "?f2 summable_on UNIV"
+    apply (rule summable_on_cdiv_left)
+    apply (rule summable_on_add)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, ccfv_SIG) Collect_mono finite.emptyI finite.insertI not_finite_existsD 
+        rev_finite_subset robot_local_state.equality singleton_conv unit.exhaust)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    by (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+  have summable_3: "?f3 summable_on UNIV"
+    apply (rule summable_on_cdiv_left)
+    apply (rule summable_on_add)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, ccfv_SIG) Collect_mono finite.emptyI finite.insertI not_finite_existsD 
+        rev_finite_subset robot_local_state.equality singleton_conv unit.exhaust)
+    apply (rule infsum_constant_finite_states_summable)
+    by (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+
+  have card_1: "card {s::robot_local_state. bel\<^sub>v s = 0} = Suc (0)"
+    apply (subst card_1_singleton_iff)
+    by (smt (verit, del_insts) Collect_cong robot_local_state.equality robot_local_state.select_convs(1) 
+      singleton_conv unit.exhaust)
+  have card_2: "card {s::robot_local_state. bel\<^sub>v s = Suc (0)} = Suc (0)"
+    apply (subst card_1_singleton_iff)
+    by (smt (verit, del_insts) Collect_cong robot_local_state.equality robot_local_state.select_convs(1) 
+      singleton_conv unit.exhaust)
+  have card_3: "card {s::robot_local_state. bel\<^sub>v s = 2} = Suc (0)"
+    apply (subst card_1_singleton_iff)
+    by (smt (verit, del_insts) Collect_cong robot_local_state.equality robot_local_state.select_convs(1) 
+      singleton_conv unit.exhaust)
+
+  have sum_1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?f1 v\<^sub>0) = 16 / 9"
+    apply (subst infsum_cdiv_left)
+    apply (rule summable_on_add)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, ccfv_SIG) Collect_mono finite.emptyI finite.insertI not_finite_existsD 
+        rev_finite_subset robot_local_state.equality singleton_conv unit.exhaust)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_add)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, ccfv_SIG) Collect_mono finite.emptyI finite.insertI not_finite_existsD 
+        rev_finite_subset robot_local_state.equality singleton_conv unit.exhaust)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_constant_finite_states)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_constant_finite_states)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    using card_1 by (smt (verit, ccfv_SIG) Collect_cong One_nat_def of_nat_1)
+
+  have sum_2: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?f2 v\<^sub>0) = 4 / 9"
+    apply (subst infsum_cdiv_left)
+    apply (rule summable_on_add)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, ccfv_SIG) Collect_mono finite.emptyI finite.insertI not_finite_existsD 
+        rev_finite_subset robot_local_state.equality singleton_conv unit.exhaust)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_add)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, ccfv_SIG) Collect_mono finite.emptyI finite.insertI not_finite_existsD 
+        rev_finite_subset robot_local_state.equality singleton_conv unit.exhaust)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_constant_finite_states)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_constant_finite_states)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    using card_2 by (simp add: card_0_singleton)
+
+  have sum_3: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?f3 v\<^sub>0) = 4 / 9"
+    apply (subst infsum_cdiv_left)
+    apply (rule summable_on_add)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, ccfv_SIG) Collect_mono finite.emptyI finite.insertI not_finite_existsD 
+        rev_finite_subset robot_local_state.equality singleton_conv unit.exhaust)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_add)
+    apply (rule summable_on_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, ccfv_SIG) Collect_mono finite.emptyI finite.insertI not_finite_existsD 
+        rev_finite_subset robot_local_state.equality singleton_conv unit.exhaust)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_cmult_right)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_constant_finite_states)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+    apply (subst infsum_constant_finite_states)
+    apply (metis (mono_tags, lifting) card.infinite card_1_singleton nat.simps(3) not_finite_existsD 
+        robot_local_state.equality unit.exhaust)
+  using card_3 by (smt (verit, ccfv_SIG) Collect_cong One_nat_def of_nat_1)
+
+  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?f1 v\<^sub>0 + ?f2 v\<^sub>0 + ?f3 v\<^sub>0) * 3 = 8"
+    apply (subst infsum_add)
+    apply (rule summable_on_add)
+    using summable_1 apply blast
+    using summable_2 apply blast
+    using summable_3 apply blast
+    apply (subst infsum_add)
+    using summable_1 apply blast
+    using summable_2 apply blast
+    by (simp add: sum_1 sum_2 sum_3)
+qed
+  
+lemma believe_2: "(((init \<parallel> scale_door) ; move_right) \<parallel> scale_door) = 
   prel_of_rfrel (2/3 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 1/6 * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 1/6 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   apply (simp add: move_right_1_simp)
   apply (simp add: scale_door_def door_def prel_defs)
+  apply (simp add: move_right_1_dist)
+  apply (simp add: move_right_1_def dist_defs)
+  apply (expr_auto add: rel)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (simp add: ring_distribs(2))
+  apply (subst fun_eq_iff, rule allI)
+  apply (auto)
+  by (simp add: believe_2_sum)+
 
 end
