@@ -194,5 +194,4 @@ term "$x"
 term "$x\<^sup><"
 find_theorems name: "state."
 
-
 end

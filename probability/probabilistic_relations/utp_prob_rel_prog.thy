@@ -2,7 +2,7 @@ section \<open> Probabilistic relation programming \<close>
 
 theory utp_prob_rel_prog
   imports 
-    "HOL.Series" 
+    (* "HOL.Series" *)
     "HOL-Analysis.Infinite_Sum" 
     "utp_iverson_bracket" 
     "utp_distribution"
