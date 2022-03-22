@@ -111,7 +111,7 @@ lemma believe_1_simp': "(init \<parallel> scale_door) = prel_of_rfrel believe_1"
   by (rel_auto)
 
 lemma move_right_1_simp: "(init \<parallel> scale_door) ; move_right = prel_of_rfrel move_right_1"
-  apply (simp add: pcomp_def move_right_1_def)
+  apply (simp add: pseqcomp_def move_right_1_def)
   (* apply (simp add: pparallel_def dist_norm_def) *)
   apply (simp add: init_def)
   apply (subst prel_parallel_uniform_dist')

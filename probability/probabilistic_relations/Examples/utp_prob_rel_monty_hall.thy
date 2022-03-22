@@ -928,7 +928,42 @@ next
     using calculation lhs_1_infsum lhs_2_infsum lhs_3_infsum rhs_1_1 rhs_1_2 rhs_1_3 by presburger
 qed
 
-lemma IMHA__NC_win: "rfrel_of_prel (IMHA_NC) ;\<^sub>f \<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1/3)\<^sub>e"
+lemma IMHA_NC_altdef_states_1_eq:
+  "{s::DWTA_state. ((c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>)) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,\<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, 
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>}"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)
+  apply (rule iffI)
+  apply (smt (z3) DWTA_state.surjective Orderings.order_eq_iff Suc_eq_numeral add.assoc 
+      cong_exp_iff_simps(2) diff_add_zero diff_is_0_eq le_SucE mod_Suc mod_self numeral_1_eq_Suc_0 
+      numeral_2_eq_2 numeral_3_eq_3 old.unit.exhaust one_eq_numeral_iff plus_1_eq_Suc)
+  by force
+
+lemma IMHA_NC_altdef_states_2_eq:
+  "{s::DWTA_state. ((c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>)) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>, 
+       \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>}"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)
+  apply (rule iffI)
+  apply (smt (verit, best) DWTA_state.surjective lessI less_2_cases mod_Suc mod_less numeral_2_eq_2 
+      numeral_3_eq_3 old.unit.exhaust order_le_less) 
+  by force
+
+lemma IMHA_NC_altdef_states_3_eq: 
+  "{s::DWTA_state. ((\<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>)) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s)}
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = (2::\<nat>), m\<^sub>v = Suc (0::\<nat>)\<rparr>,
+       \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (2::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>, 
+       \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>}"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)
+  apply (rule iffI)
+  apply (smt (verit, ccfv_SIG) DWTA_state.surjective One_nat_def diff_add_inverse diff_diff_eq 
+      less_2_cases numeral_2_eq_2 numeral_3_eq_3 old.unit.exhaust order_le_less plus_1_eq_Suc)
+  by force
+
+lemma IMHA__NC_win: "rfrel_of_prel (IMHA_NC) ; \<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1/3)\<^sub>e"
   apply (simp add: IMHA_NC_altdef)
   apply (subst prel_of_rfrel_inverse)
   using IMHA_NC_altdef_dist apply blast
@@ -965,48 +1000,19 @@ proof -
 
   have lhs_3_zero: "?lhs_3 = (\<lambda>s::DWTA_state. 0)"
     by auto
-  have states_1_eq:"{s::DWTA_state. ((c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>)) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)}
-    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,\<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, 
-      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>}"
-    apply (simp add: set_eq_iff)
-    apply (rule allI)
-    apply (rule iffI)
-     apply (smt (z3) DWTA_state.surjective Orderings.order_eq_iff Suc_eq_numeral add.assoc 
-        cong_exp_iff_simps(2) diff_add_zero diff_is_0_eq le_SucE mod_Suc mod_self numeral_1_eq_Suc_0 
-        numeral_2_eq_2 numeral_3_eq_3 old.unit.exhaust one_eq_numeral_iff plus_1_eq_Suc)
-    by force
-
-  have states_2_eq:"{s::DWTA_state. ((c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>)) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)}
-    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>, 
-       \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>}"
-    apply (simp add: set_eq_iff)
-    apply (rule allI)
-    apply (rule iffI)
-    apply (smt (verit, best) DWTA_state.surjective lessI less_2_cases mod_Suc mod_less numeral_2_eq_2 
-        numeral_3_eq_3 old.unit.exhaust order_le_less) 
-    by force
-
-  have states_3_eq: "{s::DWTA_state. ((\<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>)) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s)}
-    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = (2::\<nat>), m\<^sub>v = Suc (0::\<nat>)\<rparr>,
-       \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (2::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>, 
-       \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>}"
-    apply (simp add: set_eq_iff)
-    apply (rule allI)
-    apply (rule iffI)
-    apply (smt (verit, ccfv_SIG) DWTA_state.surjective One_nat_def diff_add_inverse diff_diff_eq 
-        less_2_cases numeral_2_eq_2 numeral_3_eq_3 old.unit.exhaust order_le_less plus_1_eq_Suc)
-    by force
 
   have lhs_1_summable: "?lhs_1 summable_on UNIV"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states_summable)
-    using states_1_eq apply (metis (mono_tags, lifting) Collect_mono finite.emptyI finite.insertI finite_subset)
+    using IMHA_NC_altdef_states_1_eq apply (metis (mono_tags, lifting) Collect_mono finite.emptyI 
+        finite.insertI finite_subset)
     by simp
 
   have lhs_2_summable: "?lhs_2 summable_on UNIV"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states_summable)
-    using states_2_eq apply (metis (mono_tags, lifting) Collect_mono finite.emptyI finite.insertI finite_subset)
+    using IMHA_NC_altdef_states_2_eq apply (metis (mono_tags, lifting) Collect_mono finite.emptyI 
+        finite.insertI finite_subset)
     by simp
 
   have lhs_3_summable: "?lhs_3 summable_on UNIV"
@@ -1016,16 +1022,16 @@ proof -
     apply (simp add: lhs_1_eq)
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states)
-    using states_1_eq apply (metis (no_types, lifting) finite.emptyI finite.insertI)
-    apply (subst states_1_eq)
+    using IMHA_NC_altdef_states_1_eq apply (metis (no_types, lifting) finite.emptyI finite.insertI)
+    apply (subst IMHA_NC_altdef_states_1_eq)
     by auto
 
   have lhs_2_infsum: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_2 s) = 3"
     apply (simp add: lhs_2_eq)
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states)
-    using states_2_eq apply (metis (no_types, lifting) finite.emptyI finite.insertI)
-    apply (subst states_2_eq)
+    using IMHA_NC_altdef_states_2_eq apply (metis (no_types, lifting) finite.emptyI finite.insertI)
+    apply (subst IMHA_NC_altdef_states_2_eq)
     by auto
 
   have lhs_3_infsum: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_3 s) = 0"
@@ -1053,6 +1059,51 @@ proof -
     apply (simp_all add: lhs_3_summable)
     using lhs_1_infsum lhs_2_infsum lhs_3_infsum by (simp)
 qed
+
+subsubsection \<open> Average values \<close>
+text \<open>Average value of @{term "p"} after the execution of @{term "IMHA_C"}, a No Change Strategy. \<close>
+lemma IMHA_NC_average_p: "rfrel_of_prel IMHA_NC ; ($p\<^sup><)\<^sub>e = (1)\<^sub>e"
+  apply (simp add: IMHA_NC_altdef)
+  apply (subst prel_of_rfrel_inverse)
+  using IMHA_NC_altdef_dist apply blast
+  apply (simp add: IMHA_NC_altdef_def)
+  apply (expr_auto)
+  apply (simp add: ring_distribs(2))
+  apply (subst conditional_conds_conj)+
+  apply (subst times_divide_eq_right[symmetric])+
+  apply (subst conditional_cmult_1)+
+  apply (subst infsum_add)
+  apply (rule summable_on_add)
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_NC_altdef_states_1_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_NC_altdef_states_2_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_NC_altdef_states_3_eq)
+  apply blast+
+  apply (subst infsum_add)
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_NC_altdef_states_1_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_NC_altdef_states_2_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states)
+  apply (subst IMHA_NC_altdef_states_1_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states)
+  apply (subst IMHA_NC_altdef_states_2_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states)
+  apply (subst IMHA_NC_altdef_states_3_eq)
+  apply blast+
+  apply (subst IMHA_NC_altdef_states_1_eq)
+  apply (subst IMHA_NC_altdef_states_2_eq)
+  apply (subst IMHA_NC_altdef_states_3_eq)
+  apply (subst sum_divide_distrib[symmetric])+
+  by (simp)
 
 subsection \<open> @{text "IMHA_C"}\<close>
 definition IMHA_C_altdef :: "DWTA_state \<times> DWTA_state \<Rightarrow> \<real>" where 
@@ -1566,7 +1617,52 @@ proof -
     using lhs_1_infsum lhs_2_infsum lhs_3_infsum by presburger
 qed  
 
-lemma IMHA_C_win: "rfrel_of_prel (IMHA_C) ;\<^sub>f \<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (2/3)\<^sub>e"
+lemma IMHA_C_altdef_states_1_eq: 
+    "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> m\<^sub>v s = Suc (p\<^sub>v s) mod (3::\<nat>)} 
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,\<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, 
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 1::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>}"
+    apply (simp add: set_eq_iff)
+    apply (rule allI)
+    apply (rule iffI)
+    apply (smt (z3) DWTA_state.surjective Nat.add_0_right Nat.diff_add_assoc Nat.diff_cancel 
+        add_diff_cancel_left' add_diff_cancel_right add_le_cancel_left bot_nat_0.extremum_uniqueI 
+        diff_Suc_diff_eq2 diff_add_zero le_Suc_eq less_Suc_eq mod_less mod_self numeral_2_eq_2 
+        numeral_3_eq_3 old.unit.exhaust)
+  by force
+
+lemma IMHA_C_altdef_states_2_eq: 
+    "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> m\<^sub>v s = Suc (Suc (p\<^sub>v s)) mod (3::\<nat>)} 
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (2::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>, 
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = 1::\<nat>\<rparr>}"
+    apply (simp add: set_eq_iff)
+    apply (rule allI)
+    apply (rule iffI)
+    apply (smt (verit, best) DWTA_state.surjective Nat.add_0_right Nat.add_diff_assoc One_nat_def 
+        Suc_1 Suc_le_mono add.commute add_2_eq_Suc' add_cancel_left_left bot_nat_0.extremum 
+        diff_Suc_Suc diff_Suc_diff_eq2 diff_diff_left diff_is_0_eq diff_self_eq_0 
+        eval_nat_numeral(3) le0 le_SucE le_antisym lessI less_2_cases mod_Suc mod_Suc_eq_mod_add3 
+        mod_by_Suc_0 mod_less mod_mod_trivial mod_self nat.inject not_mod2_eq_Suc_0_eq_0 
+        numeral_1_eq_Suc_0 numeral_3_eq_3 numeral_plus_numeral old.unit.exhaust order_le_less plus_1_eq_Suc)
+  by force
+
+lemma IMHA_C_altdef_states_3_eq: 
+  "{s::DWTA_state. (((\<not> (3::\<nat>) - (m\<^sub>v s + p\<^sub>v s) = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>)) \<and> 
+      (3::\<nat>) - (m\<^sub>v s + p\<^sub>v s) \<le> (2::\<nat>)) \<and> p\<^sub>v s \<le> (3::\<nat>) - m\<^sub>v s) \<and> c\<^sub>v s = p\<^sub>v s} 
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = (2::\<nat>)\<rparr>,
+       \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, 
+       \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>, \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>}"
+    apply (simp add: set_eq_iff)
+    apply (rule allI)
+    apply (rule iffI)
+    apply (smt (verit, ccfv_SIG) DWTA_state.ext_inject DWTA_state.select_convs(1) 
+        DWTA_state.select_convs(2) DWTA_state.select_convs(3) DWTA_state.surjective 
+        Nat.add_0_right One_nat_def Suc_1 Suc_eq_numeral bot_nat_0.extremum diff_add_inverse 
+        diff_commute diff_diff_cancel diff_diff_left diff_is_0_eq diff_is_0_eq' diff_le_self 
+        diff_self_eq_0 eval_nat_numeral(3) le_Suc_eq le_antisym less_2_cases nat.distinct(1) 
+        nle_le not_less_eq_eq old.nat.exhaust old.unit.exhaust order_le_less plus_1_eq_Suc)
+  by force
+
+lemma IMHA_C_win: "rfrel_of_prel (IMHA_C) ; \<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (2/3)\<^sub>e"
 proof -
   let ?lhs_1 = "\<lambda>(s\<^sub>1::DWTA_state) s::DWTA_state. 
     (if get\<^bsub>p\<^esub> (get\<^bsub>snd\<^sub>L\<^esub> (s\<^sub>1, s)) \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
@@ -1617,7 +1713,7 @@ proof -
 
   have lhs_lhs'_eq: "\<forall>(s\<^sub>1::DWTA_state) s::DWTA_state. ?lhs s\<^sub>1 s = ?lhs' s"
     by (simp add: c_def m_def p_def)
-
+(*
   have states_1_eq: 
     "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> m\<^sub>v s = Suc (p\<^sub>v s) mod (3::\<nat>)} 
     = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,\<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, 
@@ -1630,13 +1726,13 @@ proof -
         diff_Suc_diff_eq2 diff_add_zero le_Suc_eq less_Suc_eq mod_less mod_self numeral_2_eq_2 
         numeral_3_eq_3 old.unit.exhaust)
     by force
-
+*)
   have infsum_lhs_1: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_1' s) = 3"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states)
-    using states_1_eq apply auto[1]
-    using states_1_eq by force
-
+    using IMHA_C_altdef_states_1_eq apply auto[1]
+    using IMHA_C_altdef_states_1_eq by force
+(*
   have states_2_eq: 
     "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> m\<^sub>v s = Suc (Suc (p\<^sub>v s)) mod (3::\<nat>)} 
     = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (2::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>, 
@@ -1651,13 +1747,13 @@ proof -
         mod_by_Suc_0 mod_less mod_mod_trivial mod_self nat.inject not_mod2_eq_Suc_0_eq_0 
         numeral_1_eq_Suc_0 numeral_3_eq_3 numeral_plus_numeral old.unit.exhaust order_le_less plus_1_eq_Suc)
     by force
-
+*)
   have infsum_lhs_2: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_2' s) = 3"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states)
-    using states_2_eq apply auto[1]
-    using states_2_eq by force
-
+    using IMHA_C_altdef_states_2_eq apply auto[1]
+    using IMHA_C_altdef_states_2_eq by force
+(*
   have states_3_eq: 
     "{s::DWTA_state. (((\<not> (3::\<nat>) - (m\<^sub>v s + p\<^sub>v s) = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>)) \<and> 
       (3::\<nat>) - (m\<^sub>v s + p\<^sub>v s) \<le> (2::\<nat>)) \<and> p\<^sub>v s \<le> (3::\<nat>) - m\<^sub>v s) \<and> c\<^sub>v s = p\<^sub>v s} 
@@ -1674,17 +1770,17 @@ proof -
         diff_self_eq_0 eval_nat_numeral(3) le_Suc_eq le_antisym less_2_cases nat.distinct(1) 
         nle_le not_less_eq_eq old.nat.exhaust old.unit.exhaust order_le_less plus_1_eq_Suc)
     by force
-
+*)
   have infsum_lhs_3: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_3' s) = 6"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states)
-    using states_3_eq apply auto[1]
-    using states_3_eq by force
+    using IMHA_C_altdef_states_3_eq apply auto[1]
+    using IMHA_C_altdef_states_3_eq by force
 
   have lhs_1_summable: "?lhs_1' summable_on UNIV"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states_summable)
-    using states_1_eq by (simp_all)
+    using IMHA_C_altdef_states_1_eq by (simp_all)
 
   let ?lhs_cp = "\<lambda>s. (if c\<^sub>v s = p\<^sub>v s then 1::\<real> else (0::\<real>))"
 
@@ -1694,12 +1790,12 @@ proof -
     apply (rule finite_subset[where B="{s::DWTA_state. ((p\<^sub>v s \<le> (2::\<nat>) \<and> 
       c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> m\<^sub>v s = Suc (p\<^sub>v s) mod (3::\<nat>))}"])
     apply force
-    using states_1_eq by (simp_all)
+    using IMHA_C_altdef_states_1_eq by (simp_all)
 
   have lhs_1'_infsum: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_1' s * ?lhs_cp s) = 0"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states)
-    apply (metis (mono_tags, lifting) Collect_mono finite.emptyI finite_insert finite_subset states_1_eq)
+    apply (metis (mono_tags, lifting) Collect_mono finite.emptyI finite_insert finite_subset IMHA_C_altdef_states_1_eq)
     apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. ((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> 
       m\<^sub>v s = Suc (p\<^sub>v s) mod (3::\<nat>)) \<and> c\<^sub>v s = p\<^sub>v s)")
     apply (simp add: card_0_singleton)
@@ -1710,7 +1806,7 @@ proof -
   have lhs_2_summable: "?lhs_2' summable_on UNIV"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states_summable)
-    using states_2_eq by (simp_all)
+    using IMHA_C_altdef_states_2_eq by (simp_all)
 
   have lhs_2'_summable: "(\<lambda>s. ?lhs_2' s * ?lhs_cp s) summable_on UNIV"
     apply (subst conditional_conds_conj)+
@@ -1718,12 +1814,12 @@ proof -
     apply (rule finite_subset[where B="{s::DWTA_state. ((p\<^sub>v s \<le> (2::\<nat>) \<and> 
       c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> m\<^sub>v s = Suc (Suc (p\<^sub>v s)) mod (3::\<nat>))}"])
     apply force
-    using states_2_eq by (simp_all)
+    using IMHA_C_altdef_states_2_eq by (simp_all)
 
   have lhs_2'_infsum: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_2' s * ?lhs_cp s) = 0"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states)
-    apply (metis (mono_tags, lifting) Collect_mono finite.emptyI finite_insert finite_subset states_2_eq)
+    apply (metis (mono_tags, lifting) Collect_mono finite.emptyI finite_insert finite_subset IMHA_C_altdef_states_2_eq)
     apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. ((p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> 
       m\<^sub>v s = Suc (Suc (p\<^sub>v s)) mod (3::\<nat>)) \<and> c\<^sub>v s = p\<^sub>v s)")
     apply (simp add: card_0_singleton)
@@ -1733,12 +1829,12 @@ proof -
   have lhs_3_summable: "?lhs_3' summable_on UNIV"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states_summable)
-    using states_3_eq by (simp_all)
+    using IMHA_C_altdef_states_3_eq by (simp_all)
 
   have lhs_3'_summable: "(\<lambda>s. ?lhs_3' s * ?lhs_cp s) summable_on UNIV"
     apply (subst conditional_conds_conj)+
     apply (subst infsum_constant_finite_states_summable)
-    using states_3_eq by (simp_all)
+    using IMHA_C_altdef_states_3_eq by (simp_all)
 
   have lhs_3'_infsum: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_3' s * ?lhs_cp s) = 6"
     apply (subst infsum_lhs_3[symmetric])
@@ -1830,6 +1926,98 @@ proof -
     apply (simp_all add: lhs_3'_summable)
     using lhs_1'_infsum lhs_2'_infsum lhs_3'_infsum by linarith
 qed
+
+subsubsection \<open> Average values \<close>
+text \<open>Average value of @{term "p"} after the execution of @{term "IMHA_C"}, a Change Strategy. \<close>
+
+term "(p\<^sup><)\<^sub>e"
+term "($p\<^sup><)\<^sub>e"
+
+lemma IMHA_C_average_p: "rfrel_of_prel IMHA_C ; ($p\<^sup><)\<^sub>e = (1)\<^sub>e"
+  apply (simp add: IMHA_C_altdef)
+  apply (subst prel_of_rfrel_inverse)
+  using IMHA_C_altdef_dist apply blast
+  apply (simp add: IMHA_C_altdef_def)
+  apply (expr_auto)
+  apply (simp add: ring_distribs(2))
+  apply (subst conditional_conds_conj)+
+  apply (subst times_divide_eq_right[symmetric])+
+  apply (subst conditional_cmult_1)+
+  apply (subst infsum_add)
+  apply (rule summable_on_add)
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_1_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_2_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_3_eq)
+  apply blast+
+  apply (subst infsum_add)
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_1_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_2_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states)
+  apply (subst IMHA_C_altdef_states_1_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states)
+  apply (subst IMHA_C_altdef_states_2_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states)
+  apply (subst IMHA_C_altdef_states_3_eq)
+  apply blast+
+  apply (subst IMHA_C_altdef_states_1_eq)
+  apply (subst IMHA_C_altdef_states_2_eq)
+  apply (subst IMHA_C_altdef_states_3_eq)
+  apply (subst sum_divide_distrib[symmetric])+
+  by (simp)
+
+lemma IMHA_C_average_c: "rfrel_of_prel IMHA_C ; ($c\<^sup><)\<^sub>e = (1)\<^sub>e"
+  apply (simp add: IMHA_C_altdef)
+  apply (subst prel_of_rfrel_inverse)
+  using IMHA_C_altdef_dist apply blast
+  apply (simp add: IMHA_C_altdef_def)
+  apply (expr_auto)
+  apply (simp add: ring_distribs(2))
+  apply (subst conditional_conds_conj)+
+  apply (subst times_divide_eq_right[symmetric])+
+  apply (subst conditional_cmult_1)+
+  apply (subst infsum_add)
+  apply (rule summable_on_add)
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_1_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_2_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_3_eq)
+  apply blast+
+  apply (subst infsum_add)
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_1_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states_summable)
+  apply (subst IMHA_C_altdef_states_2_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states)
+  apply (subst IMHA_C_altdef_states_1_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states)
+  apply (subst IMHA_C_altdef_states_2_eq)
+  apply blast+
+  apply (subst infsum_cond_finite_states)
+  apply (subst IMHA_C_altdef_states_3_eq)
+  apply blast+
+  apply (subst IMHA_C_altdef_states_1_eq)
+  apply (subst IMHA_C_altdef_states_2_eq)
+  apply (subst IMHA_C_altdef_states_3_eq)
+  apply (subst sum_divide_distrib[symmetric])+
+  by (simp)
 
 subsection \<open> Learn the fact (forgetful Monty) \<close>
 
@@ -1988,7 +2176,7 @@ proof ((rule allI)+, (rule impI)+)
   show ?thesis
   apply (simp add: Forgetful_Monty_def Forgetful_Monty'_def)
   apply (simp add: INIT_altdef)
-  apply (simp only: pcomp_def passigns_def pchoice_def)
+  apply (simp only: pseqcomp_def passigns_def pchoice_def)
   apply (simp only: prel_set_conv_assign)
   apply (subst prel_set_conv_pchoice_c')
   apply (simp) 
@@ -2340,7 +2528,7 @@ definition Forgetful_Monty'_learned :: "(DWTA_state, DWTA_state) rfrel" where
 "Forgetful_Monty'_learned = ((\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = ((c\<^sup>> + 1) mod 3)\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> \<noteq> p\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e) / 12 + 
                (\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = ((c\<^sup>> + 2) mod 3)\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> \<noteq> p\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e) / 12)\<^sub>e"
 
-lemma Forgetful_Monty_win: "rfrel_of_prel Learn_fact ;\<^sub>f \<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1/2)\<^sub>e"
+lemma Forgetful_Monty_win: "rfrel_of_prel Learn_fact ; \<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1/2)\<^sub>e"
 proof -
   \<comment> \<open>Forgetful Monty\<close>
   have set_states_1: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>)) \<and> m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>)}

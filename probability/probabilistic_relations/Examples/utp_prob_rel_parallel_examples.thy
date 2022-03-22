@@ -31,7 +31,7 @@ lemma b_assign_rel: "\<lbrakk>(b := e) :: state1 rel\<rbrakk>\<^sub>P = (b\<^sup
 
 lemma "(((if\<^sub>p 1/3 then b := False else b := True) \<parallel> (if\<^sub>p 1/3 then b := (\<not> b) else II))::state1 phrel) = 
   prel_of_rfrel ((5 - 3 * \<lbrakk>b\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e + 6 * \<lbrakk>b\<^sup>< \<and> b\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e) / 10)\<^sub>e "
-  apply (simp add: pparallel'_def)
+  apply (simp add: pparallel_pp_def)
   apply (simp add: prel_skip[where x = "b"])
   apply (subst prel_set_conv_pchoice_assigns_c')
   apply (simp)

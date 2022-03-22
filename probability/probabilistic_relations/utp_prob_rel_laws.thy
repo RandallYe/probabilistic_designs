@@ -46,6 +46,16 @@ lemma conditional_conds_conj': "\<forall>s. (if b\<^sub>1 s then (m::\<real>) el
   apply (rule allI)
   by simp
 
+lemma conditional_cmult: "\<forall>s. (if b\<^sub>1 s then (m::\<real>) else (0::\<real>)) * c = 
+    ((if b\<^sub>1 s then (m::\<real>) * c else (0::\<real>)))"
+  apply (rule allI)
+  by force
+
+lemma conditional_cmult_1: "\<forall>s. (if b\<^sub>1 s then (1::\<real>) else (0::\<real>)) * c = 
+    ((if b\<^sub>1 s then c else (0::\<real>)))"
+  apply (rule allI)
+  by force
+
 subsection \<open> Laws of @{text infsum} \<close>
 lemma infset_0_not_summable_or_sum_to_zero:
   assumes "infsum f A = 0"
@@ -168,6 +178,40 @@ qed
 lemma infsum_singleton_1: 
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if v\<^sub>0 = c then (m::\<real>) else 0)) = m"
   by (smt (verit, del_insts) infsum_cong infsum_singleton)
+
+lemma infsum_cond_finite_states:
+  assumes "finite {s. b s}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0. (if b v\<^sub>0 then f v\<^sub>0 else (0::\<real>))) = (\<Sum>v\<^sub>0 \<in> {s. b s}. f v\<^sub>0)"
+proof -
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0. (if b v\<^sub>0 then f v\<^sub>0 else 0)) = (\<Sum>\<^sub>\<infinity>v\<^sub>0 \<in> {s. b s} \<union> (-{s. b s}). (if b v\<^sub>0 then f v\<^sub>0 else 0))"
+    by auto
+  moreover have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0 \<in> {s. b s}. (if b v\<^sub>0 then f v\<^sub>0 else 0))"
+    apply (subst infsum_Un_disjoint)
+    apply (simp add: assms)
+    apply (smt (verit, ccfv_threshold) ComplD mem_Collect_eq summable_on_0)
+    apply simp
+    by (smt (verit, best) ComplD infsum_0 mem_Collect_eq)
+  moreover have "... = (\<Sum>v\<^sub>0 \<in> {s. b s}. f v\<^sub>0)"
+    using assms by force
+  ultimately show ?thesis
+    by presburger
+qed
+
+lemma infsum_cond_finite_states_summable:
+  assumes "finite {s. b s}"
+  shows "(\<lambda>v\<^sub>0. (if b v\<^sub>0 then f v\<^sub>0 else (0::\<real>))) summable_on UNIV"
+proof -
+  have "((\<lambda>v\<^sub>0. (if b v\<^sub>0 then f v\<^sub>0 else (0::\<real>))) summable_on UNIV) = 
+      ((\<lambda>v\<^sub>0. (if b v\<^sub>0 then f v\<^sub>0 else (0::\<real>))) summable_on ({s. b s} \<union> -{s. b s}))"
+    by auto
+  moreover have "..."
+    apply (rule summable_on_Un_disjoint)
+    apply (simp add: assms)
+    apply (smt (verit, ccfv_threshold) ComplD mem_Collect_eq summable_on_0)
+    by simp
+  ultimately show ?thesis
+    by presburger
+qed
 
 lemma infsum_constant_finite_states:
   assumes "finite {s. b s}"
@@ -1029,7 +1073,7 @@ proof (rule allI, rule ccontr)
 lemma prel_is_dist_pcomp: 
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
-  shows "is_final_distribution (pcomp_f p q)"
+  shows "is_final_distribution (pseqcomp_f p q)"
   apply (simp add: dist_defs expr_defs, auto)
   apply (simp add: assms(1) assms(2) infsum_nonneg prel_prob_sum1_summable(1))
   defer
@@ -1220,7 +1264,7 @@ lemma uniform_dist_is_uniform:
   assumes "finite (A::'b set)"
   assumes "vwb_lens x"
   assumes "A \<noteq> {}"
-  shows "\<forall>v \<in> A. ((x \<^bold>\<U> A) ;\<^sub>f (\<lbrakk>$x\<^sup>< = \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e) = (1/card \<guillemotleft>A\<guillemotright>)\<^sub>e)"
+  shows "\<forall>v \<in> A. ((x \<^bold>\<U> A) ; (\<lbrakk>$x\<^sup>< = \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e) = (1/card \<guillemotleft>A\<guillemotright>)\<^sub>e)"
   apply (simp add: dist_defs prel_defs)
   apply (expr_auto)
   apply (rel_auto)
@@ -1472,7 +1516,7 @@ lemma prel_set_conv_pcond:
 lemma prel_set_conv_seqcomp: 
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
-  shows "rfrel_of_prel (prel_of_rfrel (pcomp_f p q)) = pcomp_f p q"
+  shows "rfrel_of_prel (prel_of_rfrel (pseqcomp_f p q)) = pseqcomp_f p q"
   apply (subst prel_of_rfrel_inverse)
    apply (simp)
   using assms(1) assms(2) prel_is_dist_pcomp apply blast
@@ -1524,7 +1568,7 @@ theorem prel_skip:
   by (simp add: assms)+
 
 subsubsection \<open> Sequential composition \<close>
-theorem prel_seqcomp_left_unit: "II ; P = P"
+theorem prel_seqcomp_left_unit: "II ; (P::'a phrel) = P"
   apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_rfrel_inverse)
   apply (simp add: dist_defs)
@@ -1543,7 +1587,7 @@ theorem prel_seqcomp_left_unit: "II ; P = P"
   apply (auto)
   by (simp add: infsum_mult_singleton_left_1)
 
-theorem prel_seqcomp_right_unit: "P ; II = P"
+theorem prel_seqcomp_right_unit: "(P::'a phrel) ; II = P"
   apply (simp add: prel_defs expr_defs)
   apply (subst prel_of_rfrel_inverse)
   apply (simp add: dist_defs)
@@ -1779,7 +1823,7 @@ lemma passign_pif_simp:
     apply (smt (verit) DiffE mult_eq_0_iff singleton_iff sum.not_neutral_contains_not_neutral)
 *)
 
-theorem prel_seqcomp_assoc: "P ; (Q ; R) = (P ; Q) ; R"
+theorem prel_seqcomp_assoc: "(P::'a phrel) ; (Q ; R) = (P ; Q) ; R"
   apply (simp add: prel_defs)
   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   apply (subst prel_of_rfrel_inverse)

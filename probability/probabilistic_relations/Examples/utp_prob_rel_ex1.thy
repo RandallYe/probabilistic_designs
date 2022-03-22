@@ -85,9 +85,8 @@ lemma passign_simp: "((r := C)::(DWTA_state, DWTA_state) prel) = prel_of_rfrel (
    apply (simp add: dist_defs expr_defs)
    apply (auto)
 *)
-
 lemma dwta_scomp_simp: 
-  "(((r := C)::(DWTA_state, DWTA_state) prel); (a := S)) = prel_of_rfrel (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
+  "(((r := C)::DWTA_state phrel); (a := S)) = prel_of_rfrel (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: passign_comp)
   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   by (rel_auto)
@@ -187,11 +186,63 @@ subsubsection \<open> x \<close>
 alphabet state =
   x :: int
 
-term "x"
-term "x\<^sup><"
-term "x\<^sup>>"
+text \<open> 
+@{text "x"}, @{text "x\<^sup><"}, @{text "x\<^sup>>"} are lens. 
+@{text "$x"} is a function (get) to view the x part of a source type.
+\<close>
+(* x is a len*)
+term "x :: (\<int> \<Longrightarrow> state)"
+term "(x)\<^sub>e"
+(* See Expressions.thy
+$x  (view of the lens X)
+\<longrightarrow> _sexp_var x
+\<longrightarrow> get\<^bsub>x\<^esub> _sexp_state
+\<longrightarrow> get\<^bsub>x\<^esub> id
+*)
 term "$x"
+
+term "get\<^bsub>x\<^esub>"
+
+term "($x)\<^sub>e"
+term "($x + 1)\<^sub>e"
+(*  
+fst_lens (fst\<^sub>L) = \<lparr> lens_get = fst, lens_put = (\<lambda> (\<sigma>, \<rho>) u. (u, \<rho>)) \<rparr>  :: "'a \<Longrightarrow> 'a \<times> 'b"
+  - provide view and update the left part of a product source type
+
+snd_lens (snd\<^sub>L) = \<lparr> lens_get = snd, lens_put = (\<lambda> (\<sigma>, \<rho>) u. (\<sigma>, u)) \<rparr>  :: "'b \<Longrightarrow> 'a \<times> 'b"
+  - provide view and update the right part of a product source type 
+
+\<up> (X /\<^sub>L Y) - The quotient operator cuts (shorts) the lens Y off from the lens X.
+*)
+term "A /\<^sub>L B" (* (A::'a \<Longrightarrow> 'c) \<restriction> (B::'b \<Longrightarrow> 'c) :: "'a \<Longrightarrow> 'b"*)
+term "x\<^sup>< :: state \<times> 'b \<Rightarrow> \<int>" (* x\<^sup>< \<equiv> [get\<^bsub>x\<^esub>]\<^sub>e \<up> fst\<^sub>L *)
+(* See Variables.thy
+x\<^sup>< 
+\<longrightarrow> _svid_fst x
+\<longrightarrow> _svid_dot fst\<^sub>L x
+\<longrightarrow> CONST ns_alpha fst\<^sub>L x
+\<longrightarrow> x ;\<^sub>L fst\<^sub>L
+\<longrightarrow> (x :: (\<int> \<Longrightarrow> state) ;\<^sub>L fst\<^sub>L :: (state \<Longrightarrow> state \<times> 'b)) 
+  ::  state \<times> 'b \<Rightarrow> \<int>
+*)
+term "(x\<^sup><)\<^sub>e"
+term "(x\<^sup>< + 1)\<^sub>e"
+(* See Variables.thy
+x\<^sup>< 
+\<longrightarrow> _svid_snd x
+\<longrightarrow> _svid_dot snd\<^sub>L x
+\<longrightarrow> CONST ns_alpha snd\<^sub>L x
+\<longrightarrow> x ;\<^sub>L fst\<^sub>L
+\<longrightarrow> (x :: (\<int> \<Longrightarrow> state) ;\<^sub>L fst\<^sub>L :: (state \<Longrightarrow> 'a \<times> state)) 
+  ::  'a \<times> state \<Rightarrow> \<int>
+*)
+term "x\<^sup>>"
+
 term "$x\<^sup><"
+
+term "($x\<^sup><)\<^sub>e" (* equal to ($(x\<^sup><))\<^sub>e *)
+term "($(x\<^sup><))\<^sub>e"
+term "($x\<^sup>< + 1)\<^sub>e"
 find_theorems name: "state."
 
 end

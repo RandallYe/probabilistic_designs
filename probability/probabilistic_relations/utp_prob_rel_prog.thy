@@ -222,11 +222,20 @@ term "
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_prel P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_prel Q)))\<^sub>e"
 thm "pred_seq_hom"
 
-abbreviation pcomp_f :: "'s rfhrel \<Rightarrow> 's rfhrel \<Rightarrow> 's rfhrel" (infixl ";\<^sub>f" 59) where 
-"pcomp_f P Q \<equiv> (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
+abbreviation pseqcomp_f :: "'s rfhrel \<Rightarrow> 's rfhrel \<Rightarrow> 's rfhrel" (infixl ";\<^sub>f" 59) where 
+"pseqcomp_f P Q \<equiv> (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
 
-definition pcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (*(infixl ";\<^sub>p" 59)*) where
-[prel_defs]: "pcomp P Q = prel_of_rfrel (pcomp_f (rfrel_of_prel P) (rfrel_of_prel Q))"
+definition pseqcomp :: "'s phrel \<Rightarrow> 's phrel \<Rightarrow> 's phrel" (*(infixl ";\<^sub>p" 59)*) where
+[prel_defs]: "pseqcomp P Q = prel_of_rfrel (pseqcomp_f (rfrel_of_prel P) (rfrel_of_prel Q))"
+
+consts
+  pseqcomp_c :: "'a \<Rightarrow> 'a \<Rightarrow> 'a" (infixl ";" 59)
+adhoc_overloading
+  pseqcomp_c pseqcomp_f and 
+  pseqcomp_c pseqcomp
+
+term "(P::('s, 's) rfrel) ; Q"
+term "(P::'s phrel) ; Q"
 
 subsubsection \<open> Parallel composition \<close>
 
@@ -274,6 +283,7 @@ term "((P::('s, 's) prel) \<parallel> (Q::('s, 's) prel))"
 term "((P::'s list) \<parallel> Q)"
 term "([] \<parallel> [a])"
 
+(*
 bundle UTP_Prob_Rel_Syntax
 begin
 
@@ -288,14 +298,14 @@ no_notation _assign (infix ":=" 76)
 
 
 (* notation passign (infix ":=" 162) *)
-notation pcomp (infixl ";" 59)
+notation pseqcomp (infixl ";" 59)
 (* notation pchoice ("(_ \<oplus>\<^bsub>_\<^esub> _)" [164, 0, 165] 164) *)
 (* notation pparallel (infixl "\<parallel>" 166) *)
 
 end
 
 unbundle UTP_Prob_Rel_Syntax
-
+*)
 (*
 syntax 
   "_pcond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if (_)/ then (_)/ else (_))" [0, 0, 167] 167)
