@@ -1559,6 +1559,9 @@ theorem pzero_left_zero: "0\<^sub>p ; P = 0\<^sub>p"
 *)
 
 subsubsection \<open> Skip and assignment \<close>
+lemma pskip\<^sub>_f_simp: "pskip\<^sub>_f = (\<lambda>(s, s'). if s = s' then 1 else 0)"
+  by (expr_auto)
+
 theorem prel_skip: 
   assumes "wb_lens x"
   shows "(II::'a phrel) = (x := $x)"
@@ -1566,6 +1569,11 @@ theorem prel_skip:
   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   apply (rel_auto)
   by (simp add: assms)+
+
+theorem prel_skip': 
+  shows "rfrel_of_prel (II) = pskip\<^sub>_f"
+  apply (simp add: prel_defs)
+  using prel_set_conv_skip by blast
 
 subsubsection \<open> Sequential composition \<close>
 theorem prel_seqcomp_left_unit: "II ; (P::'a phrel) = P"
@@ -2073,6 +2081,12 @@ lemma prel_pcond_altdef:
   apply (expr_auto)
   apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
   by auto
+
+lemma prel_pcond_id: 
+  shows "if\<^sub>c b then P else P = P"
+  apply (simp add: prel_defs)
+  apply (expr_auto)
+  by (simp add: rfrel_of_prel_inverse)
 
 subsubsection \<open> Normalisation \<close>
 theorem uniform_dist_empty_zero:  "(x \<^bold>\<U> {}) = 0\<^sub>f"

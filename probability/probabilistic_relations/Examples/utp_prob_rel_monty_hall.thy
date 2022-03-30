@@ -1932,7 +1932,7 @@ text \<open>Average value of @{term "p"} after the execution of @{term "IMHA_C"}
 
 term "(p\<^sup><)\<^sub>e"
 term "($p\<^sup><)\<^sub>e"
-
+term "rfrel_of_prel IMHA_C ; ($p\<^sup><)\<^sub>e"
 lemma IMHA_C_average_p: "rfrel_of_prel IMHA_C ; ($p\<^sup><)\<^sub>e = (1)\<^sub>e"
   apply (simp add: IMHA_C_altdef)
   apply (subst prel_of_rfrel_inverse)

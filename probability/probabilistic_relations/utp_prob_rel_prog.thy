@@ -283,6 +283,99 @@ term "((P::('s, 's) prel) \<parallel> (Q::('s, 's) prel))"
 term "((P::'s list) \<parallel> Q)"
 term "([] \<parallel> [a])"
 
+subsubsection \<open> Recursion \<close>
+text \<open> How to define a recursion or loop construct? 
+One way is to use a similar weakest or strongest solution in UTP, which is based on complete lattice.
+For this purpose, we need to define an order relation for distributions.
+
+Another way is to use a simpler form as described in the Hehner's paper. For this purpose, we need to 
+introduce a time variable of type (extended natural numbers or reals) where infinity accounts for 
+non-termination. 
+Without this variable, we are not able to define a recursive function in Isabelle because we are not 
+able to prove its termination.
+\<close>
+(*
+function pwhile :: "('s, 's) rpred \<Rightarrow> 's phrel \<Rightarrow> 's phrel" ("while\<^sub>p _ do _ od") where
+[prel_defs]: "pwhile b P = (if\<^sub>c b then (P ; (while\<^sub>p b do P od)) else II) "
+  by auto
+
+term "while\<^sub>p ($x=$y)\<^sub>e do II od"
+*)
+alphabet time = 
+  t :: nat
+
+function pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) 
+  \<Rightarrow> ('a time_scheme, 'a time_scheme) prel \<Rightarrow> ('a time_scheme, 'a time_scheme) prel" 
+("while\<^sub>p _ do _ od") where
+[prel_defs]: "pwhile b P = (if\<^sub>c b then (P ; (t := $t + 1) ; (while\<^sub>p b do P od)) else II)"
+  by auto
+
+text \<open> Without the proof of termination, this function @{term "pwhile"} is just partial. In order to 
+prove its termination, we need to prove  @{text "\<forall>a, b. pwhile_dom (a, b)"}. See Section~8 of the 
+manual ``Defining Recursive Functions in Isabelle/HOL'' for more details about partial functions.
+\<close>
+(*
+termination pwhile
+  apply (auto)
+  oops
+*)
+find_theorems name: "pwhile"
+thm "pwhile.cases"
+(* (\<And>b P.
+      (?x::(?'a time_scheme \<times> ?'a time_scheme \<Rightarrow> \<bool>) \<times> (?'a time_scheme, ?'a time_scheme) prel) = (b, P) 
+      \<Longrightarrow> ?P::\<bool>
+   )  \<Longrightarrow> ?P 
+*)
+thm "pwhile.psimps"
+(*
+pwhile_dom (?b, ?P) \<Longrightarrow>
+while\<^sub>p ?b do ?P od = 
+  pcond [?b]\<^sub>e (?P ; \<langle>subst_upd [\<leadsto>] t [\<lambda>\<s>::?'a time_scheme. get\<^bsub>t\<^esub> \<s> + (1::enat)]\<^sub>e\<rangle>\<^sub>a ; while\<^sub>p ?b do ?P od) II
+*)
+thm "pwhile.pinduct"
+(*
+pwhile_dom (?a0.0, ?a1.0) \<Longrightarrow>
+(\<And>b P.
+    pwhile_dom (b, P) \<Longrightarrow> 
+    (?P::(?'a time_scheme \<times> ?'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> (?'a time_scheme, ?'a time_scheme) prel \<Rightarrow> \<bool>) b P 
+    \<Longrightarrow> ?P b P
+) \<Longrightarrow>
+?P ?a0.0 ?a1.0
+*)
+
+definition frepeat_body:: "'a time_scheme  phrel \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>)
+     \<Rightarrow> 'a time_scheme  phrel \<Rightarrow> 'a time_scheme  phrel" where
+"frepeat_body P b X = P ; (t := $t + 1) ; (if\<^sub>c b then II else X)"
+
+function prepeat :: "nat \<Rightarrow> ('a time_scheme, 'a time_scheme) prel 
+  \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> ('a time_scheme, 'a time_scheme) prel"
+("repeat _ _ until _") where
+[prel_defs]: "prepeat n P b = P ; (t := $t + 1) ; (if\<^sub>c b then II else (repeat (n+1) P until b))"
+  by auto
+
+find_theorems name: "prepeat"
+(*
+termination prepeat
+  apply (auto)
+*)
+
+text \<open> Can we also treat recursion as a limit of sequence of approximation. See Hehner's 
+``Specifications, Programs, and Total Correctness'' for more information.
+\<close>
+fun while' where
+"while' 0 b P = II" |
+"while' (Suc n) b P = (if\<^sub>c b then (P ; while' n b P) else II)"
+
+fun prepeat' where 
+"prepeat' 0 P b = P ; (if\<^sub>c b then II else II)" |
+"prepeat' (Suc n) P b = P ; (if\<^sub>c b then II else (prepeat' (n) P b))"
+
+(*
+term "pwhile_dom"
+termination pwhile
+  apply auto
+*)
+
 (*
 bundle UTP_Prob_Rel_Syntax
 begin
@@ -324,7 +417,5 @@ adhoc_overloading
 term "if True then P else Q"
 term "if\<^sub>p R then P else Q"
 *)
-
-subsection \<open> \<close>
 
 end
