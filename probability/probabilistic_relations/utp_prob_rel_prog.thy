@@ -304,10 +304,14 @@ term "while\<^sub>p ($x=$y)\<^sub>e do II od"
 alphabet time = 
   t :: nat
 
+definition while_body:: "'a time_scheme  phrel \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>)
+     \<Rightarrow> 'a time_scheme  phrel \<Rightarrow> 'a time_scheme  phrel" where
+"while_body P b X = (if\<^sub>c b then (P ; (t := $t + 1) ; X) else II)"
+
 function pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) 
   \<Rightarrow> ('a time_scheme, 'a time_scheme) prel \<Rightarrow> ('a time_scheme, 'a time_scheme) prel" 
 ("while\<^sub>p _ do _ od") where
-[prel_defs]: "pwhile b P = (if\<^sub>c b then (P ; (t := $t + 1) ; (while\<^sub>p b do P od)) else II)"
+[prel_defs]: "pwhile b P = while_body P b (pwhile b P)"
   by auto
 
 text \<open> Without the proof of termination, this function @{term "pwhile"} is just partial. In order to 
@@ -343,17 +347,19 @@ pwhile_dom (?a0.0, ?a1.0) \<Longrightarrow>
 ?P ?a0.0 ?a1.0
 *)
 
-definition frepeat_body:: "'a time_scheme  phrel \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>)
+definition repeat_body:: "'a time_scheme  phrel \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>)
      \<Rightarrow> 'a time_scheme  phrel \<Rightarrow> 'a time_scheme  phrel" where
-"frepeat_body P b X = P ; (t := $t + 1) ; (if\<^sub>c b then II else X)"
+[prel_defs]: "repeat_body P b X = P ; (t := $t + 1) ; (if\<^sub>c b then II else X)"
 
-function prepeat :: "nat \<Rightarrow> ('a time_scheme, 'a time_scheme) prel 
+function (*(domintros)*) prepeat :: "('a time_scheme, 'a time_scheme) prel 
   \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> ('a time_scheme, 'a time_scheme) prel"
-("repeat _ _ until _") where
-[prel_defs]: "prepeat n P b = P ; (t := $t + 1) ; (if\<^sub>c b then II else (repeat (n+1) P until b))"
+("repeat _ until _") where
+[prel_defs]: "prepeat P b = repeat_body P b (prepeat P b)"
   by auto
 
+term "prepeat_dom"
 find_theorems name: "prepeat"
+(* thm "prepeat.domintros" *)
 (*
 termination prepeat
   apply (auto)
