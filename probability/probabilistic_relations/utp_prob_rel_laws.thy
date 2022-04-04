@@ -1912,6 +1912,9 @@ proof -
     using lhs_eq rhs_eq by presburger
 qed
 
+theorem "P ; (if\<^sub>p r then Q else R) = (if\<^sub>p r then (P ; Q) else (P ; R))"
+  oops
+
 subsubsection \<open> Probabilistic choice \<close>
 
 theorem prel_pchoice_commute: "if\<^sub>p r then P else Q = if\<^sub>p 1 - r then Q else P"

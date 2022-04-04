@@ -32,8 +32,15 @@ named_theorems pfun_defs
 term "ennreal"
 type_synonym ('s\<^sub>1, 's\<^sub>2) rvfun = "(real, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's rvhfun = "('s, 's) rvfun"
-type_synonym ('s\<^sub>1, 's\<^sub>2) erfun = "(ereal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
+type_synonym ('s\<^sub>1, 's\<^sub>2) erfun = "(ennreal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's erhfun = "('s, 's) erfun"
+
+subsection \<open> Syntax \<close>
+definition zero :: "'s erhfun" where
+"zero = (0)\<^sub>e"
+
+definition one :: "'s erhfun" where
+"one = (1)\<^sub>e"
 
 definition pskip :: "'s erhfun" ("II\<^sub>p") where
 [pfun_defs]: "pskip = (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
@@ -91,6 +98,9 @@ adhoc_overloading
 
 term "(P::'s erhfun) ; Q"
 
+text \<open> Considering recursions @{text "X = P ; X"}, zero is one of its solution. But this solution is 
+not very useful.  
+\<close>
 alphabet time = 
   t :: nat
 
@@ -109,13 +119,16 @@ lemma "(\<lambda>s. 1) < (\<lambda>s. 2::ereal)"
 lemma pcond_mono: "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (P\<^sub>1 \<lhd>\<^sub>f b \<rhd> Q\<^sub>1) \<le> (P\<^sub>2 \<lhd>\<^sub>f b \<rhd> Q\<^sub>2)"
   by (smt (verit, best) SEXP_def le_funE le_funI)
 
-lemma pseqcomp_mono: "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (P\<^sub>1 ; Q\<^sub>1) \<le> (P\<^sub>2 ; Q\<^sub>2)"
+lemma pseqcomp_mono: 
+  assumes "\<forall>a b. (\<lambda>v\<^sub>0::'a. P\<^sub>1 (a, v\<^sub>0) * Q\<^sub>1 (v\<^sub>0, b)) summable_on UNIV"
+  assumes "\<forall>a b. (\<lambda>v\<^sub>0::'a. P\<^sub>2 (a, v\<^sub>0) * Q\<^sub>2 (v\<^sub>0, b)) summable_on UNIV"
+  shows "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (P\<^sub>1 ; Q\<^sub>1) \<le> (P\<^sub>2 ; Q\<^sub>2)"
   apply (simp add: pfun_defs)
   apply (rule le_funI)
   apply (rel_auto)
   apply (rule infsum_mono)
-    defer
-    defer
+  apply (simp add: assms)
+  apply (simp add: assms)
 proof -
   fix a b x::"'a"
   assume a1: "P\<^sub>1 \<le> P\<^sub>2"
@@ -126,22 +139,27 @@ proof -
   from a2 have f2: "Q\<^sub>1 (x, b) \<le> Q\<^sub>2 (x, b)"
     by (simp add: le_funD)
   have "P\<^sub>1 (a, x) * Q\<^sub>1 (x, b) \<le> P\<^sub>2 (a, x) * Q\<^sub>1 (x, b)"
-    using a1 sledgehammer
-  show "P\<^sub>1 (a, x) * Q\<^sub>1 (x, b) \<le> P\<^sub>2 (a, x) * Q\<^sub>2 (x, b)"
-    
-    find_theorems "(?a::real) * ?b \<le> ?c * ?d"
+    using a1 by (simp add: f1 mult_right_mono)
+  also have "P\<^sub>2 (a, x) * Q\<^sub>1 (x, b) \<le> P\<^sub>2 (a, x) * Q\<^sub>2 (x, b)"
+    using a2 by (simp add: f2 mult_left_mono)
+  ultimately show "P\<^sub>1 (a, x) * Q\<^sub>1 (x, b) \<le> P\<^sub>2 (a, x) * Q\<^sub>2 (x, b)"
+    by (simp add: a1 a2)
+qed
 
 theorem while_unfold:
-  "while\<^sub>p b do P od = ((P ; (while\<^sub>p b do P od)) \<lhd>\<^sub>f b \<rhd> II)"
+  (* assumes "\<forall>s s' Q. (\<lambda>v\<^sub>0::'a. P (s, v\<^sub>0) * Q (v\<^sub>0, s')) summable_on UNIV" *)
+  shows "while\<^sub>p b do P od = ((P ; (while\<^sub>p b do P od)) \<lhd>\<^sub>f b \<rhd> II)"
 proof -
   have m:"mono (\<lambda>X. (P ; X) \<lhd>\<^sub>f b \<rhd> II)"
-    unfolding mono_def sledgehammer
-  have "(while b do P od) = (\<nu> X \<bullet> (P \<Zcomp> X) \<^bold>\<lhd> b \<^bold>\<rhd> II)"
-    by (simp add: while_top_def)
-  also have "... = ((P \<Zcomp> (\<nu> X \<bullet> (P \<Zcomp> X) \<^bold>\<lhd> b \<^bold>\<rhd> II)) \<^bold>\<lhd> b \<^bold>\<rhd> II)"
-    by (subst lfp_unfold, simp_all add: m)
+    apply (simp add: mono_def, auto)
+    apply (subst pcond_mono)
+    apply (subst pseqcomp_mono)
+  have "(while\<^sub>p b do P od) = (\<nu> X \<bullet> ((P ; X) \<lhd>\<^sub>f b \<rhd> II))"
+    by (simp add: pwhile_def)
+  also have "... = ((P ; (\<nu> X \<bullet> (P ; X) \<lhd>\<^sub>f b \<rhd> II)) \<lhd>\<^sub>f b \<rhd> II)"
+    apply (subst lfp_unfold)
   also have "... = ((P \<Zcomp> while b do P od) \<^bold>\<lhd> b \<^bold>\<rhd> II)"
-    by (simp add: while_top_def)
+    by (simp add: pwhile_def)
   finally show ?thesis .
 qed
 
