@@ -19,15 +19,27 @@ named_theorems pfun_defs
   ereal: complete_linorder (linorder + complete_lattice), but ; is not mono. 
     Consider negative values for the subgoal of pseqcomp_mono.
     (P\<^sub>1 \<le> P\<^sub>2 \<Longrightarrow> Q\<^sub>1 \<le> Q\<^sub>2 \<Longrightarrow> x \<in> UNIV \<Longrightarrow> P\<^sub>1 (a, x) * Q\<^sub>1 (x, b) \<le> P\<^sub>2 (a, x) * Q\<^sub>2 (x, b))
+
   ennreal: complete_linorder, but ; is not mono
     Consider the subgoal of pseqcomp_mono. Using infsum_mono, we need to prove both sides are summable_on
-    P\<^sub>1 \<le> P\<^sub>2 \<Longrightarrow>
-       Q\<^sub>1 \<le> Q\<^sub>2 \<Longrightarrow>
-       (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. P\<^sub>1 (a, v\<^sub>0) * Q\<^sub>1 (v\<^sub>0, b)) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. P\<^sub>2 (a, v\<^sub>0) * Q\<^sub>2 (v\<^sub>0, b))
-  real01:
-    So if P\<^sub>1 summable, then (P\<^sub>1 (a, v\<^sub>0) * Q\<^sub>1 (v\<^sub>0, b)) summable. (if P\<^sub>1 is a distribution, then P\<^sub>1 summable)
-  pdfun: probabilistic distribution functions.
-    But pdfun cannot be compared.
+      P\<^sub>1 \<le> P\<^sub>2 \<Longrightarrow> Q\<^sub>1 \<le> Q\<^sub>2 \<Longrightarrow>
+         (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. P\<^sub>1 (a, v\<^sub>0) * Q\<^sub>1 (v\<^sub>0, b)) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. P\<^sub>2 (a, v\<^sub>0) * Q\<^sub>2 (v\<^sub>0, b))
+    So we need to add assms that both "(\<lambda>v\<^sub>0::'a. P\<^sub>1 (a, v\<^sub>0) * Q\<^sub>1 (v\<^sub>0, b)) summable_on UNIV" and 
+      "(\<lambda>v\<^sub>0::'a. P\<^sub>2 (a, v\<^sub>0) * Q\<^sub>2 (v\<^sub>0, b)) summable_on UNIV"
+    However, in order to prove the loop body is mono: "mono (\<lambda>X. (P ; X) \<lhd>\<^sub>f b \<rhd> II)", one subgoal is 
+      "\<forall>X. (\<lambda>v\<^sub>0::'a time_scheme. P (a, v\<^sub>0) * X (v\<^sub>0, b)) summable_on UNIV"
+    We consider P is a probability distribution, (so P summable), but (P * X) is not necessary to 
+    be summable for all X.
+
+  real01 (probability):
+    So if P\<^sub>1 summable, then (P\<^sub>1 (a, v\<^sub>0) * Q\<^sub>1 (v\<^sub>0, b)) summable. (if P\<^sub>1 is a distribution, then P\<^sub>1 summable).
+    Since now X is real01 valued-functions, (P * X) is summable.
+    But for parallel composition, both P and Q in P \<parallel> Q are not necessary to be real01. But its result is
+    probability.
+
+  pdfun: probabilistic distribution functions:
+    But pdfun cannot be compared using \<le>, so they don't form a complete lattice.
+    
 *)
 term "ennreal"
 type_synonym ('s\<^sub>1, 's\<^sub>2) rvfun = "(real, 's\<^sub>1 \<times> 's\<^sub>2) expr"
