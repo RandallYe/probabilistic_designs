@@ -13,7 +13,7 @@ unbundle UTP_Syntax
 
 declare [[show_types]]
 
-named_theorems pfun_defs
+named_theorems pfun_defs and ureal_defs
 
 subsection \<open> Design decisions \<close>
 
@@ -80,9 +80,9 @@ definition pchoice :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1,
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = ((r * P + (1 - r) * Q))\<^sub>e"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[prel_defs]: "pchoice' r P Q = prel_of_rfrel (r * @(rfrel_of_prel P) + (1 - r) * @(rfrel_of_prel Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_erfun P) + (1 - r) * @(rfrel_of_erfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -191,10 +191,14 @@ find_theorems name:"ureal"
 term "complete_lattice_class"
 term "ennreal"
 
-definition "ereal2ureal x = ereal2ureal' (min (max 0 x) 1)"
+definition ereal2ureal where 
+[ureal_defs]: "ereal2ureal x = ereal2ureal' (min (max 0 x) 1)"
 
-definition "real2ureal x = ereal2ureal (ereal x)"
-definition "ureal2real x = (real_of_ereal \<circ> ureal2ereal) x"
+definition real2ureal where
+[ureal_defs]: "real2ureal x = ereal2ureal (ereal x)"
+
+definition ureal2real where
+[ureal_defs]: "ureal2real x = (real_of_ereal \<circ> ureal2ereal) x"
 
 lemma enn2ereal_range: "ereal2ureal ` {0..1} = UNIV"
 proof -
@@ -250,6 +254,7 @@ instance
   ureal2ereal_inverse)
   using less_eq_ureal.rep_eq by force
 end
+
 
 print_locale "comm_semiring_1"
 print_locale "semiring_1_no_zero_divisors"
@@ -345,9 +350,342 @@ instance ..
 end
 *)
 
-subsubsection \<open> Probability functions \<close>
+  subsubsection \<open> Probability functions \<close>
+type_synonym ('s\<^sub>1, 's\<^sub>2) rfrel = "(\<real>, 's\<^sub>1 \<times> 's\<^sub>2) expr"
+type_synonym 's rfhrel = "('s, 's) rfrel"
+
 type_synonym ('s\<^sub>1, 's\<^sub>2) erfun = "(ureal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's erhfun = "('s, 's) erfun"
+
+definition erfun_of_rfrel:: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where
+[ureal_defs]: "erfun_of_rfrel f = (real2ureal f)\<^sub>e "
+
+thm "erfun_of_rfrel_def"
+
+definition rfrel_of_erfun where
+[ureal_defs]: "rfrel_of_erfun f = (ureal2real f)\<^sub>e "
+
+subsection \<open> Syntax \<close>
+
+(* deadlock: zero and not a distribution *)
+abbreviation zero_f ("0\<^sub>f") where
+  "zero_f \<equiv> (\<lambda> s. 0::\<real>)"
+
+(* This is underspecified and could be assigned an arbitrary value. 
+TODO: How to deal with this?
+*)
+definition pzero :: "('s\<^sub>1, 's\<^sub>2) erfun" ("0\<^sub>p") where
+[pfun_defs]: "pzero = erfun_of_rfrel zero_f"
+
+(*
+lemma deadlock_always: "`@(deadlock_state pzero)`"
+  apply (simp add: pfun_defs)
+  by (simp add: is_prob_def real2ureal_inverse)
+*)
+
+subsubsection \<open> Skip \<close>
+(* The purpose of this abbreviation is to make later reference to this function inside pskip easier. *)
+abbreviation pskip\<^sub>_f ("II\<^sub>f") where
+  "pskip\<^sub>_f \<equiv> \<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
+
+definition pskip :: "'s erhfun" ("II\<^sub>p") where
+[pfun_defs]: "pskip = erfun_of_rfrel (pskip\<^sub>_f)"
+
+adhoc_overloading
+  uskip pskip
+
+term "II::'s rel"
+term "II::'s erhfun"
+term "x := ($x + 1)"
+term "x\<^sup>> := ($x\<^sup>< + 1)"
+
+subsubsection \<open> Assignment \<close>
+abbreviation passigns_f where 
+"passigns_f \<sigma> \<equiv> \<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
+
+definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) erfun" where 
+[pfun_defs]: "passigns \<sigma> = erfun_of_rfrel (passigns_f \<sigma>)"
+
+adhoc_overloading
+  uassigns passigns
+
+term "(s := e)::'s erhfun"
+term "(s := e)::'s rel"
+
+subsubsection \<open> Probabilistic choice \<close>
+abbreviation pchoice_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel" 
+("(_ \<oplus>\<^sub>f\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where 
+"pchoice_f P r Q \<equiv> (r * P + (1 - r) * Q)\<^sub>e"
+
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" 
+  ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
+[pfun_defs]: "pchoice P r Q = erfun_of_rfrel (pchoice_f (rfrel_of_erfun P) r (rfrel_of_erfun Q))"
+
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun" 
+    ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_erfun P) + (1 - r) * @(rfrel_of_erfun Q))\<^sub>e"
+*)
+
+syntax 
+  "_pchoice" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 61, 60] 60) 
+
+translations
+  "_pchoice r P Q" == "CONST pchoice P (r)\<^sub>e Q"
+  "_pchoice r P Q" <= "_pchoice (r)\<^sub>e P Q"
+
+term "if\<^sub>p 0.5 then P else Q"
+term "if\<^sub>p R then P else Q"
+term "if\<^sub>p R then P else Q = if\<^sub>p R then P else Q"
+
+text \<open> The definition @{text "lift_pre"} below lifts a real-valued function @{text r} over the initial 
+state to over the initial and final states. In the definition of @{term "pchoice"}, we use a general 
+function for the weight @{text r}, which is @{text "'s \<times> 's \<Rightarrow> \<real>"}. However, now we only consider 
+the probabilistic choice whose weight is only over the initial state. Then @{text "lift_pre"} is 
+useful to lift a such function to a more general function used in @{term "pchoice"}.
+\<close>
+abbreviation lift_pre where "lift_pre r \<equiv> (\<lambda>(s, s'). r s)"
+notation lift_pre ("_\<^sup>\<Up>")
+expr_ctr lift_pre
+
+subsubsection \<open> Conditional choice \<close>
+(* conditional choice *)
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel" 
+("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
+"pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
+
+definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where 
+[pfun_defs]: "pcond b P Q \<equiv> erfun_of_rfrel (pcond_f (rfrel_of_erfun P) b (rfrel_of_erfun Q))"
+
+syntax 
+  "_pcond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>c (_)/ then (_)/ else (_))" [0, 61, 60] 60) 
+
+translations
+  "_pcond b P Q" == "CONST pcond (b)\<^sub>e P Q"
+  "_pcond b P Q" <= "_pcond (b)\<^sub>e P Q"
+
+term "if\<^sub>c True then P else Q"
+
+subsubsection \<open> Sequential composition \<close>
+term "(rfrel_of_erfun (P::('s erhfun)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
+term "\<^bold>v\<^sup>>"
+term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. (P\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup>>\<rbrakk>) * (Q\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup><\<rbrakk>))\<^sub>e"
+term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (rfrel_of_erfun (P::'s erhfun))"
+term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e"
+term "(\<exists> v\<^sub>0. [ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>P\<rbrakk>\<^sub>P \<and> [ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>Q\<rbrakk>\<^sub>P)\<^sub>e"
+term "if True then a else b"
+term " 
+  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_erfun P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_erfun Q)))\<^sub>e"
+thm "pred_seq_hom"
+
+abbreviation pseqcomp_f :: "'s rfhrel \<Rightarrow> 's rfhrel \<Rightarrow> 's rfhrel" (infixl ";\<^sub>f" 59) where 
+"pseqcomp_f P Q \<equiv> (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
+
+definition pseqcomp :: "'s erhfun \<Rightarrow> 's erhfun \<Rightarrow> 's erhfun" (*(infixl ";\<^sub>p" 59)*) where
+[pfun_defs]: "pseqcomp P Q = erfun_of_rfrel (pseqcomp_f (rfrel_of_erfun P) (rfrel_of_erfun Q))"
+
+consts
+  pseqcomp_c :: "'a \<Rightarrow> 'a \<Rightarrow> 'a" (infixl ";" 59)
+adhoc_overloading
+  pseqcomp_c pseqcomp_f and 
+  pseqcomp_c pseqcomp
+
+term "(P::('s, 's) rfrel) ; Q"
+term "(P::'s erhfun) ; Q"
+
+subsubsection \<open> Parallel composition \<close>
+
+abbreviation pparallel_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel" (infixl "\<parallel>\<^sub>f" 58)
+  where "pparallel_f P Q \<equiv> (\<^bold>N (P * Q)\<^sub>e)"
+
+abbreviation pparallel_f' :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel"
+  where "pparallel_f' P Q \<equiv> ((P * Q) / (\<Sum>\<^sub>\<infinity> s'. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> Q)))\<^sub>e"
+
+lemma pparallel_f_eq: "pparallel_f P Q = pparallel_f' P Q"
+  apply (simp add: dist_defs)
+  by (expr_auto)
+
+text \<open> We provide four variants (different combinations of types for their parameters) of parallel 
+composition for convenience and they use a same notation @{text "\<parallel>"}. All of them defines 
+probabilistic programs of type @{typ "('a\<^sub>1, 'a\<^sub>2) erfun"}.
+\<close>
+definition pparallel :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" (infixl "\<parallel>\<^sub>p" 58) where
+[pfun_defs]: "pparallel P Q = erfun_of_rfrel (pparallel_f P Q)"
+
+definition pparallel_pp :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where
+[pfun_defs]: "pparallel_pp P Q = pparallel (rfrel_of_erfun P) (rfrel_of_erfun Q)"
+
+definition pparallel_fp :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where
+[pfun_defs]: "pparallel_fp P Q = pparallel P (rfrel_of_erfun Q)"
+
+definition pparallel_pf :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where
+[pfun_defs]: "pparallel_pf P Q = pparallel (rfrel_of_erfun P) Q"
+
+no_notation Sublist.parallel (infixl "\<parallel>" 50)
+consts
+  parallel_c :: "'a \<Rightarrow> 'b \<Rightarrow> 'c" (infixl "\<parallel>" 58)
+
+adhoc_overloading
+  parallel_c pparallel and 
+  parallel_c pparallel_pp and
+  parallel_c pparallel_fp and
+  parallel_c pparallel_pf and
+  parallel_c Sublist.parallel
+
+term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) rfrel))"
+term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) erfun))"
+term "((P::('s, 's) erfun) \<parallel> (Q::('s, 's) rfrel))"
+term "((P::('s, 's) erfun) \<parallel> (Q::('s, 's) erfun))"
+term "((P::'s list) \<parallel> Q)"
+term "([] \<parallel> [a])"
+
+subsubsection \<open> Recursion \<close>
+alphabet time = 
+  t :: nat
+
+term "lfp (\<lambda>X. (P::'s erhfun))"
+
+definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme erhfun 
+  \<Rightarrow> 'a time_scheme erhfun" 
+("while\<^sub>p _ do _ od") where
+"pwhile b P = (\<nu> X \<bullet> (if\<^sub>c b then (P ; X) else II))"
+
+print_locale "complete_lattice"
+
+lemma pcond_mono: "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (if\<^sub>c b then P\<^sub>1 else Q\<^sub>1) \<le> (if\<^sub>c b then P\<^sub>2 else Q\<^sub>2)"
+  apply (simp add: pcond_def ureal_defs)
+  apply (simp add: le_fun_def)
+  apply (auto)
+  apply (simp add: ureal_defs)
+  apply (smt (z3) atLeastAtMost_iff ereal_less_eq(1) ereal_less_eq(4) ereal_real ereal_times(1) 
+      max.absorb1 max.absorb2 min.absorb1 real_of_ereal_le_0 ureal2ereal ureal2ereal_inverse)
+  apply (simp add: ureal_defs)
+  by (smt (z3) atLeastAtMost_iff ereal_less_eq(1) ereal_less_eq(4) ereal_real ereal_times(1) 
+      max.absorb1 max.absorb2 min.absorb1 real_of_ereal_le_0 ureal2ereal ureal2ereal_inverse)
+
+print_classes
+lemma pseqcomp_mono: 
+  fixes P\<^sub>1 :: "'s erhfun"
+  assumes "\<forall>a b. (\<lambda>v\<^sub>0::'s. real_of_ereal 
+    (ureal2ereal (P\<^sub>1 (a, v\<^sub>0))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (v\<^sub>0, b)))) summable_on UNIV"
+  assumes "\<forall>a b. (\<lambda>v\<^sub>0::'s. real_of_ereal 
+    (ureal2ereal (P\<^sub>2 (a, v\<^sub>0))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (v\<^sub>0, b)))) summable_on UNIV"
+  shows "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (P\<^sub>1 ; Q\<^sub>1) \<le> (P\<^sub>2 ; Q\<^sub>2)"
+  apply (simp add: pfun_defs)
+  apply (simp add: le_fun_def)
+  apply (simp add: ureal_defs)
+  apply (expr_auto)
+proof -
+  fix a b :: "'s"
+  assume a1: "\<forall>(a::'s) b::'s. P\<^sub>1 (a, b) \<le> P\<^sub>2 (a, b)"
+  assume a2: "\<forall>(a::'s) b::'s. Q\<^sub>1 (a, b) \<le> Q\<^sub>2 (a, b)"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
+                real_of_ereal (ureal2ereal (P\<^sub>1 (a, v\<^sub>0))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (v\<^sub>0, b))))"
+  let ?rhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
+                real_of_ereal (ureal2ereal (P\<^sub>2 (a, v\<^sub>0))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (v\<^sub>0, b))))"
+
+  have "?lhs \<le> ?rhs"
+    apply (rule infsum_mono)
+    apply (simp add: assms(1))
+    apply (simp add: assms(2))
+    by (metis a1 a2 atLeastAtMost_iff ereal_less_PInfty ereal_times(1) less_eq_ureal.rep_eq 
+        linorder_not_less mult_mono real_of_ereal_pos real_of_ereal_positive_mono ureal2ereal)
+  then show " ereal2ureal' (min (max (0::ereal) (ereal ?lhs)) (1::ereal)) \<le> 
+       ereal2ureal' (min (max (0::ereal) (ereal ?rhs)) (1::ereal))"
+  (*
+  proof -
+    have f1: "\<forall>e ea. min (e::ereal) ea = (if e \<le> ea then e else ea)"
+      using min_def by blast
+    have f2: "\<forall>e ea. (e::ereal) \<le> max e ea"
+      using max.cobounded1 by blast
+    have f3: "\<forall>e ea eb. (max (e::ereal) ea \<le> eb) = (e \<le> eb \<and> ea \<le> eb)"
+      using max.bounded_iff by blast
+    have f4: "max (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))"
+      by (simp add: \<open>(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal ((P\<^sub>1::'s \<times> 's \<Rightarrow> ureal) (a::'s, v\<^sub>0))) * real_of_ereal (ureal2ereal ((Q\<^sub>1::'s \<times> 's \<Rightarrow> ureal) (v\<^sub>0, b::'s)))) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal ((P\<^sub>2::'s \<times> 's \<Rightarrow> ureal) (a, v\<^sub>0))) * real_of_ereal (ureal2ereal ((Q\<^sub>2::'s \<times> 's \<Rightarrow> ureal) (v\<^sub>0, b))))\<close>)
+    { assume "max (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1"
+      moreover
+      { assume "(0::ereal) \<le> 1 \<and> ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))) \<le> 1"
+        then have "max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) = (if max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) \<le> 1 then max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) else 1) \<and> min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1 = ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1))"
+          by (simp add: ereal2ureal'_inverse)
+        moreover
+        { assume "\<not> max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) = ureal2ereal (ereal2ureal' (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))))"
+          then have "\<not> max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1"
+            using f2 by (smt (z3) atLeastAtMost_iff ereal2ureal'_inverse) }
+        ultimately have "max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1 \<longrightarrow> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1)) \<le> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))) 1))"
+          using f4 f3 f2 f1 by (smt (z3)) }
+      ultimately have "max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1 \<longrightarrow> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1)) \<le> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))) 1)) \<or> \<not> (0::ereal) \<le> 1 \<or> \<not> ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))) \<le> 1"
+        using f3 by blast }
+    moreover
+    { assume "\<not> max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1"
+      then have "ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1)) \<le> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))) 1)) \<or> ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1) \<le> ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))) 1)"
+        using f3 by (smt (z3) atLeastAtMost_iff ereal2ureal'_inverse le_cases3 min_def_raw) }
+    ultimately show ?thesis
+      using f3 by (smt (z3) \<open>(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal ((P\<^sub>1::'s \<times> 's \<Rightarrow> ureal) (a::'s, v\<^sub>0))) * real_of_ereal (ureal2ereal ((Q\<^sub>1::'s \<times> 's \<Rightarrow> ureal) (v\<^sub>0, b::'s)))) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal ((P\<^sub>2::'s \<times> 's \<Rightarrow> ureal) (a, v\<^sub>0))) * real_of_ereal (ureal2ereal ((Q\<^sub>2::'s \<times> 's \<Rightarrow> ureal) (v\<^sub>0, b))))\<close> ereal_max less_eq_ureal.rep_eq)
+  qed *)
+    by (smt (z3) atLeastAtMost_iff ereal2ureal'_inverse ereal_less_eq(3) ereal_less_eq(4) 
+        ereal_less_eq(7) ereal_max_0 less_eq_ureal.rep_eq linorder_le_cases max.absorb_iff2 
+        min.absorb1 min.absorb2) 
+qed
+
+lemma summable_on_ureal_product:
+  assumes P_summable: "(\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
+  shows "(\<lambda>v\<^sub>0::'c time_scheme. real_of_ereal (ureal2ereal (P (s, v\<^sub>0))) * 
+        real_of_ereal (ureal2ereal (x (v\<^sub>0, b)))) summable_on UNIV"
+  apply (subst summable_on_iff_abs_summable_on_real)
+  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>x. real_of_ereal (ureal2ereal (P (s, x)))"])
+  apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+  using assms apply blast
+  by (smt (verit) atLeastAtMost_iff mult_nonneg_nonneg mult_right_le_one_le real_norm_def 
+      real_of_ereal_le_1 real_of_ereal_pos ureal2ereal)
+
+theorem pwhile_unfold:
+  assumes "\<forall>s. (\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
+  shows "while\<^sub>p b do P od = (if\<^sub>c b then (P ; (while\<^sub>p b do P od)) else II)"
+proof -
+  have m:"mono (\<lambda>X. (if\<^sub>c b then (P ; X) else II))"
+    apply (simp add: mono_def, auto)
+    apply (subst pcond_mono)
+    apply (subst pseqcomp_mono)
+    apply (auto)
+    by (simp add: assms summable_on_ureal_product)+
+  have "(while\<^sub>p b do P od) = (\<nu> X \<bullet> (if\<^sub>c b then (P ; X) else II))"
+    by (simp add: pwhile_def)
+  also have "... = ((if\<^sub>c b then (P ; (\<nu> X \<bullet> (if\<^sub>c b then (P ; X) else II))) else II))"
+    apply (subst lfp_unfold)
+    apply (simp add: m)
+    by (simp add: lfp_const)
+  also have "... = (if\<^sub>c b then (P ; (while\<^sub>p b do P od)) else II)"
+    by (simp add: pwhile_def)
+  finally show ?thesis .
+qed
+
+theorem pwhile_false: 
+  assumes "\<forall>s. (\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
+  shows "while\<^sub>p (false)\<^sub>e do P od = II"
+  apply (subst pwhile_unfold)
+  using assms apply presburger
+  apply (simp add: pfun_defs)
+  apply (expr_auto)
+  apply (simp add: ureal_defs)
+  apply (auto)
+  apply (simp add: ereal2ureal'_inverse)
+  apply (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
+  by (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
+
+lemma fzero_zero: "rfrel_of_erfun (erfun_of_rfrel 0\<^sub>f) = 0\<^sub>f"
+  apply (simp add: ureal_defs)
+  by (metis SEXP_def real_of_ereal_0 ureal2ereal_inverse zero_ureal.rep_eq)
+
+theorem pwhile_true: "while\<^sub>p (true)\<^sub>e do P od = 0\<^sub>p"
+  apply (simp add: pwhile_def pcond_def pzero_def)
+  apply (rule antisym)
+  apply (rule lfp_lowerbound)
+  apply (simp add: pseqcomp_def)
+  apply (simp add: fzero_zero)
+  apply (expr_auto)
+  apply (simp add: fzero_zero)
+  apply (simp add: ureal_defs)
+  apply (smt (verit) SEXP_def atLeastAtMost_iff le_funI less_eq_ureal.rep_eq ureal2ereal ureal2ereal_inverse zero_ureal.rep_eq)
+  done
 
 (*
 subsection \<open> Infsum \<close>
@@ -401,6 +739,7 @@ lemma summable_on_ureal_product:
   using assms(4) apply (metis (no_types, lifting) curry_def summable_on_cong)
 *)
 
+(*
 subsection \<open> Syntax \<close>
 definition zero :: "'s erhfun" where
 "zero = (0)\<^sub>e"
@@ -430,9 +769,9 @@ definition pchoice :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1,
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = ((r * P + (1 - r) * Q))\<^sub>e"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[prel_defs]: "pchoice' r P Q = prel_of_rfrel (r * @(rfrel_of_prel P) + (1 - r) * @(rfrel_of_prel Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_erfun P) + (1 - r) * @(rfrel_of_erfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -529,7 +868,7 @@ proof -
     by (simp add: pwhile_def)
   finally show ?thesis .
 qed
-
+*)
 subsubsection \<open> \<close>
 print_classes
 (*
@@ -684,9 +1023,9 @@ definition pchoice :: "('s\<^sub>1, 's\<^sub>2) pfun \<Rightarrow> ('s\<^sub>1, 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = (ereal2ureal (r * P + (1 - r) * Q)\<^sub>e)\<^sub>e"
 *)
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel \<Rightarrow> ('s, 's) prel" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[prel_defs]: "pchoice' r P Q = prel_of_rfrel (r * @(rfrel_of_prel P) + (1 - r) * @(rfrel_of_prel Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_erfun P) + (1 - r) * @(rfrel_of_erfun Q))\<^sub>e"
 *)
 
 syntax 
