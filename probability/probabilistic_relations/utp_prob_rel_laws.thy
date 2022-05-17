@@ -2091,6 +2091,13 @@ lemma prel_pcond_id:
   apply (expr_auto)
   by (simp add: rfrel_of_prel_inverse)
 
+lemma prel_pcond_pchoice_eq: 
+  shows "if\<^sub>c b then P else Q = (if\<^sub>p \<lbrakk>b\<rbrakk>\<^sub>\<I> then P else Q)"
+  apply (simp add: prel_defs)
+  apply (expr_auto)
+  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  by auto
+
 subsubsection \<open> Normalisation \<close>
 theorem uniform_dist_empty_zero:  "(x \<^bold>\<U> {}) = 0\<^sub>f"
   apply (simp add: dist_defs)

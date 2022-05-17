@@ -175,7 +175,11 @@ lemma flip_body_is_dist: "is_final_distribution flip_body_alt"
 needs to establish below. 
 
   repeat_body flip ((pre \<lbrakk>($coin\<^sup>< = chead)\<^sub>e\<rbrakk>\<^sub>u)\<^sup>\<Up>) X = X
-=   (definition)
+=   (repeat_body_defs)
+  flip ; (t := $t + 1) ; (if\<^sub>c ((pre \<lbrakk>($coin\<^sup>< = chead)\<^sub>e\<rbrakk>\<^sub>u)\<^sup>\<Up>) then II else X) = X
+=   (flip_body)
+  \<lbrakk>coin' \<in> {chead, ctail} \<and> $t\<^sup>> = $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 2 ; (if\<^sub>c ((pre \<lbrakk>($coin\<^sup>< = chead)\<^sub>e\<rbrakk>\<^sub>u)\<^sup>\<Up>) then II else X) = X
+=   (pcond_pchoice_eq and pchoice definition)
   \<lbrakk>coin' \<in> {chead, ctail} \<and> $t\<^sup>> = $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 2 ; (\<lbrakk>coin = chead\<rbrakk>\<^sub>\<I> * \<lbrakk>v'=v\<rbrakk>\<^sub>\<I> + \<lbrakk>coin = ctail\<rbrakk>\<^sub>\<I> * X) = X
 =   (Iverson bracket disjunction)
   (\<lbrakk>coin' = chead\<rbrakk>\<^sub>\<I> * \<lbrakk>t' = t + 1\<rbrakk>\<^sub>\<I> / 2 + \<lbrakk>coin' = ctail\<rbrakk>\<^sub>\<I> * \<lbrakk>t' = t + 1\<rbrakk>\<^sub>\<I> / 2) ; 
@@ -198,25 +202,47 @@ needs to establish below.
   X * 2 - X[ctail/coin,t+1/t]  =  \<lbrakk>coin' = chead\<rbrakk>\<^sub>\<I> * \<lbrakk>t' = t + 1\<rbrakk>\<^sub>\<I>
 
 As a fixed point, X shall satisfy the equation above.
+*)
 
-H: Satisfy this invariant 
-  \<lbrakk>coin' = chead \<and> t' \<ge> t + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t' - t - 1) * (1/2)
-= 
-  \<lbrakk>coin' = chead \<and> t' \<ge> t + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t' - t - 1) * (1/2) * 2 - 
-  \<lbrakk>coin' = chead \<and> t' \<ge> t + 1 + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t' - t - 2) * (1/2)
+(*
+H: Satisfy this invariant
+  
+  H * 2 - H[ctail/coin,t+1/t]
+=   (H = \<lbrakk>coin' = chead\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t' \<ge> t + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t'- t - 1) * (1/2))
+  \<lbrakk>coin' = chead \<and> t' \<ge> t + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t' - t - 1) * (1/2) * 2 - \<lbrakk>coin' = chead \<and> t' \<ge> t + 1 + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t' - t - 2) * (1/2)
 =
-  \<lbrakk>coin' = chead \<and> t' \<ge> t + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t' - t - 1) - 
-  \<lbrakk>coin' = chead \<and> t' \<ge> t + 1 + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t' - t - 1)
+  \<lbrakk>coin' = chead \<and> t' \<ge> t + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t' - t - 1) - \<lbrakk>coin' = chead \<and> t' \<ge> t + 1 + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(t' - t - 1)
 =
   \<lbrakk>coin' = chead\<rbrakk>\<^sub>\<I> * ( \<lbrakk>t' \<ge> t + 1\<rbrakk>\<^sub>\<I> - \<lbrakk>t' \<ge> t + 2\<rbrakk>\<^sub>\<I>) * (1/2)^(t' - t - 1)
 =
   \<lbrakk>coin' = chead\<rbrakk>\<^sub>\<I> * (\<lbrakk>t' \<ge> t + 2 \<or> t' = t + 1\<rbrakk>\<^sub>\<I> - \<lbrakk>t' \<ge> t + 2\<rbrakk>\<^sub>\<I>) * (1/2)^(t' - t - 1)
-=
+=   (disjunction of Iverson bracket)
   \<lbrakk>coin' = chead\<rbrakk>\<^sub>\<I> * (\<lbrakk>t' = t + 1\<rbrakk>\<^sub>\<I>) * (1/2)^(t' - t - 1)
-=
+=   (t' = t + 1)
   \<lbrakk>coin' = chead\<rbrakk>\<^sub>\<I> * (\<lbrakk>t' = t + 1\<rbrakk>\<^sub>\<I>)
 *)
 
+(* Actually, H is the unique solution?
+ 
+  " X * 2 - X[ctail/coin,t+1/t]  =  \<lbrakk>coin' = chead\<rbrakk>\<^sub>\<I> * \<lbrakk>t' = t + 1\<rbrakk>\<^sub>\<I> " \<Longrightarrow> X = H
+
+\<forall>s. 
+X(s, s')*2 - X(s[coin := ctail, t := t+1], s') = s(coin := chead, t := t+1)
+= 
+X(s, s')*2 - X(s[coin := ctail, t := t+1], s')  = H(s, s')*2 - H(s[coin := ctail, t := t+1], s')
+= 
+(X(s, s') - H(s, s')) * 2 = X(s[coin := ctail, t := t+1], s') - H(s[coin := ctail, t := t+1], s')
+
+
+\<forall>t. 
+X(t, t')*2 - X(s[coin := ctail, t := t+1], s') = s[coin := chead, t := t+1]
+
+t' = t+1
+X(t, t+1)*2 - X([ctail, t+1], t+1) = [c' = h]
+
+t' > t + 1
+X(t, > t+1)*2 = X([ctail, t+1], > t+1)
+*)
 print_locale "complete_lattice"
 
 (*

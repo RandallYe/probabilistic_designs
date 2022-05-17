@@ -4,6 +4,7 @@ theory utp_prob_rel_lattice
   imports 
     (* "HOL.Series" *)
     "HOL-Analysis.Infinite_Sum" 
+    "HOL-Library.Complete_Partial_Order2" 
     "utp_iverson_bracket" 
     "utp_distribution"
     "infsum_laws"
@@ -41,7 +42,19 @@ subsection \<open> Design decisions \<close>
 
   pdfun: probabilistic distribution functions:
     But pdfun cannot be compared using \<le>, so they don't form a complete lattice.
-    
+*)
+
+(* Should we lift operators for ureal and instantiate it for classes like "zero, one, add, minus, ..."?
+If we instantiate ureal for these classes, we are able to write (0::ureal) + (1::ureal). 
+Finally, we are able to define operators like probabilistic choice, sequential composition on ureal 
+only, not on real. However, by this way, we also need to deal with infsum for ureal, and so ureal must 
+be instantiated to a topological space and prove all related summation laws. It seems not 
+straightforward to do so.
+
+Either we can just instantiate ureal as a complete lattice and define these operators on real, but 
+these operators have ureal parameters and result. The definition needs to deal with convert ureal 
+to real, operation on reals, then convert the result back to ureal. Finally, we reuse all summation 
+laws for real numbers. 
 *)
 type_synonym ('s\<^sub>1, 's\<^sub>2) rvfun = "(real, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's rvhfun = "('s, 's) rvfun"
@@ -217,6 +230,7 @@ setup_lifting type_definition_ureal'
 
 declare [[coercion ereal2ureal]]
 
+term "a::('a::linorder)"
 instantiation ureal :: complete_linorder
 begin
 
@@ -350,7 +364,7 @@ instance ..
 end
 *)
 
-  subsubsection \<open> Probability functions \<close>
+subsubsection \<open> Probability functions \<close>
 type_synonym ('s\<^sub>1, 's\<^sub>2) rfrel = "(\<real>, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's rfhrel = "('s, 's) rfrel"
 
@@ -368,6 +382,9 @@ definition rfrel_of_erfun where
 subsection \<open> Syntax \<close>
 
 (* deadlock: zero and not a distribution *)
+abbreviation one_f ("1\<^sub>f") where
+  "one_f \<equiv> (\<lambda> s. 1::\<real>)"
+
 abbreviation zero_f ("0\<^sub>f") where
   "zero_f \<equiv> (\<lambda> s. 0::\<real>)"
 
@@ -492,6 +509,22 @@ adhoc_overloading
 term "(P::('s, 's) rfrel) ; Q"
 term "(P::'s erhfun) ; Q"
 
+lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) = 1"
+  by (simp add: ereal2ureal'_inverse)
+
+(*
+Sum v. P(s, v) * (1) = Sum v. P(s, v)
+*)
+lemma "((P::'s erhfun) ; 1\<^sub>f) = 1\<^sub>f"
+  apply (simp add: pfun_defs)
+  apply (expr_auto add: ureal_defs)
+  apply (simp add: real_1)
+proof -
+  fix a and b :: "'s"
+  show "ereal2ureal' (min (max (0::ereal) (ereal (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal (P (a, v\<^sub>0))))))
+          (1::ereal)) = ereal2ureal' (ereal (1::\<real>))"
+  qed
+
 subsubsection \<open> Parallel composition \<close>
 
 abbreviation pparallel_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel" (infixl "\<parallel>\<^sub>f" 58)
@@ -540,15 +573,78 @@ term "([] \<parallel> [a])"
 
 subsubsection \<open> Recursion \<close>
 alphabet time = 
-  t :: nat
+  t :: enat
 
+text \<open>In UTP, @{text "\<mu>"} and @{text "\<nu>"} are the weakest and strongest fix point, but there are 
+gfp and lfp in Isabelle (see @{text "utp_pred.thy"}).
+Here, we use the same order as Isabelle, opposite with UTP. So we define @{text "\<mu>\<^sub>p"} for the least 
+fix point (also lfp in Isabelle).
+\<close>
+(* no_notation gfp ("\<mu>")
+no_notation lfp ("\<nu>") 
+*)
+
+notation lfp ("\<mu>\<^sub>p")
+notation gfp ("\<nu>\<^sub>p")
+
+syntax
+  "_mu" :: "pttrn \<Rightarrow> logic \<Rightarrow> logic" ("\<mu>\<^sub>p _ \<bullet> _" [0, 10] 10)
+  "_nu" :: "pttrn \<Rightarrow> logic \<Rightarrow> logic" ("\<nu>\<^sub>p _ \<bullet> _" [0, 10] 10)
+
+translations
+  "\<nu>\<^sub>p X \<bullet> P" == "CONST gfp (\<lambda> X. P)"
+  "\<mu>\<^sub>p X \<bullet> P" == "CONST lfp (\<lambda> X. P)"
+
+term "\<mu>\<^sub>p X  \<bullet>  (X::'s erhfun)"
 term "lfp (\<lambda>X. (P::'s erhfun))"
 
-definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme erhfun 
-  \<Rightarrow> 'a time_scheme erhfun" 
-("while\<^sub>p _ do _ od") where
-"pwhile b P = (\<nu> X \<bullet> (if\<^sub>c b then (P ; X) else II))"
+subsection \<open> Fixed-point Laws \<close>
+text \<open> Existence of a fixed point for a mono function F in ureal: See 
+Knaster_Tarski under HOL/Examples
+\<close>
+lemma mu_id: "(\<mu>\<^sub>p (X::'a \<Rightarrow> ureal) \<bullet> X) = 0\<^sub>f"
+  apply (simp add: ureal_defs)
+  apply (simp add: lfp_def)
+  by (metis bot_apply bot_ureal.rep_eq ureal2ereal_inverse)
 
+lemma mu_const: "(\<mu>\<^sub>p X \<bullet> P) = P"
+  by (simp add: lfp_const)
+
+lemma nu_id: "(\<nu>\<^sub>p (X::'a \<Rightarrow> ureal) \<bullet> X) = 1\<^sub>f"
+  apply (simp add: ureal_defs)
+  apply (simp add: gfp_def)
+  by (metis ereal_eq_1(1) top_apply top_ureal.rep_eq ureal2ereal_inverse)
+
+lemma nu_const: "(\<nu>\<^sub>p X \<bullet> P) = P"
+  by (simp add: gfp_const)
+
+term "Complete_Partial_Order.chain (\<le>) x"
+term "monotone"
+thm "Complete_Partial_Order.iterates.induct"
+(*
+lemma mu_refine_intro:
+  assumes "(C \<Rightarrow> S) \<le> (F::'s erhfun \<Rightarrow> 's erhfun) (C \<Rightarrow> S)" "(C \<and> \<mu>\<^sub>p F) = (C \<and> \<nu>\<^sub>p F)"
+  shows "(C \<Rightarrow> S) \<le> \<mu>\<^sub>p F"
+proof -
+  from assms(1) have "(C \<Rightarrow> S) \<le> \<nu>\<^sub>p F"
+    by (simp add: gfp_upperbound )
+  with assms show ?thesis
+qed
+*)
+
+abbreviation "Fwhile b P X  \<equiv> (if\<^sub>c b then (P ; X) else II)"
+
+definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme erhfun 
+  \<Rightarrow> 'a time_scheme erhfun" ("while\<^sub>p _ do _ od") where
+"pwhile b P = (\<mu>\<^sub>p X \<bullet> (if\<^sub>c b then (P ; X) else II))"
+
+term "\<lambda>X. (if\<^sub>c b then (P ; X) else II)"
+term "Inf"
+
+print_locale "ord"
+print_locale "order"
+print_locale "lattice"
+print_locale "bot"
 print_locale "complete_lattice"
 
 lemma pcond_mono: "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (if\<^sub>c b then P\<^sub>1 else Q\<^sub>1) \<le> (if\<^sub>c b then P\<^sub>2 else Q\<^sub>2)"
@@ -647,9 +743,9 @@ proof -
     apply (subst pseqcomp_mono)
     apply (auto)
     by (simp add: assms summable_on_ureal_product)+
-  have "(while\<^sub>p b do P od) = (\<nu> X \<bullet> (if\<^sub>c b then (P ; X) else II))"
+  have "(while\<^sub>p b do P od) = (\<mu>\<^sub>p X \<bullet> (if\<^sub>c b then (P ; X) else II))"
     by (simp add: pwhile_def)
-  also have "... = ((if\<^sub>c b then (P ; (\<nu> X \<bullet> (if\<^sub>c b then (P ; X) else II))) else II))"
+  also have "... = ((if\<^sub>c b then (P ; (\<mu>\<^sub>p X \<bullet> (if\<^sub>c b then (P ; X) else II))) else II))"
     apply (subst lfp_unfold)
     apply (simp add: m)
     by (simp add: lfp_const)
@@ -686,6 +782,202 @@ theorem pwhile_true: "while\<^sub>p (true)\<^sub>e do P od = 0\<^sub>p"
   apply (simp add: ureal_defs)
   apply (smt (verit) SEXP_def atLeastAtMost_iff le_funI less_eq_ureal.rep_eq ureal2ereal ureal2ereal_inverse zero_ureal.rep_eq)
   done
+
+text \<open> Can we use approximation chain in UTP (Ch. 2.7) to prove a unique fix point for a probabilistic 
+iteration?
+\<close>
+
+abbreviation "Ftwhile b P X \<equiv> Fwhile b (P ; t := $t + 1) X"
+
+primrec iterate:: "\<nat> \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>)
+           \<Rightarrow> 'a time_scheme erhfun \<Rightarrow> 'a time_scheme erhfun \<Rightarrow> 'a time_scheme erhfun"
+  where
+    "iterate 0 b P X = X"
+  | "iterate (Suc n) b P X = (Ftwhile b P (iterate n b P X))"
+
+lemma "iterate 0 b P 0\<^sub>p = 0\<^sub>p"
+  by simp
+
+term "(\<le>) (P :: 'a \<Rightarrow> ureal) Q"
+term "(P :: 'a time_scheme erhfun) \<le> Q"
+
+(* TODO: add preconditions about assumable *)
+lemma mono: "monotone (\<le>) (\<le>) (iterate n b P)"
+  unfolding monotone_def apply (auto)
+  apply (induction n)
+   apply (auto)
+  apply (rule pcond_mono)
+   apply (rule pseqcomp_mono)
+  sorry
+
+lemma mono_1:
+  assumes "X \<le> Y"
+  shows "(iterate n b P X) \<le> (iterate n b P Y)"
+  by (metis assms mono monotone_def)
+
+lemma bottom_least: "0\<^sub>p \<le> P"
+  apply (simp add: le_fun_def pfun_defs ureal_defs)
+  apply (auto)
+  by (metis bot.extremum bot_ureal.rep_eq ureal2ereal_inverse)
+
+lemma increasing:
+  fixes P:: "'a time_scheme erhfun"
+  shows "(iterate n b P 0\<^sub>p) \<le> (iterate (Suc n) b P 0\<^sub>p)"
+  (* apply (simp add: le_fun_def) *)
+  apply (induction n)
+   apply (simp)
+  using bottom_least le_fun_def apply fastforce
+  apply (simp)
+  by (metis mono_1 utp_prob_rel_lattice.iterate.simps(1) utp_prob_rel_lattice.iterate.simps(2))
+
+lemma increasing_1:
+  fixes P:: "'a time_scheme erhfun"
+  shows "(iterate n b P 0\<^sub>p) \<le> (iterate (n+m) b P 0\<^sub>p)"
+  apply (induction m)
+  apply (simp)
+  by (metis (full_types) add_Suc_right dual_order.trans increasing)
+
+lemma increasing_2:
+  fixes P:: "'a time_scheme erhfun"
+  assumes "n \<le> m"
+  shows "(iterate n b P 0\<^sub>p) \<le> (iterate m b P 0\<^sub>p)"
+  using increasing_1 assms nat_le_iff_add by auto
+
+lemma chain_iterate:
+  (* assumes f: "monotone (\<le>) (\<le>) P" *)
+  shows "Complete_Partial_Order.chain (\<le>) {(iterate n b P 0\<^sub>p) | n::nat. True}" (is "Complete_Partial_Order.chain _ ?C")
+proof (rule chainI)
+  fix x y
+  assume "x \<in> ?C" "y \<in> ?C"
+  then show "x \<le> y \<or> y \<le> x"
+    by (smt (verit) increasing_2 mem_Collect_eq nle_le)
+qed
+
+definition "Fn_iter b P X n = iterate n b P X"
+
+lemma 
+  shows "Sup {(iterate n b P 0\<^sub>p) | n::nat. True} \<in> {(iterate n b P 0\<^sub>p) | n::nat. True}"
+  apply (simp)
+
+(* abbreviation "Ftwhilen n b P X \<equiv> (Ftwhile b P X) ^^ n" *)
+(*
+lemma "Complete_Partial_Order.chain (\<le>) {(Ftwhile b P)}"
+*)
+lemma "Complete_Partial_Order2.cont Sup (\<le>) Sup (\<le>) (Ftwhile b P)"
+  apply (simp add: cont_def)
+  apply (simp add: pfun_defs)
+  apply (auto)
+  oops
+  
+
+definition ptwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme erhfun 
+  \<Rightarrow> 'a time_scheme erhfun" ("while\<^sub>p\<^sub>t _ do _ od") where
+"ptwhile b P = (while\<^sub>p b do (P; t := $t + 1) od)"
+
+term "$t"
+term "(t+1)\<^sub>e"
+
+thm "ptwhile_def"
+
+theorem ptwhile_unfold:
+  assumes "\<forall>s. (\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
+  shows "while\<^sub>p\<^sub>t b do P od = (if\<^sub>c b then (P; t := $t + 1 ; (while\<^sub>p\<^sub>t b do P od)) else II)"
+  apply (simp add: ptwhile_def)
+  apply (rule pwhile_unfold)
+  apply (simp add: pfun_defs)
+  apply (expr_auto add: ureal_defs rel)
+proof -
+  fix t::"enat" and more :: "'a"
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme.
+            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
+            real_of_ereal
+             (ureal2ereal
+               (ereal2ureal'
+                 (ereal
+                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1} \<union> -{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
+            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
+            real_of_ereal
+             (ureal2ereal
+               (ereal2ureal'
+                 (ereal
+                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))"
+    by simp
+  also have f2: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
+            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
+            real_of_ereal
+             (ureal2ereal
+               (ereal2ureal'
+                 (ereal
+                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))"
+    apply (subst infsum_Un_disjoint)
+    sorry
+  also have f3: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
+            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))))"
+    sorry
+  have f4: "(\<lambda>v\<^sub>0::'a time_scheme. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
+            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))))) summable_on UNIV"
+    sorry
+  show " (\<lambda>v\<^sub>0::'a time_scheme.
+           real_of_ereal
+            (ureal2ereal
+              (ereal2ureal'
+                (min (max (0::ereal)
+                       (ereal
+                         (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme.
+                            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
+                            real_of_ereal
+                             (ureal2ereal
+                               (ereal2ureal'
+                                 (ereal
+                                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))))
+                  (1::ereal))))) summable_on
+       UNIV"
+    sorry
+qed
+
+theorem ptwhile_unique_fixed_point:
+  assumes "H\<^sub>1 = (if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>1) else II)"
+  assumes "H\<^sub>2 = (if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>2) else II)"
+  shows "H\<^sub>1 = H\<^sub>2"
+proof (rule ccontr)
+  assume a1: "\<not>H\<^sub>1 = H\<^sub>2"
+  have "(if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>1) else II) = H\<^sub>1"
+    apply (simp add: pfun_defs)
+    apply (expr_auto add: rel)
+  qed
+
+  thm "le_fun_def"
+
+(*
+  (if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>1) else II)
+= 
+  (if b then (P; t := $t + 1 ; H\<^sub>1) else II)
+=
+  (if b then (P; H\<^sub>1[t+1/t]) else II)
+=
+  (if b then (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a time_scheme. P(s, v\<^sub>0) * H\<^sub>1(v\<^sub>0[t+1/t], s')) else s'=s)
+= 
+  (\<lbrakk>b\<rbrakk>\<^sub>\<I>*(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a time_scheme. P(s, v\<^sub>0) * H\<^sub>1(v\<^sub>0[t+1/t], s')) + \<lbrakk>\<not>b\<rbrakk>\<^sub>\<I>*
+*)
+subsubsection \<open> Lifting operators for ureal \<close>
+(*
+E = \<lbrakk>coin' = chead \<and> t' \<ge> t + 1\<rbrakk> * (1/2)^(t' - t - 1) * (1/2)
+E0 = \<lbrakk>False\<rbrakk> * (1/2)^(t' - t - 1) * (1/2) = 0
+E1 = \<lbrakk>coin' = chead \<and> 1 \<ge> t + 1\<rbrakk> * (1/2)^(1 - t - 1) * (1/2)
+   = \<lbrakk>coin' = chead\<rbrakk> * (1/2)
+E2 = \<lbrakk>coin' = chead \<and> 2 \<ge> t + 1\<rbrakk> * (1/2)^(2 - t - 1) * (1/2)
+   = \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(2 - 1) * (1/2) + \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(2 -1 - 1) * (1/2) 
+   = \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(2) + \<lbrakk>coin' = chead\<rbrakk> * (1/2)
+   = \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(2) + E1 
+   = \<lbrakk>coin' = chead\<rbrakk> * (3/4)
+E3 = \<lbrakk>coin' = chead \<and> 3 \<ge> t + 1\<rbrakk> * (1/2)^(3 - t - 1) * (1/2)
+   = \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(3 - 1) * (1/2) + \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(3 - 1 - 1) * (1/2) + \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(3 - 2 - 1) * (1/2) 
+   = \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(3 - 1) * (1/2) + \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(2 - 1) * (1/2) + \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(0) * (1/2) 
+   = \<lbrakk>coin' = chead\<rbrakk> * (1/2)^(3 - 1) * (1/2) + E2 
+   = \<lbrakk>coin' = chead\<rbrakk> * (1/8 + 3/4)
+   = \<lbrakk>coin' = chead\<rbrakk> * (7/8)
+*)
 
 (*
 subsection \<open> Infsum \<close>
@@ -869,7 +1161,7 @@ proof -
   finally show ?thesis .
 qed
 *)
-subsubsection \<open> \<close>
+subsubsection \<open> instantiation of ureal \<close>
 print_classes
 (*
 instantiation ureal :: bot
@@ -1027,7 +1319,7 @@ definition pchoice :: "('s\<^sub>1, 's\<^sub>2) pfun \<Rightarrow> ('s\<^sub>1, 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
 [pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_erfun P) + (1 - r) * @(rfrel_of_erfun Q))\<^sub>e"
 *)
-
+(*
 syntax 
   "_pchoice" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 61, 60] 60) 
 
