@@ -61,41 +61,41 @@ type_synonym 's rvhfun = "('s, 's) rvfun"
 
 subsection \<open> Real numbers or non-negative extended real numbers \<close>
 (*
-type_synonym ('s\<^sub>1, 's\<^sub>2) erfun = "(ennreal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
-type_synonym 's erhfun = "('s, 's) erfun"
+type_synonym ('s\<^sub>1, 's\<^sub>2) urfun = "(ennreal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
+type_synonym 's urhfun = "('s, 's) urfun"
 
 subsection \<open> Syntax \<close>
-definition zero :: "'s erhfun" where
+definition zero :: "'s urhfun" where
 "zero = (0)\<^sub>e"
 
-definition one :: "'s erhfun" where
+definition one :: "'s urhfun" where
 "one = (1)\<^sub>e"
 
-definition pskip :: "'s erhfun" ("II\<^sub>p") where
+definition pskip :: "'s urhfun" ("II\<^sub>p") where
 [pfun_defs]: "pskip = (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uskip pskip
 
 term "II::'s rel"
-term "II::'s erhfun"
+term "II::'s urhfun"
 
-definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) erfun" where 
+definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) urfun" where 
 [pfun_defs]: "passigns \<sigma> = (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uassigns passigns
 
-term "(s := e)::'s erhfun"
+term "(s := e)::'s urhfun"
 term "(s := e)::'s rel"
 
-definition pchoice :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" 
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = ((r * P + (1 - r) * Q))\<^sub>e"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_erfun P) + (1 - r) * @(rfrel_of_erfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_urfun P) + (1 - r) * @(rfrel_of_urfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -109,14 +109,14 @@ term "if\<^sub>p 0.5 then P else Q"
 term "if\<^sub>p R then P else Q"
 term "if\<^sub>p R then P else Q = if\<^sub>p R then P else Q"
 
-abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" 
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 
 (*TODO: should be this type, but I cannot make it type correct.
-definition pseqcomp ::"('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>2, 's\<^sub>3) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>3) erfun" (infixl ";\<^sub>f" 59) where *)
+definition pseqcomp ::"('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>2, 's\<^sub>3) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>3) urfun" (infixl ";\<^sub>f" 59) where *)
 
-definition pseqcomp ::"'s erhfun \<Rightarrow> 's erhfun \<Rightarrow> 's erhfun" (infixl ";\<^sub>f" 59) where
+definition pseqcomp ::"'s urhfun \<Rightarrow> 's urhfun \<Rightarrow> 's urhfun" (infixl ";\<^sub>f" 59) where
 [pfun_defs]: "pseqcomp P Q = 
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (Q)))\<^sub>e"
 
@@ -125,7 +125,7 @@ consts
 adhoc_overloading
   pseqcomp_c pseqcomp
 
-term "(P::'s erhfun) ; Q"
+term "(P::'s urhfun) ; Q"
 
 text \<open> Considering recursions @{text "X = P ; X"}, zero is one of its solution. But this solution is 
 not very useful.  
@@ -133,10 +133,10 @@ not very useful.
 alphabet time = 
   t :: nat
 
-term "lfp (\<lambda>X. (P::'s erhfun))"
+term "lfp (\<lambda>X. (P::'s urhfun))"
 
-definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme erhfun 
-  \<Rightarrow> 'a time_scheme erhfun" 
+definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme urhfun 
+  \<Rightarrow> 'a time_scheme urhfun" 
 ("while\<^sub>p _ do _ od") where
 "pwhile b P = (\<nu> X \<bullet> ((P ; X) \<lhd>\<^sub>f b \<rhd> II))"
 
@@ -368,16 +368,16 @@ subsubsection \<open> Probability functions \<close>
 type_synonym ('s\<^sub>1, 's\<^sub>2) rfrel = "(\<real>, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's rfhrel = "('s, 's) rfrel"
 
-type_synonym ('s\<^sub>1, 's\<^sub>2) erfun = "(ureal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
-type_synonym 's erhfun = "('s, 's) erfun"
+type_synonym ('s\<^sub>1, 's\<^sub>2) urfun = "(ureal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
+type_synonym 's urhfun = "('s, 's) urfun"
 
-definition erfun_of_rfrel:: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where
-[ureal_defs]: "erfun_of_rfrel f = (real2ureal f)\<^sub>e "
+definition urfun_of_rfrel:: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where
+[ureal_defs]: "urfun_of_rfrel f = (real2ureal f)\<^sub>e "
 
-thm "erfun_of_rfrel_def"
+thm "urfun_of_rfrel_def"
 
-definition rfrel_of_erfun where
-[ureal_defs]: "rfrel_of_erfun f = (ureal2real f)\<^sub>e "
+definition rfrel_of_urfun where
+[ureal_defs]: "rfrel_of_urfun f = (ureal2real f)\<^sub>e "
 
 subsection \<open> Syntax \<close>
 
@@ -391,8 +391,8 @@ abbreviation zero_f ("0\<^sub>f") where
 (* This is underspecified and could be assigned an arbitrary value. 
 TODO: How to deal with this?
 *)
-definition pzero :: "('s\<^sub>1, 's\<^sub>2) erfun" ("0\<^sub>p") where
-[pfun_defs]: "pzero = erfun_of_rfrel zero_f"
+definition pzero :: "('s\<^sub>1, 's\<^sub>2) urfun" ("0\<^sub>p") where
+[pfun_defs]: "pzero = urfun_of_rfrel zero_f"
 
 (*
 lemma deadlock_always: "`@(deadlock_state pzero)`"
@@ -405,14 +405,14 @@ subsubsection \<open> Skip \<close>
 abbreviation pskip\<^sub>_f ("II\<^sub>f") where
   "pskip\<^sub>_f \<equiv> \<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
 
-definition pskip :: "'s erhfun" ("II\<^sub>p") where
-[pfun_defs]: "pskip = erfun_of_rfrel (pskip\<^sub>_f)"
+definition pskip :: "'s urhfun" ("II\<^sub>p") where
+[pfun_defs]: "pskip = urfun_of_rfrel (pskip\<^sub>_f)"
 
 adhoc_overloading
   uskip pskip
 
 term "II::'s rel"
-term "II::'s erhfun"
+term "II::'s urhfun"
 term "x := ($x + 1)"
 term "x\<^sup>> := ($x\<^sup>< + 1)"
 
@@ -420,13 +420,13 @@ subsubsection \<open> Assignment \<close>
 abbreviation passigns_f where 
 "passigns_f \<sigma> \<equiv> \<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
 
-definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) erfun" where 
-[pfun_defs]: "passigns \<sigma> = erfun_of_rfrel (passigns_f \<sigma>)"
+definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) urfun" where 
+[pfun_defs]: "passigns \<sigma> = urfun_of_rfrel (passigns_f \<sigma>)"
 
 adhoc_overloading
   uassigns passigns
 
-term "(s := e)::'s erhfun"
+term "(s := e)::'s urhfun"
 term "(s := e)::'s rel"
 
 subsubsection \<open> Probabilistic choice \<close>
@@ -434,13 +434,13 @@ abbreviation pchoice_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^su
 ("(_ \<oplus>\<^sub>f\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where 
 "pchoice_f P r Q \<equiv> (r * P + (1 - r) * Q)\<^sub>e"
 
-definition pchoice :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" 
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
-[pfun_defs]: "pchoice P r Q = erfun_of_rfrel (pchoice_f (rfrel_of_erfun P) r (rfrel_of_erfun Q))"
+[pfun_defs]: "pchoice P r Q = urfun_of_rfrel (pchoice_f (rfrel_of_urfun P) r (rfrel_of_urfun Q))"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_erfun P) + (1 - r) * @(rfrel_of_erfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_urfun P) + (1 - r) * @(rfrel_of_urfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -470,8 +470,8 @@ abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 
-definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where 
-[pfun_defs]: "pcond b P Q \<equiv> erfun_of_rfrel (pcond_f (rfrel_of_erfun P) b (rfrel_of_erfun Q))"
+definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where 
+[pfun_defs]: "pcond b P Q \<equiv> urfun_of_rfrel (pcond_f (rfrel_of_urfun P) b (rfrel_of_urfun Q))"
 
 syntax 
   "_pcond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>c (_)/ then (_)/ else (_))" [0, 61, 60] 60) 
@@ -483,22 +483,22 @@ translations
 term "if\<^sub>c True then P else Q"
 
 subsubsection \<open> Sequential composition \<close>
-term "(rfrel_of_erfun (P::('s erhfun)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
+term "(rfrel_of_urfun (P::('s urhfun)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
 term "\<^bold>v\<^sup>>"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. (P\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup>>\<rbrakk>) * (Q\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup><\<rbrakk>))\<^sub>e"
-term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (rfrel_of_erfun (P::'s erhfun))"
+term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (rfrel_of_urfun (P::'s urhfun))"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e"
 term "(\<exists> v\<^sub>0. [ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>P\<rbrakk>\<^sub>P \<and> [ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>Q\<rbrakk>\<^sub>P)\<^sub>e"
 term "if True then a else b"
 term " 
-  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_erfun P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_erfun Q)))\<^sub>e"
+  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_urfun P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_urfun Q)))\<^sub>e"
 thm "pred_seq_hom"
 
 abbreviation pseqcomp_f :: "'s rfhrel \<Rightarrow> 's rfhrel \<Rightarrow> 's rfhrel" (infixl ";\<^sub>f" 59) where 
 "pseqcomp_f P Q \<equiv> (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
 
-definition pseqcomp :: "'s erhfun \<Rightarrow> 's erhfun \<Rightarrow> 's erhfun" (*(infixl ";\<^sub>p" 59)*) where
-[pfun_defs]: "pseqcomp P Q = erfun_of_rfrel (pseqcomp_f (rfrel_of_erfun P) (rfrel_of_erfun Q))"
+definition pseqcomp :: "'s urhfun \<Rightarrow> 's urhfun \<Rightarrow> 's urhfun" (*(infixl ";\<^sub>p" 59)*) where
+[pfun_defs]: "pseqcomp P Q = urfun_of_rfrel (pseqcomp_f (rfrel_of_urfun P) (rfrel_of_urfun Q))"
 
 consts
   pseqcomp_c :: "'a \<Rightarrow> 'a \<Rightarrow> 'a" (infixl ";" 59)
@@ -507,7 +507,7 @@ adhoc_overloading
   pseqcomp_c pseqcomp
 
 term "(P::('s, 's) rfrel) ; Q"
-term "(P::'s erhfun) ; Q"
+term "(P::'s urhfun) ; Q"
 
 lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) = 1"
   by (simp add: ereal2ureal'_inverse)
@@ -515,7 +515,7 @@ lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) =
 (*
 Sum v. P(s, v) * (1) = Sum v. P(s, v)
 *)
-lemma "((P::'s erhfun) ; 1\<^sub>f) = 1\<^sub>f"
+lemma "((P::'s urhfun) ; 1\<^sub>f) = 1\<^sub>f"
   apply (simp add: pfun_defs)
   apply (expr_auto add: ureal_defs)
   apply (simp add: real_1)
@@ -539,19 +539,19 @@ lemma pparallel_f_eq: "pparallel_f P Q = pparallel_f' P Q"
 
 text \<open> We provide four variants (different combinations of types for their parameters) of parallel 
 composition for convenience and they use a same notation @{text "\<parallel>"}. All of them defines 
-probabilistic programs of type @{typ "('a\<^sub>1, 'a\<^sub>2) erfun"}.
+probabilistic programs of type @{typ "('a\<^sub>1, 'a\<^sub>2) urfun"}.
 \<close>
-definition pparallel :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" (infixl "\<parallel>\<^sub>p" 58) where
-[pfun_defs]: "pparallel P Q = erfun_of_rfrel (pparallel_f P Q)"
+definition pparallel :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" (infixl "\<parallel>\<^sub>p" 58) where
+[pfun_defs]: "pparallel P Q = urfun_of_rfrel (pparallel_f P Q)"
 
-definition pparallel_pp :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where
-[pfun_defs]: "pparallel_pp P Q = pparallel (rfrel_of_erfun P) (rfrel_of_erfun Q)"
+definition pparallel_pp :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where
+[pfun_defs]: "pparallel_pp P Q = pparallel (rfrel_of_urfun P) (rfrel_of_urfun Q)"
 
-definition pparallel_fp :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where
-[pfun_defs]: "pparallel_fp P Q = pparallel P (rfrel_of_erfun Q)"
+definition pparallel_fp :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where
+[pfun_defs]: "pparallel_fp P Q = pparallel P (rfrel_of_urfun Q)"
 
-definition pparallel_pf :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" where
-[pfun_defs]: "pparallel_pf P Q = pparallel (rfrel_of_erfun P) Q"
+definition pparallel_pf :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where
+[pfun_defs]: "pparallel_pf P Q = pparallel (rfrel_of_urfun P) Q"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts
@@ -565,9 +565,9 @@ adhoc_overloading
   parallel_c Sublist.parallel
 
 term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) rfrel))"
-term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) erfun))"
-term "((P::('s, 's) erfun) \<parallel> (Q::('s, 's) rfrel))"
-term "((P::('s, 's) erfun) \<parallel> (Q::('s, 's) erfun))"
+term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) urfun))"
+term "((P::('s, 's) urfun) \<parallel> (Q::('s, 's) rfrel))"
+term "((P::('s, 's) urfun) \<parallel> (Q::('s, 's) urfun))"
 term "((P::'s list) \<parallel> Q)"
 term "([] \<parallel> [a])"
 
@@ -595,8 +595,8 @@ translations
   "\<nu>\<^sub>p X \<bullet> P" == "CONST gfp (\<lambda> X. P)"
   "\<mu>\<^sub>p X \<bullet> P" == "CONST lfp (\<lambda> X. P)"
 
-term "\<mu>\<^sub>p X  \<bullet>  (X::'s erhfun)"
-term "lfp (\<lambda>X. (P::'s erhfun))"
+term "\<mu>\<^sub>p X  \<bullet>  (X::'s urhfun)"
+term "lfp (\<lambda>X. (P::'s urhfun))"
 
 subsection \<open> Fixed-point Laws \<close>
 text \<open> Existence of a fixed point for a mono function F in ureal: See 
@@ -623,7 +623,7 @@ term "monotone"
 thm "Complete_Partial_Order.iterates.induct"
 (*
 lemma mu_refine_intro:
-  assumes "(C \<Rightarrow> S) \<le> (F::'s erhfun \<Rightarrow> 's erhfun) (C \<Rightarrow> S)" "(C \<and> \<mu>\<^sub>p F) = (C \<and> \<nu>\<^sub>p F)"
+  assumes "(C \<Rightarrow> S) \<le> (F::'s urhfun \<Rightarrow> 's urhfun) (C \<Rightarrow> S)" "(C \<and> \<mu>\<^sub>p F) = (C \<and> \<nu>\<^sub>p F)"
   shows "(C \<Rightarrow> S) \<le> \<mu>\<^sub>p F"
 proof -
   from assms(1) have "(C \<Rightarrow> S) \<le> \<nu>\<^sub>p F"
@@ -634,9 +634,9 @@ qed
 
 abbreviation "Fwhile b P X  \<equiv> (if\<^sub>c b then (P ; X) else II)"
 
-definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme erhfun 
-  \<Rightarrow> 'a time_scheme erhfun" ("while\<^sub>p _ do _ od") where
-"pwhile b P = (\<mu>\<^sub>p X \<bullet> (if\<^sub>c b then (P ; X) else II))"
+definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme urhfun 
+  \<Rightarrow> 'a time_scheme urhfun" ("while\<^sub>p _ do _ od") where
+"pwhile b P = (\<mu>\<^sub>p X \<bullet> Fwhile b P X)"
 
 term "\<lambda>X. (if\<^sub>c b then (P ; X) else II)"
 term "Inf"
@@ -660,7 +660,7 @@ lemma pcond_mono: "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>
 
 print_classes
 lemma pseqcomp_mono: 
-  fixes P\<^sub>1 :: "'s erhfun"
+  fixes P\<^sub>1 :: "'s urhfun"
   assumes "\<forall>a b. (\<lambda>v\<^sub>0::'s. real_of_ereal 
     (ureal2ereal (P\<^sub>1 (a, v\<^sub>0))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (v\<^sub>0, b)))) summable_on UNIV"
   assumes "\<forall>a b. (\<lambda>v\<^sub>0::'s. real_of_ereal 
@@ -767,7 +767,7 @@ theorem pwhile_false:
   apply (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
   by (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
 
-lemma fzero_zero: "rfrel_of_erfun (erfun_of_rfrel 0\<^sub>f) = 0\<^sub>f"
+lemma fzero_zero: "rfrel_of_urfun (urfun_of_rfrel 0\<^sub>f) = 0\<^sub>f"
   apply (simp add: ureal_defs)
   by (metis SEXP_def real_of_ereal_0 ureal2ereal_inverse zero_ureal.rep_eq)
 
@@ -790,7 +790,7 @@ iteration?
 abbreviation "Ftwhile b P X \<equiv> Fwhile b (P ; t := $t + 1) X"
 
 primrec iterate:: "\<nat> \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>)
-           \<Rightarrow> 'a time_scheme erhfun \<Rightarrow> 'a time_scheme erhfun \<Rightarrow> 'a time_scheme erhfun"
+           \<Rightarrow> 'a time_scheme urhfun \<Rightarrow> 'a time_scheme urhfun \<Rightarrow> 'a time_scheme urhfun"
   where
     "iterate 0 b P X = X"
   | "iterate (Suc n) b P X = (Ftwhile b P (iterate n b P X))"
@@ -799,7 +799,7 @@ lemma "iterate 0 b P 0\<^sub>p = 0\<^sub>p"
   by simp
 
 term "(\<le>) (P :: 'a \<Rightarrow> ureal) Q"
-term "(P :: 'a time_scheme erhfun) \<le> Q"
+term "(P :: 'a time_scheme urhfun) \<le> Q"
 
 (* TODO: add preconditions about assumable *)
 lemma mono: "monotone (\<le>) (\<le>) (iterate n b P)"
@@ -821,7 +821,7 @@ lemma bottom_least: "0\<^sub>p \<le> P"
   by (metis bot.extremum bot_ureal.rep_eq ureal2ereal_inverse)
 
 lemma increasing:
-  fixes P:: "'a time_scheme erhfun"
+  fixes P:: "'a time_scheme urhfun"
   shows "(iterate n b P 0\<^sub>p) \<le> (iterate (Suc n) b P 0\<^sub>p)"
   (* apply (simp add: le_fun_def) *)
   apply (induction n)
@@ -831,14 +831,14 @@ lemma increasing:
   by (metis mono_1 utp_prob_rel_lattice.iterate.simps(1) utp_prob_rel_lattice.iterate.simps(2))
 
 lemma increasing_1:
-  fixes P:: "'a time_scheme erhfun"
+  fixes P:: "'a time_scheme urhfun"
   shows "(iterate n b P 0\<^sub>p) \<le> (iterate (n+m) b P 0\<^sub>p)"
   apply (induction m)
   apply (simp)
   by (metis (full_types) add_Suc_right dual_order.trans increasing)
 
 lemma increasing_2:
-  fixes P:: "'a time_scheme erhfun"
+  fixes P:: "'a time_scheme urhfun"
   assumes "n \<le> m"
   shows "(iterate n b P 0\<^sub>p) \<le> (iterate m b P 0\<^sub>p)"
   using increasing_1 assms nat_le_iff_add by auto
@@ -858,6 +858,7 @@ definition "Fn_iter b P X n = iterate n b P X"
 lemma 
   shows "Sup {(iterate n b P 0\<^sub>p) | n::nat. True} \<in> {(iterate n b P 0\<^sub>p) | n::nat. True}"
   apply (simp)
+  oops
 
 (* abbreviation "Ftwhilen n b P X \<equiv> (Ftwhile b P X) ^^ n" *)
 (*
@@ -870,8 +871,8 @@ lemma "Complete_Partial_Order2.cont Sup (\<le>) Sup (\<le>) (Ftwhile b P)"
   oops
   
 
-definition ptwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme erhfun 
-  \<Rightarrow> 'a time_scheme erhfun" ("while\<^sub>p\<^sub>t _ do _ od") where
+definition ptwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme urhfun 
+  \<Rightarrow> 'a time_scheme urhfun" ("while\<^sub>p\<^sub>t _ do _ od") where
 "ptwhile b P = (while\<^sub>p b do (P; t := $t + 1) od)"
 
 term "$t"
@@ -982,7 +983,7 @@ E3 = \<lbrakk>coin' = chead \<and> 3 \<ge> t + 1\<rbrakk> * (1/2)^(3 - t - 1) * 
 (*
 subsection \<open> Infsum \<close>
 lemma summable_on_ureal_product: 
-  fixes P :: "('s\<^sub>1, 's\<^sub>2) erfun"
+  fixes P :: "('s\<^sub>1, 's\<^sub>2) urfun"
   assumes "(\<lambda>v\<^sub>0. P (s, v\<^sub>0)) summable_on UNIV"
   shows "ureal2real o (\<lambda>v\<^sub>0. (P (s, v\<^sub>0))) summable_on UNIV"
   apply (simp add: summable_on_def)
@@ -1020,7 +1021,7 @@ proof -
   qed
 
 lemma summable_on_ureal_product: 
-  fixes P :: "('s\<^sub>1, 's\<^sub>2) erfun"
+  fixes P :: "('s\<^sub>1, 's\<^sub>2) urfun"
   assumes "\<forall>s. (\<lambda>v\<^sub>0. P (s, v\<^sub>0)) summable_on UNIV"
   shows "\<forall>s. (\<lambda>v\<^sub>0. P (s, v\<^sub>0) * Q (s, v\<^sub>0)) summable_on UNIV"
   apply (auto)
@@ -1033,37 +1034,37 @@ lemma summable_on_ureal_product:
 
 (*
 subsection \<open> Syntax \<close>
-definition zero :: "'s erhfun" where
+definition zero :: "'s urhfun" where
 "zero = (0)\<^sub>e"
 
-definition one :: "'s erhfun" where
+definition one :: "'s urhfun" where
 "one = (1)\<^sub>e"
 
-definition pskip :: "'s erhfun" ("II\<^sub>p") where
+definition pskip :: "'s urhfun" ("II\<^sub>p") where
 [pfun_defs]: "pskip = (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uskip pskip
 
 term "II::'s rel"
-term "II::'s erhfun"
+term "II::'s urhfun"
 
-definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) erfun" where 
+definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) urfun" where 
 [pfun_defs]: "passigns \<sigma> = (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uassigns passigns
 
-term "(s := e)::'s erhfun"
+term "(s := e)::'s urhfun"
 term "(s := e)::'s rel"
 
-definition pchoice :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" 
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = ((r * P + (1 - r) * Q))\<^sub>e"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_erfun P) + (1 - r) * @(rfrel_of_erfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_urfun P) + (1 - r) * @(rfrel_of_urfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -1077,14 +1078,14 @@ term "if\<^sub>p 0.5 then P else Q"
 term "if\<^sub>p R then P else Q"
 term "if\<^sub>p R then P else Q = if\<^sub>p R then P else Q"
 
-abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) erfun" 
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 
 (*TODO: should be this type, but I cannot make it type correct.
-definition pseqcomp ::"('s\<^sub>1, 's\<^sub>2) erfun \<Rightarrow> ('s\<^sub>2, 's\<^sub>3) erfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>3) erfun" (infixl ";\<^sub>f" 59) where *)
+definition pseqcomp ::"('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>2, 's\<^sub>3) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>3) urfun" (infixl ";\<^sub>f" 59) where *)
 
-definition pseqcomp ::"'s erhfun \<Rightarrow> 's erhfun \<Rightarrow> 's erhfun" (infixl ";\<^sub>f" 59) where
+definition pseqcomp ::"'s urhfun \<Rightarrow> 's urhfun \<Rightarrow> 's urhfun" (infixl ";\<^sub>f" 59) where
 [pfun_defs]: "pseqcomp P Q = 
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (Q)))\<^sub>e"
 
@@ -1093,7 +1094,7 @@ consts
 adhoc_overloading
   pseqcomp_c pseqcomp
 
-term "(P::'s erhfun) ; Q"
+term "(P::'s urhfun) ; Q"
 
 text \<open> Considering recursions @{text "X = P ; X"}, zero is one of its solution. But this solution is 
 not very useful.  
@@ -1101,10 +1102,10 @@ not very useful.
 alphabet time = 
   t :: nat
 
-term "lfp (\<lambda>X. (P::'s erhfun))"
+term "lfp (\<lambda>X. (P::'s urhfun))"
 
-definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme erhfun 
-  \<Rightarrow> 'a time_scheme erhfun" 
+definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme urhfun 
+  \<Rightarrow> 'a time_scheme urhfun" 
 ("while\<^sub>p _ do _ od") where
 "pwhile b P = (\<nu> X \<bullet> ((P ; X) \<lhd>\<^sub>f b \<rhd> II))"
 
@@ -1315,9 +1316,9 @@ definition pchoice :: "('s\<^sub>1, 's\<^sub>2) pfun \<Rightarrow> ('s\<^sub>1, 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = (ereal2ureal (r * P + (1 - r) * Q)\<^sub>e)\<^sub>e"
 *)
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun \<Rightarrow> ('s, 's) erfun" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_erfun P) + (1 - r) * @(rfrel_of_erfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_urfun P) + (1 - r) * @(rfrel_of_urfun Q))\<^sub>e"
 *)
 (*
 syntax 
