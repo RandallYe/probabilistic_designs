@@ -61,41 +61,41 @@ type_synonym 's rvhfun = "('s, 's) rvfun"
 
 subsection \<open> Real numbers or non-negative extended real numbers \<close>
 (*
-type_synonym ('s\<^sub>1, 's\<^sub>2) urfun = "(ennreal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
-type_synonym 's urhfun = "('s, 's) urfun"
+type_synonym ('s\<^sub>1, 's\<^sub>2) prfun = "(ennreal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
+type_synonym 's prhfun = "('s, 's) prfun"
 
 subsection \<open> Syntax \<close>
-definition zero :: "'s urhfun" where
+definition zero :: "'s prhfun" where
 "zero = (0)\<^sub>e"
 
-definition one :: "'s urhfun" where
+definition one :: "'s prhfun" where
 "one = (1)\<^sub>e"
 
-definition pskip :: "'s urhfun" ("II\<^sub>p") where
+definition pskip :: "'s prhfun" ("II\<^sub>p") where
 [pfun_defs]: "pskip = (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uskip pskip
 
 term "II::'s rel"
-term "II::'s urhfun"
+term "II::'s prhfun"
 
-definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) urfun" where 
+definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prfun" where 
 [pfun_defs]: "passigns \<sigma> = (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uassigns passigns
 
-term "(s := e)::'s urhfun"
+term "(s := e)::'s prhfun"
 term "(s := e)::'s rel"
 
-definition pchoice :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = ((r * P + (1 - r) * Q))\<^sub>e"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_urfun P) + (1 - r) * @(rfrel_of_urfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_prfun P) + (1 - r) * @(rfrel_of_prfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -109,14 +109,14 @@ term "if\<^sub>p 0.5 then P else Q"
 term "if\<^sub>p R then P else Q"
 term "if\<^sub>p R then P else Q = if\<^sub>p R then P else Q"
 
-abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 
 (*TODO: should be this type, but I cannot make it type correct.
-definition pseqcomp ::"('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>2, 's\<^sub>3) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>3) urfun" (infixl ";\<^sub>f" 59) where *)
+definition pseqcomp ::"('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>2, 's\<^sub>3) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>3) prfun" (infixl ";\<^sub>f" 59) where *)
 
-definition pseqcomp ::"'s urhfun \<Rightarrow> 's urhfun \<Rightarrow> 's urhfun" (infixl ";\<^sub>f" 59) where
+definition pseqcomp ::"'s prhfun \<Rightarrow> 's prhfun \<Rightarrow> 's prhfun" (infixl ";\<^sub>f" 59) where
 [pfun_defs]: "pseqcomp P Q = 
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (Q)))\<^sub>e"
 
@@ -125,7 +125,7 @@ consts
 adhoc_overloading
   pseqcomp_c pseqcomp
 
-term "(P::'s urhfun) ; Q"
+term "(P::'s prhfun) ; Q"
 
 text \<open> Considering recursions @{text "X = P ; X"}, zero is one of its solution. But this solution is 
 not very useful.  
@@ -133,10 +133,10 @@ not very useful.
 alphabet time = 
   t :: nat
 
-term "lfp (\<lambda>X. (P::'s urhfun))"
+term "lfp (\<lambda>X. (P::'s prhfun))"
 
-definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme urhfun 
-  \<Rightarrow> 'a time_scheme urhfun" 
+definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme prhfun 
+  \<Rightarrow> 'a time_scheme prhfun" 
 ("while\<^sub>p _ do _ od") where
 "pwhile b P = (\<nu> X \<bullet> ((P ; X) \<lhd>\<^sub>f b \<rhd> II))"
 
@@ -368,16 +368,17 @@ subsubsection \<open> Probability functions \<close>
 type_synonym ('s\<^sub>1, 's\<^sub>2) rfrel = "(\<real>, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's rfhrel = "('s, 's) rfrel"
 
-type_synonym ('s\<^sub>1, 's\<^sub>2) urfun = "(ureal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
-type_synonym 's urhfun = "('s, 's) urfun"
+text \<open> Probability functions which map state space to a real number between 0 and 1 (and so ureal)\<close>
+type_synonym ('s\<^sub>1, 's\<^sub>2) prfun = "(ureal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
+type_synonym 's prhfun = "('s, 's) prfun"
 
-definition urfun_of_rfrel:: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where
-[ureal_defs]: "urfun_of_rfrel f = (real2ureal f)\<^sub>e "
+definition prfun_of_rfrel:: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
+[ureal_defs]: "prfun_of_rfrel f = (real2ureal f)\<^sub>e "
 
-thm "urfun_of_rfrel_def"
+thm "prfun_of_rfrel_def"
 
-definition rfrel_of_urfun where
-[ureal_defs]: "rfrel_of_urfun f = (ureal2real f)\<^sub>e "
+definition rfrel_of_prfun where
+[ureal_defs]: "rfrel_of_prfun f = (ureal2real f)\<^sub>e "
 
 subsection \<open> Syntax \<close>
 
@@ -391,8 +392,8 @@ abbreviation zero_f ("0\<^sub>f") where
 (* This is underspecified and could be assigned an arbitrary value. 
 TODO: How to deal with this?
 *)
-definition pzero :: "('s\<^sub>1, 's\<^sub>2) urfun" ("0\<^sub>p") where
-[pfun_defs]: "pzero = urfun_of_rfrel zero_f"
+definition pzero :: "('s\<^sub>1, 's\<^sub>2) prfun" ("0\<^sub>p") where
+[pfun_defs]: "pzero = prfun_of_rfrel zero_f"
 
 (*
 lemma deadlock_always: "`@(deadlock_state pzero)`"
@@ -405,14 +406,14 @@ subsubsection \<open> Skip \<close>
 abbreviation pskip\<^sub>_f ("II\<^sub>f") where
   "pskip\<^sub>_f \<equiv> \<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
 
-definition pskip :: "'s urhfun" ("II\<^sub>p") where
-[pfun_defs]: "pskip = urfun_of_rfrel (pskip\<^sub>_f)"
+definition pskip :: "'s prhfun" ("II\<^sub>p") where
+[pfun_defs]: "pskip = prfun_of_rfrel (pskip\<^sub>_f)"
 
 adhoc_overloading
   uskip pskip
 
 term "II::'s rel"
-term "II::'s urhfun"
+term "II::'s prhfun"
 term "x := ($x + 1)"
 term "x\<^sup>> := ($x\<^sup>< + 1)"
 
@@ -420,13 +421,13 @@ subsubsection \<open> Assignment \<close>
 abbreviation passigns_f where 
 "passigns_f \<sigma> \<equiv> \<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
 
-definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) urfun" where 
-[pfun_defs]: "passigns \<sigma> = urfun_of_rfrel (passigns_f \<sigma>)"
+definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prfun" where 
+[pfun_defs]: "passigns \<sigma> = prfun_of_rfrel (passigns_f \<sigma>)"
 
 adhoc_overloading
   uassigns passigns
 
-term "(s := e)::'s urhfun"
+term "(s := e)::'s prhfun"
 term "(s := e)::'s rel"
 
 subsubsection \<open> Probabilistic choice \<close>
@@ -434,13 +435,13 @@ abbreviation pchoice_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^su
 ("(_ \<oplus>\<^sub>f\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where 
 "pchoice_f P r Q \<equiv> (r * P + (1 - r) * Q)\<^sub>e"
 
-definition pchoice :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
-[pfun_defs]: "pchoice P r Q = urfun_of_rfrel (pchoice_f (rfrel_of_urfun P) r (rfrel_of_urfun Q))"
+[pfun_defs]: "pchoice P r Q = prfun_of_rfrel (pchoice_f (rfrel_of_prfun P) r (rfrel_of_prfun Q))"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_urfun P) + (1 - r) * @(rfrel_of_urfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_prfun P) + (1 - r) * @(rfrel_of_prfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -470,8 +471,8 @@ abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 
-definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where 
-[pfun_defs]: "pcond b P Q \<equiv> urfun_of_rfrel (pcond_f (rfrel_of_urfun P) b (rfrel_of_urfun Q))"
+definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where 
+[pfun_defs]: "pcond b P Q \<equiv> prfun_of_rfrel (pcond_f (rfrel_of_prfun P) b (rfrel_of_prfun Q))"
 
 syntax 
   "_pcond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>c (_)/ then (_)/ else (_))" [0, 61, 60] 60) 
@@ -483,22 +484,22 @@ translations
 term "if\<^sub>c True then P else Q"
 
 subsubsection \<open> Sequential composition \<close>
-term "(rfrel_of_urfun (P::('s urhfun)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
+term "(rfrel_of_prfun (P::('s prhfun)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
 term "\<^bold>v\<^sup>>"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. (P\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup>>\<rbrakk>) * (Q\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup><\<rbrakk>))\<^sub>e"
-term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (rfrel_of_urfun (P::'s urhfun))"
+term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (rfrel_of_prfun (P::'s prhfun))"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e"
 term "(\<exists> v\<^sub>0. [ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>P\<rbrakk>\<^sub>P \<and> [ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>Q\<rbrakk>\<^sub>P)\<^sub>e"
 term "if True then a else b"
 term " 
-  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_urfun P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_urfun Q)))\<^sub>e"
+  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_prfun P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_prfun Q)))\<^sub>e"
 thm "pred_seq_hom"
 
 abbreviation pseqcomp_f :: "'s rfhrel \<Rightarrow> 's rfhrel \<Rightarrow> 's rfhrel" (infixl ";\<^sub>f" 59) where 
 "pseqcomp_f P Q \<equiv> (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
 
-definition pseqcomp :: "'s urhfun \<Rightarrow> 's urhfun \<Rightarrow> 's urhfun" (*(infixl ";\<^sub>p" 59)*) where
-[pfun_defs]: "pseqcomp P Q = urfun_of_rfrel (pseqcomp_f (rfrel_of_urfun P) (rfrel_of_urfun Q))"
+definition pseqcomp :: "'s prhfun \<Rightarrow> 's prhfun \<Rightarrow> 's prhfun" (*(infixl ";\<^sub>p" 59)*) where
+[pfun_defs]: "pseqcomp P Q = prfun_of_rfrel (pseqcomp_f (rfrel_of_prfun P) (rfrel_of_prfun Q))"
 
 consts
   pseqcomp_c :: "'a \<Rightarrow> 'a \<Rightarrow> 'a" (infixl ";" 59)
@@ -507,23 +508,10 @@ adhoc_overloading
   pseqcomp_c pseqcomp
 
 term "(P::('s, 's) rfrel) ; Q"
-term "(P::'s urhfun) ; Q"
+term "(P::'s prhfun) ; Q"
 
 lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) = 1"
   by (simp add: ereal2ureal'_inverse)
-
-(*
-Sum v. P(s, v) * (1) = Sum v. P(s, v)
-*)
-lemma "((P::'s urhfun) ; 1\<^sub>f) = 1\<^sub>f"
-  apply (simp add: pfun_defs)
-  apply (expr_auto add: ureal_defs)
-  apply (simp add: real_1)
-proof -
-  fix a and b :: "'s"
-  show "ereal2ureal' (min (max (0::ereal) (ereal (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal (P (a, v\<^sub>0))))))
-          (1::ereal)) = ereal2ureal' (ereal (1::\<real>))"
-  qed
 
 subsubsection \<open> Parallel composition \<close>
 
@@ -539,19 +527,19 @@ lemma pparallel_f_eq: "pparallel_f P Q = pparallel_f' P Q"
 
 text \<open> We provide four variants (different combinations of types for their parameters) of parallel 
 composition for convenience and they use a same notation @{text "\<parallel>"}. All of them defines 
-probabilistic programs of type @{typ "('a\<^sub>1, 'a\<^sub>2) urfun"}.
+probabilistic programs of type @{typ "('a\<^sub>1, 'a\<^sub>2) prfun"}.
 \<close>
-definition pparallel :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" (infixl "\<parallel>\<^sub>p" 58) where
-[pfun_defs]: "pparallel P Q = urfun_of_rfrel (pparallel_f P Q)"
+definition pparallel :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" (infixl "\<parallel>\<^sub>p" 58) where
+[pfun_defs]: "pparallel P Q = prfun_of_rfrel (pparallel_f P Q)"
 
-definition pparallel_pp :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where
-[pfun_defs]: "pparallel_pp P Q = pparallel (rfrel_of_urfun P) (rfrel_of_urfun Q)"
+definition pparallel_pp :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
+[pfun_defs]: "pparallel_pp P Q = pparallel (rfrel_of_prfun P) (rfrel_of_prfun Q)"
 
-definition pparallel_fp :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where
-[pfun_defs]: "pparallel_fp P Q = pparallel P (rfrel_of_urfun Q)"
+definition pparallel_fp :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
+[pfun_defs]: "pparallel_fp P Q = pparallel P (rfrel_of_prfun Q)"
 
-definition pparallel_pf :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" where
-[pfun_defs]: "pparallel_pf P Q = pparallel (rfrel_of_urfun P) Q"
+definition pparallel_pf :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
+[pfun_defs]: "pparallel_pf P Q = pparallel (rfrel_of_prfun P) Q"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts
@@ -565,9 +553,9 @@ adhoc_overloading
   parallel_c Sublist.parallel
 
 term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) rfrel))"
-term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) urfun))"
-term "((P::('s, 's) urfun) \<parallel> (Q::('s, 's) rfrel))"
-term "((P::('s, 's) urfun) \<parallel> (Q::('s, 's) urfun))"
+term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) prfun))"
+term "((P::('s, 's) prfun) \<parallel> (Q::('s, 's) rfrel))"
+term "((P::('s, 's) prfun) \<parallel> (Q::('s, 's) prfun))"
 term "((P::'s list) \<parallel> Q)"
 term "([] \<parallel> [a])"
 
@@ -595,8 +583,15 @@ translations
   "\<nu>\<^sub>p X \<bullet> P" == "CONST gfp (\<lambda> X. P)"
   "\<mu>\<^sub>p X \<bullet> P" == "CONST lfp (\<lambda> X. P)"
 
-term "\<mu>\<^sub>p X  \<bullet>  (X::'s urhfun)"
-term "lfp (\<lambda>X. (P::'s urhfun))"
+term "\<mu>\<^sub>p X  \<bullet>  (X::'s prhfun)"
+term "lfp (\<lambda>X. (P::'s prhfun))"
+
+subsection \<open> Chains \<close> 
+definition increasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Rightarrow> bool" where
+"increasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<le> f n)"
+
+definition decreasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Rightarrow> bool" where
+"decreasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<ge> f n)"
 
 subsection \<open> Fixed-point Laws \<close>
 text \<open> Existence of a fixed point for a mono function F in ureal: See 
@@ -623,7 +618,7 @@ term "monotone"
 thm "Complete_Partial_Order.iterates.induct"
 (*
 lemma mu_refine_intro:
-  assumes "(C \<Rightarrow> S) \<le> (F::'s urhfun \<Rightarrow> 's urhfun) (C \<Rightarrow> S)" "(C \<and> \<mu>\<^sub>p F) = (C \<and> \<nu>\<^sub>p F)"
+  assumes "(C \<Rightarrow> S) \<le> (F::'s prhfun \<Rightarrow> 's prhfun) (C \<Rightarrow> S)" "(C \<and> \<mu>\<^sub>p F) = (C \<and> \<nu>\<^sub>p F)"
   shows "(C \<Rightarrow> S) \<le> \<mu>\<^sub>p F"
 proof -
   from assms(1) have "(C \<Rightarrow> S) \<le> \<nu>\<^sub>p F"
@@ -634,333 +629,11 @@ qed
 
 abbreviation "Fwhile b P X  \<equiv> (if\<^sub>c b then (P ; X) else II)"
 
-definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme urhfun 
-  \<Rightarrow> 'a time_scheme urhfun" ("while\<^sub>p _ do _ od") where
+definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme prhfun 
+  \<Rightarrow> 'a time_scheme prhfun" ("while\<^sub>p _ do _ od") where
 "pwhile b P = (\<mu>\<^sub>p X \<bullet> Fwhile b P X)"
 
-term "\<lambda>X. (if\<^sub>c b then (P ; X) else II)"
-term "Inf"
 
-print_locale "ord"
-print_locale "order"
-print_locale "lattice"
-print_locale "bot"
-print_locale "complete_lattice"
-
-lemma pcond_mono: "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (if\<^sub>c b then P\<^sub>1 else Q\<^sub>1) \<le> (if\<^sub>c b then P\<^sub>2 else Q\<^sub>2)"
-  apply (simp add: pcond_def ureal_defs)
-  apply (simp add: le_fun_def)
-  apply (auto)
-  apply (simp add: ureal_defs)
-  apply (smt (z3) atLeastAtMost_iff ereal_less_eq(1) ereal_less_eq(4) ereal_real ereal_times(1) 
-      max.absorb1 max.absorb2 min.absorb1 real_of_ereal_le_0 ureal2ereal ureal2ereal_inverse)
-  apply (simp add: ureal_defs)
-  by (smt (z3) atLeastAtMost_iff ereal_less_eq(1) ereal_less_eq(4) ereal_real ereal_times(1) 
-      max.absorb1 max.absorb2 min.absorb1 real_of_ereal_le_0 ureal2ereal ureal2ereal_inverse)
-
-print_classes
-lemma pseqcomp_mono: 
-  fixes P\<^sub>1 :: "'s urhfun"
-  assumes "\<forall>a b. (\<lambda>v\<^sub>0::'s. real_of_ereal 
-    (ureal2ereal (P\<^sub>1 (a, v\<^sub>0))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (v\<^sub>0, b)))) summable_on UNIV"
-  assumes "\<forall>a b. (\<lambda>v\<^sub>0::'s. real_of_ereal 
-    (ureal2ereal (P\<^sub>2 (a, v\<^sub>0))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (v\<^sub>0, b)))) summable_on UNIV"
-  shows "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (P\<^sub>1 ; Q\<^sub>1) \<le> (P\<^sub>2 ; Q\<^sub>2)"
-  apply (simp add: pfun_defs)
-  apply (simp add: le_fun_def)
-  apply (simp add: ureal_defs)
-  apply (expr_auto)
-proof -
-  fix a b :: "'s"
-  assume a1: "\<forall>(a::'s) b::'s. P\<^sub>1 (a, b) \<le> P\<^sub>2 (a, b)"
-  assume a2: "\<forall>(a::'s) b::'s. Q\<^sub>1 (a, b) \<le> Q\<^sub>2 (a, b)"
-  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
-                real_of_ereal (ureal2ereal (P\<^sub>1 (a, v\<^sub>0))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (v\<^sub>0, b))))"
-  let ?rhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
-                real_of_ereal (ureal2ereal (P\<^sub>2 (a, v\<^sub>0))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (v\<^sub>0, b))))"
-
-  have "?lhs \<le> ?rhs"
-    apply (rule infsum_mono)
-    apply (simp add: assms(1))
-    apply (simp add: assms(2))
-    by (metis a1 a2 atLeastAtMost_iff ereal_less_PInfty ereal_times(1) less_eq_ureal.rep_eq 
-        linorder_not_less mult_mono real_of_ereal_pos real_of_ereal_positive_mono ureal2ereal)
-  then show " ereal2ureal' (min (max (0::ereal) (ereal ?lhs)) (1::ereal)) \<le> 
-       ereal2ureal' (min (max (0::ereal) (ereal ?rhs)) (1::ereal))"
-  (*
-  proof -
-    have f1: "\<forall>e ea. min (e::ereal) ea = (if e \<le> ea then e else ea)"
-      using min_def by blast
-    have f2: "\<forall>e ea. (e::ereal) \<le> max e ea"
-      using max.cobounded1 by blast
-    have f3: "\<forall>e ea eb. (max (e::ereal) ea \<le> eb) = (e \<le> eb \<and> ea \<le> eb)"
-      using max.bounded_iff by blast
-    have f4: "max (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))"
-      by (simp add: \<open>(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal ((P\<^sub>1::'s \<times> 's \<Rightarrow> ureal) (a::'s, v\<^sub>0))) * real_of_ereal (ureal2ereal ((Q\<^sub>1::'s \<times> 's \<Rightarrow> ureal) (v\<^sub>0, b::'s)))) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal ((P\<^sub>2::'s \<times> 's \<Rightarrow> ureal) (a, v\<^sub>0))) * real_of_ereal (ureal2ereal ((Q\<^sub>2::'s \<times> 's \<Rightarrow> ureal) (v\<^sub>0, b))))\<close>)
-    { assume "max (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1"
-      moreover
-      { assume "(0::ereal) \<le> 1 \<and> ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))) \<le> 1"
-        then have "max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) = (if max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) \<le> 1 then max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b))))) else 1) \<and> min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1 = ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1))"
-          by (simp add: ereal2ureal'_inverse)
-        moreover
-        { assume "\<not> max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) = ureal2ereal (ereal2ureal' (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))))"
-          then have "\<not> max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1"
-            using f2 by (smt (z3) atLeastAtMost_iff ereal2ureal'_inverse) }
-        ultimately have "max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1 \<longrightarrow> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1)) \<le> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))) 1))"
-          using f4 f3 f2 f1 by (smt (z3)) }
-      ultimately have "max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1 \<longrightarrow> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1)) \<le> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))) 1)) \<or> \<not> (0::ereal) \<le> 1 \<or> \<not> ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))) \<le> 1"
-        using f3 by blast }
-    moreover
-    { assume "\<not> max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b))))) \<le> 1"
-      then have "ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1)) \<le> ureal2ereal (ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))) 1)) \<or> ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>1 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>1 (s, b)))))) 1) \<le> ereal2ureal' (min (max 0 (ereal (\<Sum>\<^sub>\<infinity>s. real_of_ereal (ureal2ereal (P\<^sub>2 (a, s))) * real_of_ereal (ureal2ereal (Q\<^sub>2 (s, b)))))) 1)"
-        using f3 by (smt (z3) atLeastAtMost_iff ereal2ureal'_inverse le_cases3 min_def_raw) }
-    ultimately show ?thesis
-      using f3 by (smt (z3) \<open>(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal ((P\<^sub>1::'s \<times> 's \<Rightarrow> ureal) (a::'s, v\<^sub>0))) * real_of_ereal (ureal2ereal ((Q\<^sub>1::'s \<times> 's \<Rightarrow> ureal) (v\<^sub>0, b::'s)))) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. real_of_ereal (ureal2ereal ((P\<^sub>2::'s \<times> 's \<Rightarrow> ureal) (a, v\<^sub>0))) * real_of_ereal (ureal2ereal ((Q\<^sub>2::'s \<times> 's \<Rightarrow> ureal) (v\<^sub>0, b))))\<close> ereal_max less_eq_ureal.rep_eq)
-  qed *)
-    by (smt (z3) atLeastAtMost_iff ereal2ureal'_inverse ereal_less_eq(3) ereal_less_eq(4) 
-        ereal_less_eq(7) ereal_max_0 less_eq_ureal.rep_eq linorder_le_cases max.absorb_iff2 
-        min.absorb1 min.absorb2) 
-qed
-
-lemma summable_on_ureal_product:
-  assumes P_summable: "(\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
-  shows "(\<lambda>v\<^sub>0::'c time_scheme. real_of_ereal (ureal2ereal (P (s, v\<^sub>0))) * 
-        real_of_ereal (ureal2ereal (x (v\<^sub>0, b)))) summable_on UNIV"
-  apply (subst summable_on_iff_abs_summable_on_real)
-  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>x. real_of_ereal (ureal2ereal (P (s, x)))"])
-  apply (subst summable_on_iff_abs_summable_on_real[symmetric])
-  using assms apply blast
-  by (smt (verit) atLeastAtMost_iff mult_nonneg_nonneg mult_right_le_one_le real_norm_def 
-      real_of_ereal_le_1 real_of_ereal_pos ureal2ereal)
-
-theorem pwhile_unfold:
-  assumes "\<forall>s. (\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
-  shows "while\<^sub>p b do P od = (if\<^sub>c b then (P ; (while\<^sub>p b do P od)) else II)"
-proof -
-  have m:"mono (\<lambda>X. (if\<^sub>c b then (P ; X) else II))"
-    apply (simp add: mono_def, auto)
-    apply (subst pcond_mono)
-    apply (subst pseqcomp_mono)
-    apply (auto)
-    by (simp add: assms summable_on_ureal_product)+
-  have "(while\<^sub>p b do P od) = (\<mu>\<^sub>p X \<bullet> (if\<^sub>c b then (P ; X) else II))"
-    by (simp add: pwhile_def)
-  also have "... = ((if\<^sub>c b then (P ; (\<mu>\<^sub>p X \<bullet> (if\<^sub>c b then (P ; X) else II))) else II))"
-    apply (subst lfp_unfold)
-    apply (simp add: m)
-    by (simp add: lfp_const)
-  also have "... = (if\<^sub>c b then (P ; (while\<^sub>p b do P od)) else II)"
-    by (simp add: pwhile_def)
-  finally show ?thesis .
-qed
-
-theorem pwhile_false: 
-  assumes "\<forall>s. (\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
-  shows "while\<^sub>p (false)\<^sub>e do P od = II"
-  apply (subst pwhile_unfold)
-  using assms apply presburger
-  apply (simp add: pfun_defs)
-  apply (expr_auto)
-  apply (simp add: ureal_defs)
-  apply (auto)
-  apply (simp add: ereal2ureal'_inverse)
-  apply (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
-  by (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
-
-lemma fzero_zero: "rfrel_of_urfun (urfun_of_rfrel 0\<^sub>f) = 0\<^sub>f"
-  apply (simp add: ureal_defs)
-  by (metis SEXP_def real_of_ereal_0 ureal2ereal_inverse zero_ureal.rep_eq)
-
-theorem pwhile_true: "while\<^sub>p (true)\<^sub>e do P od = 0\<^sub>p"
-  apply (simp add: pwhile_def pcond_def pzero_def)
-  apply (rule antisym)
-  apply (rule lfp_lowerbound)
-  apply (simp add: pseqcomp_def)
-  apply (simp add: fzero_zero)
-  apply (expr_auto)
-  apply (simp add: fzero_zero)
-  apply (simp add: ureal_defs)
-  apply (smt (verit) SEXP_def atLeastAtMost_iff le_funI less_eq_ureal.rep_eq ureal2ereal ureal2ereal_inverse zero_ureal.rep_eq)
-  done
-
-text \<open> Can we use approximation chain in UTP (Ch. 2.7) to prove a unique fix point for a probabilistic 
-iteration?
-\<close>
-
-abbreviation "Ftwhile b P X \<equiv> Fwhile b (P ; t := $t + 1) X"
-
-primrec iterate:: "\<nat> \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>)
-           \<Rightarrow> 'a time_scheme urhfun \<Rightarrow> 'a time_scheme urhfun \<Rightarrow> 'a time_scheme urhfun"
-  where
-    "iterate 0 b P X = X"
-  | "iterate (Suc n) b P X = (Ftwhile b P (iterate n b P X))"
-
-lemma "iterate 0 b P 0\<^sub>p = 0\<^sub>p"
-  by simp
-
-term "(\<le>) (P :: 'a \<Rightarrow> ureal) Q"
-term "(P :: 'a time_scheme urhfun) \<le> Q"
-
-(* TODO: add preconditions about assumable *)
-lemma mono: "monotone (\<le>) (\<le>) (iterate n b P)"
-  unfolding monotone_def apply (auto)
-  apply (induction n)
-   apply (auto)
-  apply (rule pcond_mono)
-   apply (rule pseqcomp_mono)
-  sorry
-
-lemma mono_1:
-  assumes "X \<le> Y"
-  shows "(iterate n b P X) \<le> (iterate n b P Y)"
-  by (metis assms mono monotone_def)
-
-lemma bottom_least: "0\<^sub>p \<le> P"
-  apply (simp add: le_fun_def pfun_defs ureal_defs)
-  apply (auto)
-  by (metis bot.extremum bot_ureal.rep_eq ureal2ereal_inverse)
-
-lemma increasing:
-  fixes P:: "'a time_scheme urhfun"
-  shows "(iterate n b P 0\<^sub>p) \<le> (iterate (Suc n) b P 0\<^sub>p)"
-  (* apply (simp add: le_fun_def) *)
-  apply (induction n)
-   apply (simp)
-  using bottom_least le_fun_def apply fastforce
-  apply (simp)
-  by (metis mono_1 utp_prob_rel_lattice.iterate.simps(1) utp_prob_rel_lattice.iterate.simps(2))
-
-lemma increasing_1:
-  fixes P:: "'a time_scheme urhfun"
-  shows "(iterate n b P 0\<^sub>p) \<le> (iterate (n+m) b P 0\<^sub>p)"
-  apply (induction m)
-  apply (simp)
-  by (metis (full_types) add_Suc_right dual_order.trans increasing)
-
-lemma increasing_2:
-  fixes P:: "'a time_scheme urhfun"
-  assumes "n \<le> m"
-  shows "(iterate n b P 0\<^sub>p) \<le> (iterate m b P 0\<^sub>p)"
-  using increasing_1 assms nat_le_iff_add by auto
-
-lemma chain_iterate:
-  (* assumes f: "monotone (\<le>) (\<le>) P" *)
-  shows "Complete_Partial_Order.chain (\<le>) {(iterate n b P 0\<^sub>p) | n::nat. True}" (is "Complete_Partial_Order.chain _ ?C")
-proof (rule chainI)
-  fix x y
-  assume "x \<in> ?C" "y \<in> ?C"
-  then show "x \<le> y \<or> y \<le> x"
-    by (smt (verit) increasing_2 mem_Collect_eq nle_le)
-qed
-
-definition "Fn_iter b P X n = iterate n b P X"
-
-lemma 
-  shows "Sup {(iterate n b P 0\<^sub>p) | n::nat. True} \<in> {(iterate n b P 0\<^sub>p) | n::nat. True}"
-  apply (simp)
-  oops
-
-(* abbreviation "Ftwhilen n b P X \<equiv> (Ftwhile b P X) ^^ n" *)
-(*
-lemma "Complete_Partial_Order.chain (\<le>) {(Ftwhile b P)}"
-*)
-lemma "Complete_Partial_Order2.cont Sup (\<le>) Sup (\<le>) (Ftwhile b P)"
-  apply (simp add: cont_def)
-  apply (simp add: pfun_defs)
-  apply (auto)
-  oops
-  
-
-definition ptwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme urhfun 
-  \<Rightarrow> 'a time_scheme urhfun" ("while\<^sub>p\<^sub>t _ do _ od") where
-"ptwhile b P = (while\<^sub>p b do (P; t := $t + 1) od)"
-
-term "$t"
-term "(t+1)\<^sub>e"
-
-thm "ptwhile_def"
-
-theorem ptwhile_unfold:
-  assumes "\<forall>s. (\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
-  shows "while\<^sub>p\<^sub>t b do P od = (if\<^sub>c b then (P; t := $t + 1 ; (while\<^sub>p\<^sub>t b do P od)) else II)"
-  apply (simp add: ptwhile_def)
-  apply (rule pwhile_unfold)
-  apply (simp add: pfun_defs)
-  apply (expr_auto add: ureal_defs rel)
-proof -
-  fix t::"enat" and more :: "'a"
-  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
-            real_of_ereal
-             (ureal2ereal
-               (ereal2ureal'
-                 (ereal
-                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))
-    = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1} \<union> -{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
-            real_of_ereal
-             (ureal2ereal
-               (ereal2ureal'
-                 (ereal
-                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))"
-    by simp
-  also have f2: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
-            real_of_ereal
-             (ureal2ereal
-               (ereal2ureal'
-                 (ereal
-                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))"
-    apply (subst infsum_Un_disjoint)
-    sorry
-  also have f3: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))))"
-    sorry
-  have f4: "(\<lambda>v\<^sub>0::'a time_scheme. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))))) summable_on UNIV"
-    sorry
-  show " (\<lambda>v\<^sub>0::'a time_scheme.
-           real_of_ereal
-            (ureal2ereal
-              (ereal2ureal'
-                (min (max (0::ereal)
-                       (ereal
-                         (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme.
-                            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
-                            real_of_ereal
-                             (ureal2ereal
-                               (ereal2ureal'
-                                 (ereal
-                                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))))
-                  (1::ereal))))) summable_on
-       UNIV"
-    sorry
-qed
-
-theorem ptwhile_unique_fixed_point:
-  assumes "H\<^sub>1 = (if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>1) else II)"
-  assumes "H\<^sub>2 = (if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>2) else II)"
-  shows "H\<^sub>1 = H\<^sub>2"
-proof (rule ccontr)
-  assume a1: "\<not>H\<^sub>1 = H\<^sub>2"
-  have "(if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>1) else II) = H\<^sub>1"
-    apply (simp add: pfun_defs)
-    apply (expr_auto add: rel)
-  qed
-
-  thm "le_fun_def"
-
-(*
-  (if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>1) else II)
-= 
-  (if b then (P; t := $t + 1 ; H\<^sub>1) else II)
-=
-  (if b then (P; H\<^sub>1[t+1/t]) else II)
-=
-  (if b then (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a time_scheme. P(s, v\<^sub>0) * H\<^sub>1(v\<^sub>0[t+1/t], s')) else s'=s)
-= 
-  (\<lbrakk>b\<rbrakk>\<^sub>\<I>*(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a time_scheme. P(s, v\<^sub>0) * H\<^sub>1(v\<^sub>0[t+1/t], s')) + \<lbrakk>\<not>b\<rbrakk>\<^sub>\<I>*
-*)
 subsubsection \<open> Lifting operators for ureal \<close>
 (*
 E = \<lbrakk>coin' = chead \<and> t' \<ge> t + 1\<rbrakk> * (1/2)^(t' - t - 1) * (1/2)
@@ -983,7 +656,7 @@ E3 = \<lbrakk>coin' = chead \<and> 3 \<ge> t + 1\<rbrakk> * (1/2)^(3 - t - 1) * 
 (*
 subsection \<open> Infsum \<close>
 lemma summable_on_ureal_product: 
-  fixes P :: "('s\<^sub>1, 's\<^sub>2) urfun"
+  fixes P :: "('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "(\<lambda>v\<^sub>0. P (s, v\<^sub>0)) summable_on UNIV"
   shows "ureal2real o (\<lambda>v\<^sub>0. (P (s, v\<^sub>0))) summable_on UNIV"
   apply (simp add: summable_on_def)
@@ -1021,7 +694,7 @@ proof -
   qed
 
 lemma summable_on_ureal_product: 
-  fixes P :: "('s\<^sub>1, 's\<^sub>2) urfun"
+  fixes P :: "('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "\<forall>s. (\<lambda>v\<^sub>0. P (s, v\<^sub>0)) summable_on UNIV"
   shows "\<forall>s. (\<lambda>v\<^sub>0. P (s, v\<^sub>0) * Q (s, v\<^sub>0)) summable_on UNIV"
   apply (auto)
@@ -1034,37 +707,37 @@ lemma summable_on_ureal_product:
 
 (*
 subsection \<open> Syntax \<close>
-definition zero :: "'s urhfun" where
+definition zero :: "'s prhfun" where
 "zero = (0)\<^sub>e"
 
-definition one :: "'s urhfun" where
+definition one :: "'s prhfun" where
 "one = (1)\<^sub>e"
 
-definition pskip :: "'s urhfun" ("II\<^sub>p") where
+definition pskip :: "'s prhfun" ("II\<^sub>p") where
 [pfun_defs]: "pskip = (\<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uskip pskip
 
 term "II::'s rel"
-term "II::'s urhfun"
+term "II::'s prhfun"
 
-definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) urfun" where 
+definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prfun" where 
 [pfun_defs]: "passigns \<sigma> = (\<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>)"
 
 adhoc_overloading
   uassigns passigns
 
-term "(s := e)::'s urhfun"
+term "(s := e)::'s prhfun"
 term "(s := e)::'s rel"
 
-definition pchoice :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = ((r * P + (1 - r) * Q))\<^sub>e"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_urfun P) + (1 - r) * @(rfrel_of_urfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_prfun P) + (1 - r) * @(rfrel_of_prfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -1078,14 +751,14 @@ term "if\<^sub>p 0.5 then P else Q"
 term "if\<^sub>p R then P else Q"
 term "if\<^sub>p R then P else Q = if\<^sub>p R then P else Q"
 
-abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urfun" 
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 
 (*TODO: should be this type, but I cannot make it type correct.
-definition pseqcomp ::"('s\<^sub>1, 's\<^sub>2) urfun \<Rightarrow> ('s\<^sub>2, 's\<^sub>3) urfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>3) urfun" (infixl ";\<^sub>f" 59) where *)
+definition pseqcomp ::"('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>2, 's\<^sub>3) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>3) prfun" (infixl ";\<^sub>f" 59) where *)
 
-definition pseqcomp ::"'s urhfun \<Rightarrow> 's urhfun \<Rightarrow> 's urhfun" (infixl ";\<^sub>f" 59) where
+definition pseqcomp ::"'s prhfun \<Rightarrow> 's prhfun \<Rightarrow> 's prhfun" (infixl ";\<^sub>f" 59) where
 [pfun_defs]: "pseqcomp P Q = 
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (P)) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (Q)))\<^sub>e"
 
@@ -1094,7 +767,7 @@ consts
 adhoc_overloading
   pseqcomp_c pseqcomp
 
-term "(P::'s urhfun) ; Q"
+term "(P::'s prhfun) ; Q"
 
 text \<open> Considering recursions @{text "X = P ; X"}, zero is one of its solution. But this solution is 
 not very useful.  
@@ -1102,10 +775,10 @@ not very useful.
 alphabet time = 
   t :: nat
 
-term "lfp (\<lambda>X. (P::'s urhfun))"
+term "lfp (\<lambda>X. (P::'s prhfun))"
 
-definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme urhfun 
-  \<Rightarrow> 'a time_scheme urhfun" 
+definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme prhfun 
+  \<Rightarrow> 'a time_scheme prhfun" 
 ("while\<^sub>p _ do _ od") where
 "pwhile b P = (\<nu> X \<bullet> ((P ; X) \<lhd>\<^sub>f b \<rhd> II))"
 
@@ -1316,9 +989,9 @@ definition pchoice :: "('s\<^sub>1, 's\<^sub>2) pfun \<Rightarrow> ('s\<^sub>1, 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = (ereal2ureal (r * P + (1 - r) * Q)\<^sub>e)\<^sub>e"
 *)
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun \<Rightarrow> ('s, 's) urfun" 
+(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_urfun P) + (1 - r) * @(rfrel_of_urfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_prfun P) + (1 - r) * @(rfrel_of_prfun Q))\<^sub>e"
 *)
 (*
 syntax 
