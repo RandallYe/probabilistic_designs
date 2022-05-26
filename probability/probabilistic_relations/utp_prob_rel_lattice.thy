@@ -14,7 +14,7 @@ unbundle UTP_Syntax
 
 declare [[show_types]]
 
-named_theorems pfun_defs and ureal_defs
+named_theorems pfun_defs and ureal_defs and chains_defs
 
 subsection \<open> Design decisions \<close>
 
@@ -383,17 +383,17 @@ definition rfrel_of_prfun where
 subsection \<open> Syntax \<close>
 
 (* deadlock: zero and not a distribution *)
-abbreviation one_f ("1\<^sub>f") where
-  "one_f \<equiv> (\<lambda> s. 1::\<real>)"
+abbreviation one_f ("\<^bold>1") where
+  "one_f \<equiv> (\<lambda> s. 1::ureal)"
 
-abbreviation zero_f ("0\<^sub>f") where
-  "zero_f \<equiv> (\<lambda> s. 0::\<real>)"
+abbreviation zero_f ("\<^bold>0") where
+  "zero_f \<equiv> (\<lambda> s. 0::ureal)"
 
 (* This is underspecified and could be assigned an arbitrary value. 
 TODO: How to deal with this?
 *)
 definition pzero :: "('s\<^sub>1, 's\<^sub>2) prfun" ("0\<^sub>p") where
-[pfun_defs]: "pzero = prfun_of_rfrel zero_f"
+[pfun_defs]: "pzero = zero_f"
 
 (*
 lemma deadlock_always: "`@(deadlock_state pzero)`"
@@ -588,27 +588,26 @@ term "lfp (\<lambda>X. (P::'s prhfun))"
 
 subsection \<open> Chains \<close> 
 definition increasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Rightarrow> bool" where
-"increasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<le> f n)"
+[chains_defs]: "increasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<le> f n)"
 
 definition decreasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Rightarrow> bool" where
-"decreasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<ge> f n)"
+[chains_defs]: "decreasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<ge> f n)"
 
 subsection \<open> Fixed-point Laws \<close>
 text \<open> Existence of a fixed point for a mono function F in ureal: See 
 Knaster_Tarski under HOL/Examples
 \<close>
-lemma mu_id: "(\<mu>\<^sub>p (X::'a \<Rightarrow> ureal) \<bullet> X) = 0\<^sub>f"
-  apply (simp add: ureal_defs)
+lemma mu_id: "(\<mu>\<^sub>p (X::'a \<Rightarrow> ureal) \<bullet> X) = \<^bold>0"
   apply (simp add: lfp_def)
-  by (metis bot_apply bot_ureal.rep_eq ureal2ereal_inverse)
+  by (metis bot.extremum_uniqueI bot_fun_def bot_ureal.rep_eq dual_order.refl less_eq_ureal.rep_eq 
+      zero_ureal.rep_eq)
 
 lemma mu_const: "(\<mu>\<^sub>p X \<bullet> P) = P"
   by (simp add: lfp_const)
 
-lemma nu_id: "(\<nu>\<^sub>p (X::'a \<Rightarrow> ureal) \<bullet> X) = 1\<^sub>f"
-  apply (simp add: ureal_defs)
+lemma nu_id: "(\<nu>\<^sub>p (X::'a \<Rightarrow> ureal) \<bullet> X) = \<^bold>1"
   apply (simp add: gfp_def)
-  by (metis ereal_eq_1(1) top_apply top_ureal.rep_eq ureal2ereal_inverse)
+  using one_ureal_def top_ureal_def by auto
 
 lemma nu_const: "(\<nu>\<^sub>p X \<bullet> P) = P"
   by (simp add: gfp_const)
@@ -627,12 +626,24 @@ proof -
 qed
 *)
 
-abbreviation "Fwhile b P X  \<equiv> (if\<^sub>c b then (P ; X) else II)"
+definition Fwhile :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" where
+[pfun_defs]: "Fwhile b P X  \<equiv> (if\<^sub>c b then (P ; X) else II)"
 
-definition pwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme prhfun 
-  \<Rightarrow> 'a time_scheme prhfun" ("while\<^sub>p _ do _ od") where
-"pwhile b P = (\<mu>\<^sub>p X \<bullet> Fwhile b P X)"
+definition pwhile :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("while\<^sub>p _ do _ od") where
+[pfun_defs]: "pwhile b P = (\<mu>\<^sub>p X \<bullet> Fwhile b P X)"
 
+primrec iterate :: "\<nat> \<Rightarrow> ('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("iterate\<^sub>p") where
+    "iterate 0 b P X = X"
+  | "iterate (Suc n) b P X = (Fwhile b P (iterate n b P X))"
+
+abbreviation "Ftwhile b P X \<equiv> Fwhile b (P ; t := $t + 1) X"
+definition ptwhile :: "('a time_scheme \<times> 'a time_scheme) pred \<Rightarrow> 'a time_scheme prhfun \<Rightarrow> 'a time_scheme prhfun" 
+("while\<^sub>p\<^sub>t _ do _ od") where
+[pfun_defs]: "ptwhile b P = (\<mu>\<^sub>p X \<bullet> Ftwhile b P X)"
+
+abbreviation iteratet ("iterate\<^sub>t") where "iteratet n b P X \<equiv> iterate n b (P ; t := $t + 1) X"
+
+term "iterate\<^sub>t 0 b P \<^bold>0 = \<^bold>0"
 
 subsubsection \<open> Lifting operators for ureal \<close>
 (*

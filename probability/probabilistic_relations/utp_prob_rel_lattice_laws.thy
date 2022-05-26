@@ -9,7 +9,7 @@ theory utp_prob_rel_lattice_laws
 begin 
 
 term "convergent"
-subsection \<open> General laws \<close>
+subsection \<open> @{text "ureal"} laws \<close>
 lemma ureal2ereal_mono:
   "\<lbrakk>a < b\<rbrakk> \<Longrightarrow> ureal2ereal a < ureal2ereal b"
   by (simp add: less_ureal.rep_eq)
@@ -159,6 +159,12 @@ lemma ureal_gt_zero:
   apply (simp add: ureal_defs)
   using assms ereal2ureal'_inverse less_ureal.rep_eq zero_ureal.rep_eq by auto
 
+lemma ureal2real_eq:
+  assumes "ureal2real a = ureal2real b"
+  shows "a = b"
+  by (metis assms linorder_neq_iff ureal2real_mono_strict)
+
+subsection \<open> Infinite sum \<close>
 text \<open> A probability distribution function is probabilistic, whose final states forms a distribution, 
 and summable (convergent). \<close>
 lemma pdrfun_prob_sum1_summable:
@@ -184,7 +190,61 @@ proof -
     by (metis dist infsum_not_exists zero_neq_one)
 qed
 
+lemma pdrfun_product_summable:
+  assumes "is_final_distribution (rfrel_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  shows "(\<lambda>s. (ureal2real (f (s\<^sub>1, s))) * (ureal2real (g (s\<^sub>1, s)))) summable_on UNIV"
+  apply (subst summable_on_iff_abs_summable_on_real)
+  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. (ureal2real (f (s\<^sub>1, s)))"])
+  apply (metis assms infsum_not_exists pdrfun_prob_sum1_summable(3) 
+      summable_on_iff_abs_summable_on_real zero_neq_one)
+  by (simp add: mult_right_le_one_le ureal_lower_bound ureal_upper_bound)
+
+lemma pdrfun_product_summable':
+  assumes "is_final_distribution (rfrel_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  shows "(\<lambda>s. (ureal2real (f (s\<^sub>1, s))) * (ureal2real (g (s, s')))) summable_on UNIV"
+  apply (subst summable_on_iff_abs_summable_on_real)
+  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. (ureal2real (f (s\<^sub>1, s)))"])
+  apply (metis assms infsum_not_exists pdrfun_prob_sum1_summable(3) 
+      summable_on_iff_abs_summable_on_real zero_neq_one)
+  by (simp add: mult_right_le_one_le ureal_lower_bound ureal_upper_bound)
+
+lemma ureal2real_summable_eq:
+  assumes "(\<lambda>s. ureal2real (f (s\<^sub>1, s))) summable_on UNIV"
+  shows "(\<lambda>s. real_of_ereal (ureal2ereal (f (s\<^sub>1, s)))) summable_on UNIV"
+  using assms ureal_defs by auto
+
+lemma pdrfun_product_summable'':
+  assumes "is_final_distribution (rfrel_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  shows "(\<lambda>s. real_of_ereal (ureal2ereal (f (s\<^sub>1, s))) * real_of_ereal (ureal2ereal (g (s, s')))) 
+    summable_on UNIV"
+  apply (subst summable_on_iff_abs_summable_on_real)
+  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. real_of_ereal (ureal2ereal (f (s\<^sub>1, s)))"])
+  using ureal2real_summable_eq apply (metis assms infsum_not_exists pdrfun_prob_sum1_summable(3) 
+      summable_on_iff_abs_summable_on_real zero_neq_one)
+  by (smt (z3) atLeastAtMost_iff mult_nonneg_nonneg mult_right_le_one_le real_norm_def 
+      real_of_ereal_le_1 real_of_ereal_pos ureal2ereal)
+
+lemma summable_on_ureal_product:
+  assumes P_summable: "(\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
+  shows "(\<lambda>v\<^sub>0::'c time_scheme. real_of_ereal (ureal2ereal (P (s, v\<^sub>0))) * 
+        real_of_ereal (ureal2ereal (x (v\<^sub>0, b)))) summable_on UNIV"
+  apply (subst summable_on_iff_abs_summable_on_real)
+  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>x. real_of_ereal (ureal2ereal (P (s, x)))"])
+  apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+  using assms apply blast
+  by (smt (verit) atLeastAtMost_iff mult_nonneg_nonneg mult_right_le_one_le real_norm_def 
+      real_of_ereal_le_1 real_of_ereal_pos ureal2ereal)
+
 subsection \<open> Probabilistic programs \<close>
+lemma ureal_bottom_least: "\<^bold>0 \<le> P"
+  apply (simp add: le_fun_def pfun_defs ureal_defs)
+  apply (auto)
+  by (metis bot.extremum bot_ureal.rep_eq ureal2ereal_inject zero_ureal.rep_eq)
+
+lemma ureal_bottom_least': "0\<^sub>p \<le> P"
+  apply (simp add: pfun_defs)
+  by (rule ureal_bottom_least)
+
 lemma pcond_mono: "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (if\<^sub>c b then P\<^sub>1 else Q\<^sub>1) \<le> (if\<^sub>c b then P\<^sub>2 else Q\<^sub>2)"
   apply (simp add: pcond_def ureal_defs)
   apply (simp add: le_fun_def)
@@ -260,25 +320,34 @@ proof -
         min.absorb1 min.absorb2) 
 qed
 
-lemma summable_on_ureal_product:
-  assumes P_summable: "(\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
-  shows "(\<lambda>v\<^sub>0::'c time_scheme. real_of_ereal (ureal2ereal (P (s, v\<^sub>0))) * 
-        real_of_ereal (ureal2ereal (x (v\<^sub>0, b)))) summable_on UNIV"
-  apply (subst summable_on_iff_abs_summable_on_real)
-  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>x. real_of_ereal (ureal2ereal (P (s, x)))"])
-  apply (subst summable_on_iff_abs_summable_on_real[symmetric])
-  using assms apply blast
-  by (smt (verit) atLeastAtMost_iff mult_nonneg_nonneg mult_right_le_one_le real_norm_def 
-      real_of_ereal_le_1 real_of_ereal_pos ureal2ereal)
+subsubsection \<open> Conditional choice \<close>
+lemma prel_pcond_pchoice_eq: "(if\<^sub>c b then P else Q) = (if\<^sub>p \<lbrakk>b\<rbrakk>\<^sub>\<I> then P else Q)"
+  apply (simp add: pfun_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rfrel"])
+  by (expr_auto)
+
+subsubsection \<open> Sequential composition \<close>
+lemma ureal_zero: "rfrel_of_prfun \<^bold>0 = (0)\<^sub>e"
+  apply (simp add: ureal_defs)
+  by (simp add: zero_ureal.rep_eq)
+
+lemma ureal_zero': "prfun_of_rfrel (0)\<^sub>e = \<^bold>0"
+  apply (simp add: ureal_defs)
+  by (metis SEXP_apply ureal2ereal_inverse zero_ureal.rep_eq)
+
+lemma prfun_zero_right: "P ; \<^bold>0 = \<^bold>0"
+  apply (simp add: pfun_defs ureal_zero)
+  apply (simp add: ureal_defs)
+  by (simp add: SEXP_def ereal2ureal_def subst_app_expr_def zero_ureal_def)
 
 subsection \<open> Chains \<close>
-lemma increasing_chain_mono:
+theorem increasing_chain_mono:
   assumes "increasing_chain f"
   assumes "m \<le> n"
   shows "f m \<le> f n"
   using assms(1) assms(2) increasing_chain_def by blast
 
-lemma decreasing_chain_antitone:
+theorem decreasing_chain_antitone:
   assumes "decreasing_chain f"
   assumes "m \<le> n"
   shows "f m \<ge> f n"
@@ -309,7 +378,7 @@ proof -
     using pos sup_least by (meson linorder_not_le ureal_minus_less)
 qed
 
-lemma increasing_chain_limit_is_lub:
+theorem increasing_chain_limit_is_lub:
   fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "increasing_chain f"
   (* We state the limits in real numbers because LIMSEQ_iff is only for type real_normed_vector,
@@ -317,7 +386,7 @@ lemma increasing_chain_limit_is_lub:
   shows "(\<lambda>n. ureal2real (f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n (s, s')))"
 proof (cases "\<exists>n. f n (s, s') > 0")
   case True
-  show ?thesis 
+  show ?thesis
   apply (subst LIMSEQ_iff)
   apply (auto)
   proof -
@@ -393,7 +462,7 @@ proof -
     using pos inf_greatest by (meson linorder_not_le ureal_plus_greater)
 qed
 
-lemma decreasing_chain_limit_is_glb:
+theorem decreasing_chain_limit_is_glb:
   fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "decreasing_chain f"
   shows "(\<lambda>n. ureal2real (f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Sqinter>n::\<nat>. f n (s, s')))"
@@ -464,8 +533,38 @@ print_locale "lattice"
 print_locale "bot"
 print_locale "complete_lattice"
 
+theorem Fwhile_mono:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  shows "mono (Fwhile b P)"
+  apply (simp add: mono_def Fwhile_def)
+  apply (auto)
+  apply (subst pcond_mono)
+  apply (subst pseqcomp_mono)
+  apply (auto)
+  by (simp add: assms pdrfun_product_summable'')+
+
+theorem Fwhile_monoE:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "X \<le> Y"
+  shows "Fwhile b P X \<le> Fwhile b P Y"
+  by (simp add: Fwhile_mono assms(1) assms(2) monoD)
+                                               
+theorem mono_func_increasing_chain_is_increasing:
+  assumes "increasing_chain c"
+  assumes "mono F"
+  shows "increasing_chain (\<lambda>n. F (c n))"
+  apply (simp add: increasing_chain_def)
+  using assms by (simp add: increasing_chain_mono monoD)
+
+theorem mono_func_decreasing_chain_is_decreasing:
+  assumes "decreasing_chain c"
+  assumes "mono F"
+  shows "decreasing_chain (\<lambda>n. F (c n))"
+  apply (simp add: decreasing_chain_def)
+  using assms by (simp add: decreasing_chain_antitone monoD)
+
 theorem pwhile_unfold:
-  assumes "\<forall>s. (\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
   shows "while\<^sub>p b do P od = (if\<^sub>c b then (P ; (while\<^sub>p b do P od)) else II)"
 proof -
   have m:"mono (\<lambda>X. (if\<^sub>c b then (P ; X) else II))"
@@ -473,20 +572,20 @@ proof -
     apply (subst pcond_mono)
     apply (subst pseqcomp_mono)
     apply (auto)
-    by (simp add: assms summable_on_ureal_product)+
+    by (simp add: assms pdrfun_product_summable'')+
   have "(while\<^sub>p b do P od) = (\<mu>\<^sub>p X \<bullet> (if\<^sub>c b then (P ; X) else II))"
-    by (simp add: pwhile_def)
+    by (simp add: pwhile_def Fwhile_def)
   also have "... = ((if\<^sub>c b then (P ; (\<mu>\<^sub>p X \<bullet> (if\<^sub>c b then (P ; X) else II))) else II))"
     apply (subst lfp_unfold)
     apply (simp add: m)
     by (simp add: lfp_const)
   also have "... = (if\<^sub>c b then (P ; (while\<^sub>p b do P od)) else II)"
-    by (simp add: pwhile_def)
+    by (simp add: pwhile_def Fwhile_def)
   finally show ?thesis .
 qed
 
 theorem pwhile_false: 
-  assumes "\<forall>s. (\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
   shows "while\<^sub>p (false)\<^sub>e do P od = II"
   apply (subst pwhile_unfold)
   using assms apply presburger
@@ -495,112 +594,170 @@ theorem pwhile_false:
   apply (simp add: ureal_defs)
   apply (auto)
   apply (simp add: ereal2ureal'_inverse)
-  apply (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
   by (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
 
-lemma fzero_zero: "rfrel_of_prfun (prfun_of_rfrel 0\<^sub>f) = 0\<^sub>f"
+lemma fzero_zero: "prfun_of_rfrel (rfrel_of_prfun \<^bold>0) = \<^bold>0"
   apply (simp add: ureal_defs)
-  by (metis SEXP_def real_of_ereal_0 ureal2ereal_inverse zero_ureal.rep_eq)
+  by (metis SEXP_def max.idem min.absorb1 real_of_ereal_0 ureal2ereal_inverse zero_ereal_def 
+      zero_less_one_ereal zero_ureal.rep_eq)
 
 theorem pwhile_true: "while\<^sub>p (true)\<^sub>e do P od = 0\<^sub>p"
   apply (simp add: pwhile_def pcond_def pzero_def)
   apply (rule antisym)
   apply (rule lfp_lowerbound)
-  apply (simp add: pseqcomp_def)
-  apply (simp add: fzero_zero)
-  apply (expr_auto)
-  apply (simp add: fzero_zero)
-  apply (simp add: ureal_defs)
-  apply (smt (verit) SEXP_def atLeastAtMost_iff le_funI less_eq_ureal.rep_eq ureal2ereal ureal2ereal_inverse zero_ureal.rep_eq)
-  done
+  apply (simp add: Fwhile_def)
+  apply (simp add: prfun_zero_right)
+  apply (simp add: pfun_defs)
+  apply (simp add: ureal_zero ureal_zero')
+  by (rule ureal_bottom_least)
 
 text \<open> Can we use approximation chain in UTP (Ch. 2.7) to prove a unique fix point for a probabilistic 
 iteration?
 \<close>
-
-abbreviation "Ftwhile b P X \<equiv> Fwhile b (P ; t := $t + 1) X"
-
-primrec iterate:: "\<nat> \<Rightarrow> ('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>)
-           \<Rightarrow> 'a time_scheme prhfun \<Rightarrow> 'a time_scheme prhfun \<Rightarrow> 'a time_scheme prhfun"
-  where
-    "iterate 0 b P X = X"
-  | "iterate (Suc n) b P X = (Ftwhile b P (iterate n b P X))"
-
 lemma "iterate 0 b P 0\<^sub>p = 0\<^sub>p"
   by simp
 
-term "(\<le>) (P :: 'a \<Rightarrow> ureal) Q"
-term "(P :: 'a time_scheme prhfun) \<le> Q"
-
-(* TODO: add preconditions about assumable *)
-lemma mono: "monotone (\<le>) (\<le>) (iterate n b P)"
+lemma iterate_mono:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  shows "monotone (\<le>) (\<le>) (iterate n b P)"
   unfolding monotone_def apply (auto)
   apply (induction n)
    apply (auto)
-  apply (rule pcond_mono)
-   apply (rule pseqcomp_mono)
-  sorry
+  by (metis Fwhile_mono assms monoE)
 
-lemma mono_1:
+lemma iterate_monoE:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
   assumes "X \<le> Y"
   shows "(iterate n b P X) \<le> (iterate n b P Y)"
-  by (metis assms mono monotone_def)
+  by (metis assms(1) assms(2) iterate_mono monotone_def)
 
-lemma bottom_least: "0\<^sub>p \<le> P"
-  apply (simp add: le_fun_def pfun_defs ureal_defs)
-  apply (auto)
-  by (metis bot.extremum bot_ureal.rep_eq ureal2ereal_inverse)
-
-lemma increasing:
-  fixes P:: "'a time_scheme prhfun"
+lemma iterate_increasing:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
   shows "(iterate n b P 0\<^sub>p) \<le> (iterate (Suc n) b P 0\<^sub>p)"
-  (* apply (simp add: le_fun_def) *)
   apply (induction n)
-   apply (simp)
-  using bottom_least le_fun_def apply fastforce
   apply (simp)
-  by (metis mono_1 utp_prob_rel_lattice_laws.iterate.simps(1) utp_prob_rel_lattice_laws.iterate.simps(2))
+  using ureal_bottom_least' apply blast
+  apply (simp)
+  apply (subst Fwhile_monoE)
+  by (simp add: assms)+
 
-lemma increasing_1:
-  fixes P:: "'a time_scheme prhfun"
+lemma iterate_increasing1:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
   shows "(iterate n b P 0\<^sub>p) \<le> (iterate (n+m) b P 0\<^sub>p)"
   apply (induction m)
   apply (simp)
-  by (metis (full_types) add_Suc_right dual_order.trans increasing)
+  by (metis (full_types) assms add_Suc_right dual_order.trans iterate_increasing)
 
-lemma increasing_2:
-  fixes P:: "'a time_scheme prhfun"
+lemma iterate_increasing2:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
   assumes "n \<le> m"
   shows "(iterate n b P 0\<^sub>p) \<le> (iterate m b P 0\<^sub>p)"
-  using increasing_1 assms nat_le_iff_add by auto
+  using iterate_increasing1 assms nat_le_iff_add by auto
 
-lemma chain_iterate:
-  (* assumes f: "monotone (\<le>) (\<le>) P" *)
-  shows "Complete_Partial_Order.chain (\<le>) {(iterate n b P 0\<^sub>p) | n::nat. True}" (is "Complete_Partial_Order.chain _ ?C")
+lemma iterate_chain:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  shows "Complete_Partial_Order.chain (\<le>) {(iterate n b P 0\<^sub>p) | n::nat. True}" 
+    (is "Complete_Partial_Order.chain _ ?C")
 proof (rule chainI)
   fix x y
   assume "x \<in> ?C" "y \<in> ?C"
   then show "x \<le> y \<or> y \<le> x"
-    by (smt (verit) increasing_2 mem_Collect_eq nle_le)
+    by (smt (verit) assms iterate_increasing2 mem_Collect_eq nle_le)
 qed
 
-lemma increasing_chain_iterate:
+lemma iterate_increasing_chain:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
   shows "increasing_chain (\<lambda>n. (iterate n b P 0\<^sub>p))" 
     (is "increasing_chain ?C")
   apply (simp add: increasing_chain_def)
-  by (simp add: increasing_2)
+  by (simp add: assms iterate_increasing2)
 
-definition "Fn_iter b P X n = iterate n b P X"
+lemma iterate_continuous_limit:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  shows "(\<lambda>n. ureal2real (Fwhile b P (iterate n b P 0\<^sub>p) (s, s'))) \<longlonglongrightarrow> 
+    ureal2real ((Fwhile b P (\<Squnion>n::nat. iterate n b P 0\<^sub>p)) (s, s'))"
+  apply (subst LIMSEQ_iff)
+  apply (auto)
+proof -
+  fix r
+  assume "(0::\<real>) < r"
+  have f1: "\<forall>n. ureal2real (Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) \<le>
+              ureal2real (Fwhile b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s'))"
+    apply (auto)
+    apply (rule ureal2real_mono)
+    by (smt (verit) Fwhile_monoE SUP_upper UNIV_I assms le_fun_def)
+  have f2: "\<forall>n. \<bar>ureal2real (Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) -
+              ureal2real (Fwhile b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s'))\<bar> = 
+    (ureal2real (Fwhile b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s')) - 
+     ureal2real (Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')))"
+    using f1 by force
+  let ?f = "(\<lambda>n. (iterate\<^sub>p n b P 0\<^sub>p))"
+  have Sn_limit_sup: "(\<lambda>n. ureal2real (?f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')))"
+    apply (subst increasing_chain_limit_is_lub)
+    apply (simp add: assms increasing_chain_def iterate_increasing2)
+    by simp
+  then have Sn_limit: "\<forall>r>0. \<exists>no::\<nat>. \<forall>n\<ge>no.
+             \<bar>ureal2real (?f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. ?f n (s, s'))\<bar> < r"
+    using Sn_limit_sup LIMSEQ_iff by (smt (verit, del_insts) real_norm_def)
+  show " \<exists>no::\<nat>. \<forall>n\<ge>no.
+             \<bar>ureal2real (Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) -
+              ureal2real (Fwhile b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s'))\<bar> < r"
+    apply (simp add: Fwhile_def)
+  qed
 
-lemma 
-  shows "Sup {(iterate n b P 0\<^sub>p) | n::nat. True} \<in> {(iterate n b P 0\<^sub>p) | n::nat. True}"
-  apply (simp)
-  oops
+lemma iterate_continuous:
+  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  (*
+  shows "Fwhile   b P (Sup {(iterate n b P 0\<^sub>p) | n::nat. True}) = 
+         Sup (Fwhile b P ` {(iterate n b P 0\<^sub>p) | n::nat. True})"
+  *)
+  (*
+  shows "Fwhile b P (Sup {(iterate n b P 0\<^sub>p) | n::nat. True}) = 
+       Sup ({Fwhile b P x | x. x \<in> {(iterate n b P 0\<^sub>p) | n::nat. True}})"
+  *)
+  shows "Fwhile b P (\<Squnion>n::nat. iterate n b P 0\<^sub>p) = (\<Squnion>x \<in> {(iterate n b P 0\<^sub>p) | n::nat. True}. (Fwhile b P x))"
+  apply (subst fun_eq_iff)
+  apply (auto)
+proof -
+  fix s s'
+  let ?f = "\<lambda>n. Fwhile b P (iterate n b P 0\<^sub>p)"
+  have "increasing_chain ?f"
+    by (simp add: Fwhile_monoE assms increasing_chain_def iterate_increasing2)
+  then have "(\<lambda>n. ureal2real (?f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')))"
+    by (rule increasing_chain_limit_is_lub) 
+  then have "ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')) = ureal2real ((Fwhile b P (\<Squnion>n::nat. iterate n b P 0\<^sub>p)) (s, s'))"
+    using iterate_continuous_limit assms by (metis LIMSEQ_unique)
+  then have f1: "(\<Squnion>n::\<nat>. ?f n (s, s')) = ((Fwhile b P (\<Squnion>n::nat. iterate n b P 0\<^sub>p)) (s, s'))"
+    using ureal2real_eq by blast
+
+  have f2: "(\<Squnion>x::'s \<times> 's \<Rightarrow> ureal\<in> Fwhile b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 0\<^sub>p}. x (s, s'))
+    = Sup ((\<lambda>x. x (s, s')) ` (Fwhile b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 0\<^sub>p}))"
+    by auto
+  have f3: "(\<Squnion>n::\<nat>. Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) = (Sup (range (\<lambda>n. Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s'))))"
+    by simp
+  have f4: "((\<lambda>x. x (s, s')) ` (Fwhile b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 0\<^sub>p})) = 
+        (range (\<lambda>n. Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')))"
+    apply (simp add: image_def)
+    by (auto)
+  show "Fwhile b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s') =
+       (\<Squnion>x::'s \<times> 's \<Rightarrow> ureal\<in>Fwhile b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 0\<^sub>p}. x (s, s'))"
+    apply (simp add: f1[symmetric])
+    using f4 by presburger
+qed
+(*
+theorem increasing_chain_limit_is_lub:
+  fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
+  assumes "increasing_chain f"
+  (* We state the limits in real numbers because LIMSEQ_iff is only for type real_normed_vector,
+  ureal is not of that type. *)
+  shows "(\<lambda>n. ureal2real (f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n (s, s')))"
+*)
 
 (* abbreviation "Ftwhilen n b P X \<equiv> (Ftwhile b P X) ^^ n" *)
 (*
 lemma "Complete_Partial_Order.chain (\<le>) {(Ftwhile b P)}"
 *)
+(*
 lemma "Complete_Partial_Order2.cont Sup (\<le>) Sup (\<le>) (Ftwhile b P)"
   apply (simp add: cont_def)
   apply (simp add: pfun_defs)
@@ -702,5 +859,5 @@ proof (rule ccontr)
 subsection \<open> \<close>
 
 lemma
-
+*)
 end
