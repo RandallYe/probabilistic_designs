@@ -56,9 +56,10 @@ these operators have ureal parameters and result. The definition needs to deal w
 to real, operation on reals, then convert the result back to ureal. Finally, we reuse all summation 
 laws for real numbers. 
 *)
+(*
 type_synonym ('s\<^sub>1, 's\<^sub>2) rvfun = "(real, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's rvhfun = "('s, 's) rvfun"
-
+*)
 subsection \<open> Real numbers or non-negative extended real numbers \<close>
 (*
 type_synonym ('s\<^sub>1, 's\<^sub>2) prfun = "(ennreal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
