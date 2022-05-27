@@ -165,10 +165,25 @@ lemma ureal2real_eq:
   by (metis assms linorder_neq_iff ureal2real_mono_strict)
 
 subsection \<open> Infinite sum \<close>
+lemma rvfun_prob_sum1_summable:
+  assumes "is_final_distribution p"
+  shows "\<forall>s. 0 \<le> p s \<and> p s \<le> 1" 
+        "(\<Sum>\<^sub>\<infinity> s. p (s\<^sub>1, s)) = (1::\<real>)"
+        "(\<lambda>s. p (s\<^sub>1, s)) summable_on UNIV"
+  using assms apply (simp add: dist_defs expr_defs)
+  using assms is_dist_def is_sum_1_def apply (metis (no_types, lifting) curry_conv infsum_cong)
+proof (rule ccontr)
+  assume a1: "\<not> (\<lambda>s. p (s\<^sub>1, s)) summable_on UNIV"
+  from a1 have f1: "(\<Sum>\<^sub>\<infinity>s. p (s\<^sub>1, s)) = (0::\<real>)"
+    by (simp add: infsum_def)
+  then show "False"
+    by (metis assms case_prod_eta curry_case_prod is_dist_def is_sum_1_def zero_neq_one)
+qed
+
 text \<open> A probability distribution function is probabilistic, whose final states forms a distribution, 
 and summable (convergent). \<close>
 lemma pdrfun_prob_sum1_summable:
-  assumes "is_final_distribution (rfrel_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
   shows "\<forall>s. 0 \<le> f s \<and> f s \<le> 1"
         "\<forall>s. 0 \<le> ureal2real (f s) \<and> ureal2real (f s) \<le> 1"
         "(\<Sum>\<^sub>\<infinity> s. ureal2real (f (s\<^sub>1, s))) = (1::\<real>)"
@@ -181,7 +196,7 @@ lemma pdrfun_prob_sum1_summable:
   using real_of_ereal_pos ureal2ereal ureal2real_def apply auto[1]
     apply (simp add: ureal_upper_bound)
 proof -
-  have "\<forall>s\<^sub>1::'s\<^sub>1. (\<Sum>\<^sub>\<infinity> s. ((curry (rfrel_of_prfun f)) s\<^sub>1) s) = 1"
+  have "\<forall>s\<^sub>1::'s\<^sub>1. (\<Sum>\<^sub>\<infinity> s. ((curry (rvfun_of_prfun f)) s\<^sub>1) s) = 1"
     using assms by (simp add: is_dist_def is_sum_1_def)
   then show dist: "(\<Sum>\<^sub>\<infinity>s::'s\<^sub>2. ureal2real (f (s\<^sub>1, s))) = (1::\<real>)"
     by (simp add: ureal_defs)
@@ -191,7 +206,7 @@ proof -
 qed
 
 lemma pdrfun_product_summable:
-  assumes "is_final_distribution (rfrel_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
   shows "(\<lambda>s. (ureal2real (f (s\<^sub>1, s))) * (ureal2real (g (s\<^sub>1, s)))) summable_on UNIV"
   apply (subst summable_on_iff_abs_summable_on_real)
   apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. (ureal2real (f (s\<^sub>1, s)))"])
@@ -199,8 +214,13 @@ lemma pdrfun_product_summable:
       summable_on_iff_abs_summable_on_real zero_neq_one)
   by (simp add: mult_right_le_one_le ureal_lower_bound ureal_upper_bound)
 
+lemma pdrfun_product_summable_swap:
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  shows "(\<lambda>s. (ureal2real (g (s\<^sub>1, s))) * (ureal2real (f (s\<^sub>1, s)))) summable_on UNIV"
+  using pdrfun_product_summable by (smt (verit, ccfv_threshold) assms mult_commute_abs summable_on_cong)
+
 lemma pdrfun_product_summable':
-  assumes "is_final_distribution (rfrel_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
   shows "(\<lambda>s. (ureal2real (f (s\<^sub>1, s))) * (ureal2real (g (s, s')))) summable_on UNIV"
   apply (subst summable_on_iff_abs_summable_on_real)
   apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. (ureal2real (f (s\<^sub>1, s)))"])
@@ -208,13 +228,18 @@ lemma pdrfun_product_summable':
       summable_on_iff_abs_summable_on_real zero_neq_one)
   by (simp add: mult_right_le_one_le ureal_lower_bound ureal_upper_bound)
 
+lemma pdrfun_product_summable'_swap:
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  shows "(\<lambda>s. (ureal2real (g (s, s'))) * (ureal2real (f (s\<^sub>1, s)))) summable_on UNIV"
+  using pdrfun_product_summable' by (smt (verit, ccfv_threshold) assms mult_commute_abs summable_on_cong)
+
 lemma ureal2real_summable_eq:
   assumes "(\<lambda>s. ureal2real (f (s\<^sub>1, s))) summable_on UNIV"
   shows "(\<lambda>s. real_of_ereal (ureal2ereal (f (s\<^sub>1, s)))) summable_on UNIV"
   using assms ureal_defs by auto
 
 lemma pdrfun_product_summable'':
-  assumes "is_final_distribution (rfrel_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
   shows "(\<lambda>s. real_of_ereal (ureal2ereal (f (s\<^sub>1, s))) * real_of_ereal (ureal2ereal (g (s, s')))) 
     summable_on UNIV"
   apply (subst summable_on_iff_abs_summable_on_real)
@@ -235,7 +260,62 @@ lemma summable_on_ureal_product:
   by (smt (verit) atLeastAtMost_iff mult_nonneg_nonneg mult_right_le_one_le real_norm_def 
       real_of_ereal_le_1 real_of_ereal_pos ureal2ereal)
 
+subsection \<open> @{term "is_prob"} \<close>
+lemma is_prob: "\<lbrakk>is_prob P\<rbrakk> \<Longrightarrow> (\<forall>s. P s \<ge> 0 \<and> P s \<le> 1)"
+  by (simp add: is_prob_def taut_def)
+
+lemma ureal_is_prob: "is_prob (rvfun_of_prfun P)"
+  by (simp add: is_prob_def rvfun_of_prfun_def ureal_lower_bound ureal_upper_bound)
+
+lemma is_prob_final_prob: "\<lbrakk>is_prob P\<rbrakk> \<Longrightarrow> is_final_prob P"
+  by (simp add: is_prob_def taut_def)
+
+subsection \<open> Inverse between @{term "rvfun"} and @{term "prfun"}  \<close>
+lemma rvfun_inverse: 
+  assumes "is_prob P"
+  shows "rvfun_of_prfun (prfun_of_rvfun P) = P"
+  apply (simp add: ureal_defs)
+  apply (expr_auto)
+proof -
+  fix a b
+  have "\<forall>s. P s \<ge> 0 \<and> P s \<le> 1"
+    by (metis (mono_tags, lifting) SEXP_def assms is_prob_def taut_def)
+  then show "real_of_ereal (ureal2ereal (ereal2ureal' (min (max (0::ereal) (ereal (P (a, b)))) (1::ereal)))) = P (a, b)"
+    by (simp add: ereal2ureal'_inverse)
+qed
+
+lemma prfun_inverse: 
+  shows " prfun_of_rvfun (rvfun_of_prfun P) = P"
+  apply (simp add: ureal_defs)
+  apply (expr_auto)
+  by (smt (verit, best) atLeastAtMost_iff ereal_le_real_iff ereal_less_eq(1) ereal_real' 
+      ereal_times(2) max.bounded_iff min_absorb1 nle_le real_of_ereal_le_0 
+      type_definition.Rep_inverse type_definition_ureal ureal2ereal zero_ereal_def)
+
 subsection \<open> Probabilistic programs \<close>
+subsubsection \<open> Bottom and Top \<close>
+lemma ureal_bot_zero: "\<bottom> = \<^bold>0"
+  by (metis bot_apply bot_ureal.rep_eq ureal2ereal_inject zero_ureal.rep_eq)
+
+lemma ureal_top_one: "\<top> = \<^bold>1"
+  by (metis one_ureal.rep_eq top_apply top_ureal.rep_eq ureal2ereal_inject)
+
+lemma ureal_zero: "rvfun_of_prfun \<^bold>0 = (0)\<^sub>e"
+  apply (simp add: ureal_defs)
+  by (simp add: zero_ureal.rep_eq)
+
+lemma ureal_zero': "prfun_of_rvfun (0)\<^sub>e = \<^bold>0"
+  apply (simp add: ureal_defs)
+  by (metis SEXP_apply ureal2ereal_inverse zero_ureal.rep_eq)
+
+lemma ureal_one: "rvfun_of_prfun \<^bold>1 = (1)\<^sub>e"
+  apply (simp add: ureal_defs)
+  by (simp add: one_ureal.rep_eq)
+
+lemma ureal_one': "prfun_of_rvfun (1)\<^sub>e = \<^bold>1"
+  apply (simp add: ureal_defs)
+  by (metis SEXP_def one_ereal_def one_ureal.rep_eq ureal2ereal_inverse)
+
 lemma ureal_bottom_least: "\<^bold>0 \<le> P"
   apply (simp add: le_fun_def pfun_defs ureal_defs)
   apply (auto)
@@ -244,6 +324,100 @@ lemma ureal_bottom_least: "\<^bold>0 \<le> P"
 lemma ureal_bottom_least': "0\<^sub>p \<le> P"
   apply (simp add: pfun_defs)
   by (rule ureal_bottom_least)
+
+lemma ureal_top_greatest: "P \<le> \<^bold>1"
+  apply (simp add: le_fun_def pfun_defs ureal_defs)
+  apply (auto)
+  using less_eq_ureal.rep_eq one_ureal.rep_eq ureal2ereal by auto
+
+subsubsection \<open> Skip \<close>
+lemma rvfun_skip_f_is_prob: "is_prob II\<^sub>f"
+  by (simp add: is_prob_def iverson_bracket_def)
+
+lemma rvfun_skip_f_is_dist: "is_final_distribution II\<^sub>f"
+  apply (simp add: dist_defs expr_defs)
+  by (simp add: infsum_singleton)
+
+lemma rvfun_skip_inverse: "rvfun_of_prfun (prfun_of_rvfun II\<^sub>f) = II\<^sub>f"
+  by (simp add: is_prob_def iverson_bracket_def rvfun_inverse)
+
+lemma rvfun_skip\<^sub>_f_simp: "II\<^sub>f = (\<lambda>(s, s'). if s = s' then 1 else 0)"
+  by (expr_auto)
+
+theorem prfun_skip: 
+  assumes "wb_lens x"
+  shows "(II::'a prhfun) = (x := $x)"
+  apply (simp add: pfun_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (rel_auto)
+  by (simp add: assms)+
+
+theorem prfun_skip':
+  shows "rvfun_of_prfun (II) = pskip\<^sub>_f"
+  apply (simp add: pfun_defs)
+  using rvfun_skip_inverse by blast
+
+subsubsection \<open> Assignment \<close>
+lemma rvfun_assignment_is_prob: "is_prob (passigns_f \<sigma>)"
+  by (simp add: is_prob_def iverson_bracket_def)
+
+lemma rvfun_assignment_is_dist: "is_final_distribution (passigns_f \<sigma>)"
+  apply (simp add: dist_defs expr_defs)
+  apply (rel_auto)
+  by (simp add: infsum_singleton)
+
+lemma rvfun_assignment_inverse: "rvfun_of_prfun (prfun_of_rvfun (passigns_f \<sigma>)) = (passigns_f \<sigma>)"
+  by (simp add: is_prob_def iverson_bracket_def rvfun_inverse)
+
+subsubsection \<open> Probabilistic choice \<close>
+lemma rvfun_pchoice_is_prob: 
+  assumes "is_prob P" "is_prob Q"
+  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> (1::\<real>)"
+  shows "is_prob (P \<oplus>\<^sub>f\<^bsub>r\<^esub> Q)"
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (smt (verit, del_insts) SEXP_def assms(1) assms(2) assms(3) is_prob_def mult_nonneg_nonneg 
+      taut_def)
+  by (simp add: assms(1) assms(2) assms(3) convex_bound_le is_prob)
+
+lemma rvfun_pchoice_is_dist: 
+  assumes "is_final_distribution P" "is_final_distribution Q"
+  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> (1::\<real>)"
+  shows "is_final_distribution (P \<oplus>\<^sub>f\<^bsub>(r\<^sup>\<Up>)\<^esub> Q)"
+  apply (simp add: dist_defs expr_defs, auto)
+  apply (simp add: assms(1) assms(2) assms(3) is_final_distribution_prob is_final_prob_altdef)
+  apply (simp add: assms(1) assms(2) assms(3) convex_bound_le is_final_distribution_prob is_final_prob_altdef)
+  apply (subst infsum_add)
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  apply (simp add: assms(2) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(2) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  by (simp add: assms(1) assms(2) rvfun_prob_sum1_summable(2))
+
+lemma rvfun_assignment_inverse: "rvfun_of_prfun (prfun_of_rvfun (passigns_f \<sigma>)) = (passigns_f \<sigma>)"
+  by (simp add: is_prob_def iverson_bracket_def rvfun_inverse)
+
+subsubsection \<open> Conditional choice \<close>
+lemma rvfun_pcond_is_prob: 
+  assumes "is_prob P" "is_prob Q"
+  shows "is_prob (P \<lhd>\<^sub>f b \<rhd> Q)"
+  by (smt (verit, best) SEXP_def assms(1) assms(2) is_prob_def taut_def)
+
+lemma rvfun_pcond_is_dist: 
+  assumes "is_final_distribution P" "is_final_distribution Q"
+  shows "is_final_distribution (P \<lhd>\<^sub>f b \<rhd> Q)"
+  apply (simp add: dist_defs expr_defs, auto)
+  apply (simp add: assms is_final_distribution_prob is_final_prob_altdef)+
+
+lemma rvfun_assignment_inverse: "rvfun_of_prfun (prfun_of_rvfun (passigns_f \<sigma>)) = (passigns_f \<sigma>)"
+  by (simp add: is_prob_def iverson_bracket_def rvfun_inverse)
+
+lemma prfun_pcond_pchoice_eq: "(if\<^sub>c b then P else Q) = (if\<^sub>p \<lbrakk>b\<rbrakk>\<^sub>\<I> then P else Q)"
+  apply (simp add: pfun_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  by (expr_auto)
 
 lemma pcond_mono: "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (if\<^sub>c b then P\<^sub>1 else Q\<^sub>1) \<le> (if\<^sub>c b then P\<^sub>2 else Q\<^sub>2)"
   apply (simp add: pcond_def ureal_defs)
@@ -255,6 +429,18 @@ lemma pcond_mono: "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>
   apply (simp add: ureal_defs)
   by (smt (z3) atLeastAtMost_iff ereal_less_eq(1) ereal_less_eq(4) ereal_real ereal_times(1) 
       max.absorb1 max.absorb2 min.absorb1 real_of_ereal_le_0 ureal2ereal ureal2ereal_inverse)
+
+subsubsection \<open> Sequential composition \<close>
+lemma prfun_zero_right: "P ; \<^bold>0 = \<^bold>0"
+  apply (simp add: pfun_defs ureal_zero)
+  apply (simp add: ureal_defs)
+  by (simp add: SEXP_def ereal2ureal_def subst_app_expr_def zero_ureal_def)
+
+lemma prfun_zero_left: "\<^bold>0 ; P = \<^bold>0"
+  apply (simp add: pfun_defs ureal_zero)
+  apply (simp add: ureal_defs)
+  by (simp add: SEXP_def ereal2ureal_def subst_app_expr_def zero_ureal_def)
+
 
 print_classes
 lemma pseqcomp_mono: 
@@ -319,26 +505,6 @@ proof -
         ereal_less_eq(7) ereal_max_0 less_eq_ureal.rep_eq linorder_le_cases max.absorb_iff2 
         min.absorb1 min.absorb2) 
 qed
-
-subsubsection \<open> Conditional choice \<close>
-lemma prel_pcond_pchoice_eq: "(if\<^sub>c b then P else Q) = (if\<^sub>p \<lbrakk>b\<rbrakk>\<^sub>\<I> then P else Q)"
-  apply (simp add: pfun_defs)
-  apply (rule HOL.arg_cong[where f="prfun_of_rfrel"])
-  by (expr_auto)
-
-subsubsection \<open> Sequential composition \<close>
-lemma ureal_zero: "rfrel_of_prfun \<^bold>0 = (0)\<^sub>e"
-  apply (simp add: ureal_defs)
-  by (simp add: zero_ureal.rep_eq)
-
-lemma ureal_zero': "prfun_of_rfrel (0)\<^sub>e = \<^bold>0"
-  apply (simp add: ureal_defs)
-  by (metis SEXP_apply ureal2ereal_inverse zero_ureal.rep_eq)
-
-lemma prfun_zero_right: "P ; \<^bold>0 = \<^bold>0"
-  apply (simp add: pfun_defs ureal_zero)
-  apply (simp add: ureal_defs)
-  by (simp add: SEXP_def ereal2ureal_def subst_app_expr_def zero_ureal_def)
 
 subsection \<open> Chains \<close>
 theorem increasing_chain_mono:
@@ -534,7 +700,7 @@ print_locale "bot"
 print_locale "complete_lattice"
 
 theorem Fwhile_mono:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "mono (Fwhile b P)"
   apply (simp add: mono_def Fwhile_def)
   apply (auto)
@@ -544,7 +710,7 @@ theorem Fwhile_mono:
   by (simp add: assms pdrfun_product_summable'')+
 
 theorem Fwhile_monoE:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   assumes "X \<le> Y"
   shows "Fwhile b P X \<le> Fwhile b P Y"
   by (simp add: Fwhile_mono assms(1) assms(2) monoD)
@@ -563,8 +729,19 @@ theorem mono_func_decreasing_chain_is_decreasing:
   apply (simp add: decreasing_chain_def)
   using assms by (simp add: decreasing_chain_antitone monoD)
 
+lemma 
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  shows "(ureal2real (Fwhile b P X (s,s')) - ureal2real (Fwhile b P Y (s,s'))) = 
+    ureal2real 1"
+  apply (simp add: Fwhile_def)
+  apply (simp add: prel_pcond_pchoice_eq)
+  apply (simp add: pfun_defs)
+  apply (simp add: rvfun_skip_inverse)
+  apply (expr_auto add: rel)
+  oops
+
 theorem pwhile_unfold:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "while\<^sub>p b do P od = (if\<^sub>c b then (P ; (while\<^sub>p b do P od)) else II)"
 proof -
   have m:"mono (\<lambda>X. (if\<^sub>c b then (P ; X) else II))"
@@ -585,7 +762,7 @@ proof -
 qed
 
 theorem pwhile_false: 
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "while\<^sub>p (false)\<^sub>e do P od = II"
   apply (subst pwhile_unfold)
   using assms apply presburger
@@ -596,7 +773,7 @@ theorem pwhile_false:
   apply (simp add: ereal2ureal'_inverse)
   by (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
 
-lemma fzero_zero: "prfun_of_rfrel (rfrel_of_prfun \<^bold>0) = \<^bold>0"
+lemma fzero_zero: "prfun_of_rvfun (rvfun_of_prfun \<^bold>0) = \<^bold>0"
   apply (simp add: ureal_defs)
   by (metis SEXP_def max.idem min.absorb1 real_of_ereal_0 ureal2ereal_inverse zero_ereal_def 
       zero_less_one_ereal zero_ureal.rep_eq)
@@ -618,7 +795,7 @@ lemma "iterate 0 b P 0\<^sub>p = 0\<^sub>p"
   by simp
 
 lemma iterate_mono:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "monotone (\<le>) (\<le>) (iterate n b P)"
   unfolding monotone_def apply (auto)
   apply (induction n)
@@ -626,13 +803,13 @@ lemma iterate_mono:
   by (metis Fwhile_mono assms monoE)
 
 lemma iterate_monoE:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   assumes "X \<le> Y"
   shows "(iterate n b P X) \<le> (iterate n b P Y)"
   by (metis assms(1) assms(2) iterate_mono monotone_def)
 
 lemma iterate_increasing:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "(iterate n b P 0\<^sub>p) \<le> (iterate (Suc n) b P 0\<^sub>p)"
   apply (induction n)
   apply (simp)
@@ -642,20 +819,20 @@ lemma iterate_increasing:
   by (simp add: assms)+
 
 lemma iterate_increasing1:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "(iterate n b P 0\<^sub>p) \<le> (iterate (n+m) b P 0\<^sub>p)"
   apply (induction m)
   apply (simp)
   by (metis (full_types) assms add_Suc_right dual_order.trans iterate_increasing)
 
 lemma iterate_increasing2:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   assumes "n \<le> m"
   shows "(iterate n b P 0\<^sub>p) \<le> (iterate m b P 0\<^sub>p)"
   using iterate_increasing1 assms nat_le_iff_add by auto
 
 lemma iterate_chain:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "Complete_Partial_Order.chain (\<le>) {(iterate n b P 0\<^sub>p) | n::nat. True}" 
     (is "Complete_Partial_Order.chain _ ?C")
 proof (rule chainI)
@@ -666,21 +843,21 @@ proof (rule chainI)
 qed
 
 lemma iterate_increasing_chain:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "increasing_chain (\<lambda>n. (iterate n b P 0\<^sub>p))" 
     (is "increasing_chain ?C")
   apply (simp add: increasing_chain_def)
   by (simp add: assms iterate_increasing2)
 
 lemma iterate_continuous_limit:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "(\<lambda>n. ureal2real (Fwhile b P (iterate n b P 0\<^sub>p) (s, s'))) \<longlonglongrightarrow> 
     ureal2real ((Fwhile b P (\<Squnion>n::nat. iterate n b P 0\<^sub>p)) (s, s'))"
   apply (subst LIMSEQ_iff)
   apply (auto)
 proof -
   fix r
-  assume "(0::\<real>) < r"
+  assume a1: "(0::\<real>) < r"
   have f1: "\<forall>n. ureal2real (Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) \<le>
               ureal2real (Fwhile b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s'))"
     apply (auto)
@@ -691,6 +868,7 @@ proof -
     (ureal2real (Fwhile b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s')) - 
      ureal2real (Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')))"
     using f1 by force
+  (* *)
   let ?f = "(\<lambda>n. (iterate\<^sub>p n b P 0\<^sub>p))"
   have Sn_limit_sup: "(\<lambda>n. ureal2real (?f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')))"
     apply (subst increasing_chain_limit_is_lub)
@@ -699,14 +877,27 @@ proof -
   then have Sn_limit: "\<forall>r>0. \<exists>no::\<nat>. \<forall>n\<ge>no.
              \<bar>ureal2real (?f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. ?f n (s, s'))\<bar> < r"
     using Sn_limit_sup LIMSEQ_iff by (smt (verit, del_insts) real_norm_def)
+  have exist_N: "\<exists>no::\<nat>. \<forall>n\<ge>no. \<bar>ureal2real (?f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. ?f n (s, s'))\<bar> < r"
+    using Sn_limit a1 by blast
+  obtain N where P_N: "\<forall>n\<ge>N. \<bar>ureal2real (?f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. ?f n (s, s'))\<bar> < r"
+    using exist_N by blast
+  have "\<forall>n. ureal2real (?f n (s, s')) \<le> ureal2real (\<Squnion>n::\<nat>. ?f n (s, s'))"
+    by (meson SUP_upper UNIV_I ureal2real_mono)
+  then have P_N': "\<forall>n\<ge>N. ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')) - ureal2real (?f n (s, s')) < r"
+    using P_N by force
+  (* *)
+  have "\<forall>n\<ge>N. (ureal2real (Fwhile b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s')) - 
+     ureal2real (Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s'))) < r"
+    sorry
   show " \<exists>no::\<nat>. \<forall>n\<ge>no.
              \<bar>ureal2real (Fwhile b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) -
               ureal2real (Fwhile b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s'))\<bar> < r"
     apply (simp add: Fwhile_def)
+    sorry
   qed
 
 lemma iterate_continuous:
-  assumes "is_final_distribution (rfrel_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   (*
   shows "Fwhile   b P (Sup {(iterate n b P 0\<^sub>p) | n::nat. True}) = 
          Sup (Fwhile b P ` {(iterate n b P 0\<^sub>p) | n::nat. True})"

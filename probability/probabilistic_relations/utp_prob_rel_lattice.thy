@@ -93,9 +93,9 @@ definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1,
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = ((r * P + (1 - r) * Q))\<^sub>e"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
+(* definition pchoice' :: "'s rvhfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_prfun P) + (1 - r) * @(rfrel_of_prfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rvfun_of_prfun P) + (1 - r) * @(rvfun_of_prfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -365,20 +365,20 @@ end
 *)
 
 subsubsection \<open> Probability functions \<close>
-type_synonym ('s\<^sub>1, 's\<^sub>2) rfrel = "(\<real>, 's\<^sub>1 \<times> 's\<^sub>2) expr"
-type_synonym 's rfhrel = "('s, 's) rfrel"
+type_synonym ('s\<^sub>1, 's\<^sub>2) rvfun = "(\<real>, 's\<^sub>1 \<times> 's\<^sub>2) expr"
+type_synonym 's rvhfun = "('s, 's) rvfun"
 
 text \<open> Probability functions which map state space to a real number between 0 and 1 (and so ureal)\<close>
 type_synonym ('s\<^sub>1, 's\<^sub>2) prfun = "(ureal, 's\<^sub>1 \<times> 's\<^sub>2) expr"
 type_synonym 's prhfun = "('s, 's) prfun"
 
-definition prfun_of_rfrel:: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
-[ureal_defs]: "prfun_of_rfrel f = (real2ureal f)\<^sub>e "
+definition prfun_of_rvfun:: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
+[ureal_defs]: "prfun_of_rvfun f = (real2ureal f)\<^sub>e "
 
-thm "prfun_of_rfrel_def"
+thm "prfun_of_rvfun_def"
 
-definition rfrel_of_prfun where
-[ureal_defs]: "rfrel_of_prfun f = (ureal2real f)\<^sub>e "
+definition rvfun_of_prfun where
+[ureal_defs]: "rvfun_of_prfun f = (ureal2real f)\<^sub>e "
 
 subsection \<open> Syntax \<close>
 
@@ -407,7 +407,7 @@ abbreviation pskip\<^sub>_f ("II\<^sub>f") where
   "pskip\<^sub>_f \<equiv> \<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
 
 definition pskip :: "'s prhfun" ("II\<^sub>p") where
-[pfun_defs]: "pskip = prfun_of_rfrel (pskip\<^sub>_f)"
+[pfun_defs]: "pskip = prfun_of_rvfun (pskip\<^sub>_f)"
 
 adhoc_overloading
   uskip pskip
@@ -422,7 +422,7 @@ abbreviation passigns_f where
 "passigns_f \<sigma> \<equiv> \<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
 
 definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prfun" where 
-[pfun_defs]: "passigns \<sigma> = prfun_of_rfrel (passigns_f \<sigma>)"
+[pfun_defs]: "passigns \<sigma> = prfun_of_rvfun (passigns_f \<sigma>)"
 
 adhoc_overloading
   uassigns passigns
@@ -431,17 +431,17 @@ term "(s := e)::'s prhfun"
 term "(s := e)::'s rel"
 
 subsubsection \<open> Probabilistic choice \<close>
-abbreviation pchoice_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel" 
+abbreviation pchoice_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun" 
 ("(_ \<oplus>\<^sub>f\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where 
 "pchoice_f P r Q \<equiv> (r * P + (1 - r) * Q)\<^sub>e"
 
-definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
-[pfun_defs]: "pchoice P r Q = prfun_of_rfrel (pchoice_f (rfrel_of_prfun P) r (rfrel_of_prfun Q))"
+[pfun_defs]: "pchoice P r Q = prfun_of_rvfun (pchoice_f (rvfun_of_prfun P) r (rvfun_of_prfun Q))"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
+(* definition pchoice' :: "'s rvhfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_prfun P) + (1 - r) * @(rfrel_of_prfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rvfun_of_prfun P) + (1 - r) * @(rvfun_of_prfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -467,12 +467,12 @@ expr_ctr lift_pre
 
 subsubsection \<open> Conditional choice \<close>
 (* conditional choice *)
-abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel" 
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun" 
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 
 definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where 
-[pfun_defs]: "pcond b P Q \<equiv> prfun_of_rfrel (pcond_f (rfrel_of_prfun P) b (rfrel_of_prfun Q))"
+[pfun_defs]: "pcond b P Q \<equiv> prfun_of_rvfun (pcond_f (rvfun_of_prfun P) b (rvfun_of_prfun Q))"
 
 syntax 
   "_pcond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>c (_)/ then (_)/ else (_))" [0, 61, 60] 60) 
@@ -484,22 +484,22 @@ translations
 term "if\<^sub>c True then P else Q"
 
 subsubsection \<open> Sequential composition \<close>
-term "(rfrel_of_prfun (P::('s prhfun)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
+term "(rvfun_of_prfun (P::('s prhfun)))\<lbrakk>v\<^sub>0/\<^bold>v\<^sup>>\<rbrakk>"
 term "\<^bold>v\<^sup>>"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. (P\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup>>\<rbrakk>) * (Q\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup><\<rbrakk>))\<^sub>e"
-term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (rfrel_of_prfun (P::'s prhfun))"
+term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (rvfun_of_prfun (P::'s prhfun))"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e"
 term "(\<exists> v\<^sub>0. [ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>P\<rbrakk>\<^sub>P \<and> [ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>Q\<rbrakk>\<^sub>P)\<^sub>e"
 term "if True then a else b"
 term " 
-  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_prfun P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rfrel_of_prfun Q)))\<^sub>e"
+  (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rvfun_of_prfun P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rvfun_of_prfun Q)))\<^sub>e"
 thm "pred_seq_hom"
 
-abbreviation pseqcomp_f :: "'s rfhrel \<Rightarrow> 's rfhrel \<Rightarrow> 's rfhrel" (infixl ";\<^sub>f" 59) where 
+abbreviation pseqcomp_f :: "'s rvhfun \<Rightarrow> 's rvhfun \<Rightarrow> 's rvhfun" (infixl ";\<^sub>f" 59) where 
 "pseqcomp_f P Q \<equiv> (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e" 
 
 definition pseqcomp :: "'s prhfun \<Rightarrow> 's prhfun \<Rightarrow> 's prhfun" (*(infixl ";\<^sub>p" 59)*) where
-[pfun_defs]: "pseqcomp P Q = prfun_of_rfrel (pseqcomp_f (rfrel_of_prfun P) (rfrel_of_prfun Q))"
+[pfun_defs]: "pseqcomp P Q = prfun_of_rvfun (pseqcomp_f (rvfun_of_prfun P) (rvfun_of_prfun Q))"
 
 consts
   pseqcomp_c :: "'a \<Rightarrow> 'a \<Rightarrow> 'a" (infixl ";" 59)
@@ -507,7 +507,7 @@ adhoc_overloading
   pseqcomp_c pseqcomp_f and 
   pseqcomp_c pseqcomp
 
-term "(P::('s, 's) rfrel) ; Q"
+term "(P::('s, 's) rvfun) ; Q"
 term "(P::'s prhfun) ; Q"
 
 lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) = 1"
@@ -515,10 +515,10 @@ lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) =
 
 subsubsection \<open> Parallel composition \<close>
 
-abbreviation pparallel_f :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel" (infixl "\<parallel>\<^sub>f" 58)
+abbreviation pparallel_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun" (infixl "\<parallel>\<^sub>f" 58)
   where "pparallel_f P Q \<equiv> (\<^bold>N (P * Q)\<^sub>e)"
 
-abbreviation pparallel_f' :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel"
+abbreviation pparallel_f' :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun"
   where "pparallel_f' P Q \<equiv> ((P * Q) / (\<Sum>\<^sub>\<infinity> s'. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> Q)))\<^sub>e"
 
 lemma pparallel_f_eq: "pparallel_f P Q = pparallel_f' P Q"
@@ -529,17 +529,17 @@ text \<open> We provide four variants (different combinations of types for their
 composition for convenience and they use a same notation @{text "\<parallel>"}. All of them defines 
 probabilistic programs of type @{typ "('a\<^sub>1, 'a\<^sub>2) prfun"}.
 \<close>
-definition pparallel :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" (infixl "\<parallel>\<^sub>p" 58) where
-[pfun_defs]: "pparallel P Q = prfun_of_rfrel (pparallel_f P Q)"
+definition pparallel :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" (infixl "\<parallel>\<^sub>p" 58) where
+[pfun_defs]: "pparallel P Q = prfun_of_rvfun (pparallel_f P Q)"
 
 definition pparallel_pp :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
-[pfun_defs]: "pparallel_pp P Q = pparallel (rfrel_of_prfun P) (rfrel_of_prfun Q)"
+[pfun_defs]: "pparallel_pp P Q = pparallel (rvfun_of_prfun P) (rvfun_of_prfun Q)"
 
-definition pparallel_fp :: "('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
-[pfun_defs]: "pparallel_fp P Q = pparallel P (rfrel_of_prfun Q)"
+definition pparallel_fp :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
+[pfun_defs]: "pparallel_fp P Q = pparallel P (rvfun_of_prfun Q)"
 
-definition pparallel_pf :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rfrel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
-[pfun_defs]: "pparallel_pf P Q = pparallel (rfrel_of_prfun P) Q"
+definition pparallel_pf :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where
+[pfun_defs]: "pparallel_pf P Q = pparallel (rvfun_of_prfun P) Q"
 
 no_notation Sublist.parallel (infixl "\<parallel>" 50)
 consts
@@ -552,9 +552,9 @@ adhoc_overloading
   parallel_c pparallel_pf and
   parallel_c Sublist.parallel
 
-term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) rfrel))"
-term "((P::('s, 's) rfrel) \<parallel> (Q::('s, 's) prfun))"
-term "((P::('s, 's) prfun) \<parallel> (Q::('s, 's) rfrel))"
+term "((P::('s, 's) rvfun) \<parallel> (Q::('s, 's) rvfun))"
+term "((P::('s, 's) rvfun) \<parallel> (Q::('s, 's) prfun))"
+term "((P::('s, 's) prfun) \<parallel> (Q::('s, 's) rvfun))"
 term "((P::('s, 's) prfun) \<parallel> (Q::('s, 's) prfun))"
 term "((P::'s list) \<parallel> Q)"
 term "([] \<parallel> [a])"
@@ -746,9 +746,9 @@ definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1,
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = ((r * P + (1 - r) * Q))\<^sub>e"
 
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
+(* definition pchoice' :: "'s rvhfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_prfun P) + (1 - r) * @(rfrel_of_prfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rvfun_of_prfun P) + (1 - r) * @(rvfun_of_prfun Q))\<^sub>e"
 *)
 
 syntax 
@@ -1000,9 +1000,9 @@ definition pchoice :: "('s\<^sub>1, 's\<^sub>2) pfun \<Rightarrow> ('s\<^sub>1, 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
 [pfun_defs]: "pchoice P r Q = (ereal2ureal (r * P + (1 - r) * Q)\<^sub>e)\<^sub>e"
 *)
-(* definition pchoice' :: "'s rfhrel \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
+(* definition pchoice' :: "'s rvhfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where
-[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rfrel_of_prfun P) + (1 - r) * @(rfrel_of_prfun Q))\<^sub>e"
+[pfun_defs]: "pchoice' r P Q = real2ureal (r * @(rvfun_of_prfun P) + (1 - r) * @(rvfun_of_prfun Q))\<^sub>e"
 *)
 (*
 syntax 
