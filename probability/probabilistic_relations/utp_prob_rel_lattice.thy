@@ -436,9 +436,9 @@ abbreviation pchoice_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^su
 ("(_ \<oplus>\<^sub>f\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where 
 "pchoice_f P r Q \<equiv> (r * P + (1 - r) * Q)\<^sub>e"
 
-definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
+definition pchoice :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
   ("(_ \<oplus>\<^bsub>_\<^esub> _)" [61, 0, 60] 60) where
-[pfun_defs]: "pchoice P r Q = prfun_of_rvfun (pchoice_f (rvfun_of_prfun P) r (rvfun_of_prfun Q))"
+[pfun_defs]: "pchoice P r Q = prfun_of_rvfun (pchoice_f (rvfun_of_prfun P) (rvfun_of_prfun r) (rvfun_of_prfun Q))"
 
 (* definition pchoice' :: "'s rvhfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun \<Rightarrow> ('s, 's) prfun" 
     ("(if\<^sub>p (_)/ then (_)/ else (_))" [0, 0, 167] 167) where

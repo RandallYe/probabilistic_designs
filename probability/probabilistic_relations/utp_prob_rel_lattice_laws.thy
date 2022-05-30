@@ -164,6 +164,19 @@ lemma ureal2real_eq:
   shows "a = b"
   by (metis assms linorder_neq_iff ureal2real_mono_strict)
 
+lemma ureal_1_minus_1_minus_r_r: 
+  "((1::\<real>) - rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'b. (1::ureal) - r \<s>) (a, b)) = rvfun_of_prfun r (a, b)"
+  apply (simp add: ureal_defs)
+  by (smt (verit, ccfv_threshold) Orderings.order_eq_iff abs_ereal_ge0 atLeastAtMost_iff 
+      ereal_diff_positive ereal_less_eq(1) ereal_times(1) max_def minus_ureal.rep_eq one_ureal.rep_eq 
+      real_ereal_1 real_of_ereal_minus ureal2ereal)
+
+lemma ureal_zero_0: "real_of_ereal (ureal2ereal (0::ureal)) = 0"
+  by (simp add: zero_ureal.rep_eq)
+
+lemma ureal_one_1: "real_of_ereal (ureal2ereal (1::ureal)) = 1"
+  by (simp add: one_ureal.rep_eq)
+
 subsection \<open> Infinite sum \<close>
 lemma rvfun_prob_sum1_summable:
   assumes "is_final_distribution p"
@@ -204,6 +217,17 @@ proof -
     apply (rule ccontr)
     by (metis dist infsum_not_exists zero_neq_one)
 qed
+
+lemma pdrfun_prob_sum1_summable':
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  shows "\<forall>s. 0 \<le> f s \<and> f s \<le> 1"
+        "\<forall>s. 0 \<le> rvfun_of_prfun f s \<and> rvfun_of_prfun f s \<le> 1"
+        "(\<Sum>\<^sub>\<infinity> s. rvfun_of_prfun f (s\<^sub>1, s)) = (1::\<real>)"
+        "(\<lambda>s. rvfun_of_prfun f (s\<^sub>1, s)) summable_on UNIV"
+  apply (simp add: assms pdrfun_prob_sum1_summable(1))
+  using assms rvfun_prob_sum1_summable(1) apply blast
+  apply (simp add: assms rvfun_prob_sum1_summable(2))
+  by (simp add: assms rvfun_prob_sum1_summable(3))
 
 lemma pdrfun_product_summable:
   assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
@@ -406,6 +430,99 @@ proof (rule allI)
     by linarith
 qed
 
+lemma prfun_in_0_1: "(curry (rvfun_of_prfun Q)) x y \<ge> 0 \<and> (curry (rvfun_of_prfun Q)) x y \<le> 1"
+  by (simp add: is_prob ureal_is_prob)
+
+lemma prfun_in_0_1': "(rvfun_of_prfun Q) s \<ge> 0 \<and> (rvfun_of_prfun Q) s \<le> 1"
+  apply (simp add: ureal_defs)
+  apply (auto)
+  using real_of_ereal_pos ureal2ereal apply fastforce
+  using ureal2real_def ureal_upper_bound by auto
+
+(* The first component of pairs, which infsum is over, can be discarded. *)
+(* The basic observation is that 
+    A = {(s::'a, v\<^sub>0::'a) | s v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}
+is resulted from an injective function 
+  (\<lambda>v\<^sub>0. (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)) 
+from (UNIV::'a set) which the right summation is over.
+
+Informally speaking, every v\<^sub>0 in UNIV has a corresponding (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0) in A, and no more, 
+thus summations are equal. 
+*)
+lemma prfun_infsum_over_pair_fst_discard:
+  assumes "is_final_distribution (rvfun_of_prfun (P::'a prhfun))"
+  shows "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a) \<in> {(s::'a, v\<^sub>0::'a) | s v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}. rvfun_of_prfun P (s\<^sub>1, v\<^sub>0)) = 
+   (\<Sum>\<^sub>\<infinity> v\<^sub>0::'a. rvfun_of_prfun P (s\<^sub>1, v\<^sub>0))"
+  apply (simp add: pdrfun_prob_sum1_summable' assms)
+  \<comment> \<open> Definition of @{term "infsum"} \<close>
+  apply (rule infsumI)
+  apply (simp add: has_sum_def)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+proof -
+  fix S::"\<bbbP> \<real>"
+  assume a1: "open S"
+  assume a2: "(1::\<real>) \<in> S"
+  \<comment> \<open>How to improve this proof? Forward proof. Focus on the goal f0 9 lines below \<close>
+  have "(\<Sum>\<^sub>\<infinity>s::'a. rvfun_of_prfun P (s\<^sub>1, s)) = (1::\<real>)"
+    by (simp add: pdrfun_prob_sum1_summable' assms)
+  then have "has_sum (\<lambda>s::'a. rvfun_of_prfun P (s\<^sub>1, s)) UNIV (1::\<real>)"
+    by (metis has_sum_infsum infsum_not_exists zero_neq_one)
+  then have "(sum (\<lambda>s::'a. rvfun_of_prfun P (s\<^sub>1, s)) \<longlongrightarrow> (1::\<real>)) (finite_subsets_at_top UNIV)"
+    using has_sum_def by blast
+  then have "\<forall>\<^sub>F x::\<bbbP> 'a in finite_subsets_at_top UNIV. (\<Sum>s::'a\<in>x. rvfun_of_prfun P (s\<^sub>1, s)) \<in> S"
+    using a1 a2 tendsto_def by blast
+  then have f0: "\<exists>X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+      (\<Sum>s::'a\<in>Y. rvfun_of_prfun P (s\<^sub>1, s)) \<in> S)"
+    by (simp add: eventually_finite_subsets_at_top)
+  then show "\<exists>X::'a rel. finite X \<and> X \<subseteq> {uu::'a \<times> 'a. \<exists>v\<^sub>0::'a. uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)} \<and>
+          (\<forall>Y::'a rel.
+              finite Y \<and> X \<subseteq> Y \<and> Y \<subseteq> {uu::'a \<times> 'a. \<exists>v\<^sub>0::'a. uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)} \<longrightarrow>
+              (\<Sum>x::'a \<times> 'a\<in>Y. case x of (s::'a, v\<^sub>0::'a) \<Rightarrow> rvfun_of_prfun P (s\<^sub>1, v\<^sub>0)) \<in> S)"
+  proof -
+    assume a11: "\<exists>X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+      (\<Sum>s::'a\<in>Y. rvfun_of_prfun P (s\<^sub>1, s)) \<in> S)"
+    have f1: "finite
+       {uu::'a \<times> 'a. \<exists>v\<^sub>0::'a. v\<^sub>0 \<in> (SOME X::\<bbbP> 'a.
+          finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> (\<Sum>s::'a\<in>Y. rvfun_of_prfun P (s\<^sub>1, s)) \<in> S))
+        \<and> uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)}"
+      apply (subst finite_Collect_bounded_ex)
+      apply (smt (verit, ccfv_threshold) CollectD a11 rev_finite_subset someI_ex subset_iff)
+      by (auto)
+    show ?thesis
+      (* Construct a witness from existing X from f0 using SOME (indifinite description) *)
+      apply (rule_tac x = "{(put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0) | v\<^sub>0 . 
+        v\<^sub>0 \<in> (SOME X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> 
+        (\<Sum>s::'a\<in>Y. rvfun_of_prfun P (s\<^sub>1, s)) \<in> S))}" in exI)
+      apply (rule conjI)
+      using f1 apply (smt (verit, best) Collect_mono rev_finite_subset)
+      apply (auto)
+    proof -
+      fix Y::"'a rel"
+      assume a111: "finite Y"
+      assume a112: "{uu::'a \<times> 'a.
+        \<exists>v\<^sub>0::'a.
+           uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0) \<and>
+           v\<^sub>0 \<in> (SOME X::\<bbbP> 'a. finite X \<and> (\<forall>Y::\<bbbP> 'a. finite Y \<and> X \<subseteq> Y \<longrightarrow> (\<Sum>s::'a\<in>Y. rvfun_of_prfun P (s\<^sub>1, s)) \<in> S))}
+       \<subseteq> Y"
+      assume a113: "Y \<subseteq> {uu::'a \<times> 'a. \<exists>v\<^sub>0::'a. uu = (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)}"
+      have f11: "(\<Sum>s::'a\<in>Range Y. rvfun_of_prfun P (s\<^sub>1, s)) \<in> S"
+        using a11 a111 a112
+        by (smt (verit, del_insts) Range_iff finite_Range mem_Collect_eq subset_iff verit_sko_ex_indirect)
+      have f12: "inj_on (\<lambda>v\<^sub>0. (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0)) (Range Y)"
+        using inj_on_def by blast
+      have f13: "(\<Sum>x::'a \<times> 'a\<in>Y. case x of (s::'a, v\<^sub>0::'a) \<Rightarrow> rvfun_of_prfun P (s\<^sub>1, v\<^sub>0)) = 
+            (\<Sum>s::'a\<in>Range Y. rvfun_of_prfun P (s\<^sub>1, s))"
+        apply (rule sum.reindex_cong[where l = "(\<lambda>v\<^sub>0. (put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0), v\<^sub>0))" and B = "Range Y"]) 
+        apply (simp add: f12)
+        using a113 by (auto)
+      show "(\<Sum>x::'a \<times> 'a\<in>Y. case x of (s::'a, v\<^sub>0::'a) \<Rightarrow> rvfun_of_prfun P (s\<^sub>1, v\<^sub>0)) \<in> S"
+        using f11 f13 by presburger
+    qed
+  qed
+qed
+
 subsection \<open> Probabilistic programs \<close>
 subsubsection \<open> Bottom and Top \<close>
 lemma ureal_bot_zero: "\<bottom> = \<^bold>0"
@@ -550,34 +667,57 @@ lemma rvfun_pchoice_inverse_c':
   apply (simp add: assms(1) assms(2) assms(3) is_prob)
   by (simp add: assms(1) assms(2) assms(3) convex_bound_le is_prob)
 
+theorem prfun_pchoice_altdef: 
+  "if\<^sub>p r then P else Q 
+    = prfun_of_rvfun (@(rvfun_of_prfun r) * @(rvfun_of_prfun P) + (1 - @(rvfun_of_prfun (r))) * @(rvfun_of_prfun Q))\<^sub>e"
+  by (simp add: pfun_defs ureal_defs)
+
 theorem prfun_pchoice_commute: "if\<^sub>p r then P else Q = if\<^sub>p 1 - r then Q else P"
   apply (simp add: pfun_defs)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  by (auto)
+  apply (expr_auto)
+  apply (simp add: ureal_1_minus_1_minus_r_r)
+  apply (simp add: ureal_defs)
+  apply (rule disjI2)
+  by (metis Orderings.order_eq_iff abs_ereal_ge0 atLeastAtMost_iff ereal_diff_positive ereal_less_eq(1) 
+      ereal_times(1) max.absorb2 minus_ureal.rep_eq one_ureal.rep_eq real_ereal_1 real_of_ereal_minus 
+      ureal2ereal)
 
 theorem prfun_pchoice_zero: "if\<^sub>p 0 then P else Q = Q"
   apply (simp add: pfun_defs)
-  by (simp add: SEXP_def prfun_inverse)
+  apply (simp add: ureal_defs)
+  apply (simp add: ureal_zero_0)
+  apply (subst fun_eq_iff, auto)
+  by (metis abs_ereal_ge0 add_0 atLeastAtMost_iff ereal_less_eq(1) ereal_real ereal_times(1) 
+      max.absorb2 max_min_same(1) min.commute plus_ureal.rep_eq ureal2ereal ureal2ereal_inverse 
+      zero_ureal.rep_eq)
+
+theorem prfun_pchoice_one: "if\<^sub>p 1 then P else Q = P"
+  apply (simp add: pfun_defs)
+  apply (simp add: ureal_defs)
+  apply (simp add: ureal_one_1)
+  apply (subst fun_eq_iff, auto)
+  by (metis abs_ereal_ge0 add_0 atLeastAtMost_iff ereal_less_eq(1) ereal_real ereal_times(1) 
+      max.absorb2 max_min_same(1) min.commute plus_ureal.rep_eq ureal2ereal ureal2ereal_inverse 
+      zero_ureal.rep_eq)
 
 theorem prfun_pchoice_zero': 
-  fixes w\<^sub>1 :: "'a \<Rightarrow> \<real>"
+  fixes w\<^sub>1 :: "'a \<Rightarrow> ureal"
   assumes "`w\<^sub>1 = 0`"
   shows "P \<oplus>\<^bsub>w\<^sub>1\<^sup>\<Up>\<^esub> Q = Q"
   apply (simp add: pfun_defs)
 proof -
-  have f0: "\<forall>s. w\<^sub>1 s = 0"
-    by (metis (mono_tags, lifting) SEXP_def assms taut_def)
-  show "prfun_of_rvfun (pchoice_f (rvfun_of_prfun P) (w\<^sub>1\<^sup>\<Up>) (rvfun_of_prfun Q)) = Q"
-    apply (simp add: f0 SEXP_def)
+  have f1: "rvfun_of_prfun (w\<^sub>1\<^sup>\<Up>) = (0)\<^sub>e"
+    apply (simp add: ureal_defs)
+    apply (subst fun_eq_iff, auto)
+    by (metis (mono_tags, lifting) SEXP_def assms real_of_ereal_0 taut_def zero_ureal.rep_eq)
+  show "prfun_of_rvfun (pchoice_f (rvfun_of_prfun P) (rvfun_of_prfun (w\<^sub>1\<^sup>\<Up>)) (rvfun_of_prfun Q)) = Q"
+    apply (simp add: f1 SEXP_def)
     by (simp add: prfun_inverse)
 qed
 
-theorem prfun_pchoice_one: "if\<^sub>p 1 then P else Q = P"
-  apply (simp add: pfun_defs)
-  by (simp add: SEXP_def prfun_inverse)
-
 theorem prfun_pchoice_assoc:
-  fixes w\<^sub>1 :: "'a \<Rightarrow> \<real>"
+  fixes w\<^sub>1 :: "'a \<Rightarrow> ureal"
   assumes "`0 \<le> w\<^sub>1 \<and> w\<^sub>1 \<le> 1`"
   assumes "`0 \<le> w\<^sub>2 \<and> w\<^sub>2 \<le> 1`"
   assumes "`0 \<le> r\<^sub>1 \<and> r\<^sub>1 \<le> 1`"
@@ -586,7 +726,7 @@ theorem prfun_pchoice_assoc:
   shows "P \<oplus>\<^bsub>w\<^sub>1\<^sup>\<Up>\<^esub> (Q \<oplus>\<^bsub>w\<^sub>2\<^sup>\<Up>\<^esub> R) = (P \<oplus>\<^bsub>r\<^sub>1\<^sup>\<Up>\<^esub> Q) \<oplus>\<^bsub>r\<^sub>2\<^sup>\<Up>\<^esub> R" (is "?lhs = ?rhs")
 proof -
   have f0: "`((1 - w\<^sub>1) * (1 - w\<^sub>2)) = (1 - w\<^sub>1 - w\<^sub>2 + w\<^sub>1 * w\<^sub>2)`"
-    apply (simp add: taut_def)
+    apply (simp add: taut_def, auto)
     by (smt (verit, del_insts) left_diff_distrib mult.commute mult_cancel_right1)
   then have f1: "`(1 - w\<^sub>1 - w\<^sub>2 + w\<^sub>1 * w\<^sub>2) = (1 - r\<^sub>2)`"
     by (smt (verit, ccfv_threshold) SEXP_def assms(4) taut_def)
@@ -1067,214 +1207,99 @@ proof -
     by (simp add: assms rvfun_prob_sum1_summable(2))
 qed
 
-theorem prel_seqcomp_left_one_point: "x := e ; P = prel_of_rfrel (([ x\<^sup>< \<leadsto> e\<^sup>< ] \<dagger> @(rfrel_of_prel P)))\<^sub>e"
+theorem prfun_seqcomp_left_one_point: "x := e ; P = prfun_of_rvfun (([ x\<^sup>< \<leadsto> e\<^sup>< ] \<dagger> @(rvfun_of_prfun P)))\<^sub>e"
   apply (simp add: pfun_defs expr_defs)
   apply (subst rvfun_inverse)
   apply (simp add: dist_defs expr_defs)
-  apply (rel_auto)
-  apply (simp add: infsum_singleton)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (rel_auto)
   by (simp add: infsum_mult_singleton_left_1)
 
-lemma prel_infsum_over_pair_subset_1:
-  "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a). rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 1"
+lemma prfun_infsum_over_pair_subset_1:
+  assumes "is_final_distribution (rvfun_of_prfun (P::'a prhfun))"
+  shows "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a). rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 1"
 proof -
-  have "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a). rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 
-        (\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a) \<in> {(s::'a, v\<^sub>0::'a) | s v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}. rfrel_of_prel P (s\<^sub>1, v\<^sub>0))"
+  have f1: "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a). rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 
+        (\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a) \<in> {(s::'a, v\<^sub>0::'a) | s v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}. rvfun_of_prfun P (s\<^sub>1, v\<^sub>0))"
     apply (rule infsum_cong_neutral)
     apply force
     using DiffD2 prod.collapse apply fastforce
     by force
-  then show ?thesis
-    by (metis prel_infsum_over_pair_fst_discard prel_sum_1)
+  have f2: "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a) \<in> {(s::'a, v\<^sub>0::'a) | s v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}. rvfun_of_prfun P (s\<^sub>1, v\<^sub>0)) = 1"
+    apply (subst prfun_infsum_over_pair_fst_discard)
+    apply (simp add: assms)
+    by (simp add: assms rvfun_prob_sum1_summable(2))
+  show ?thesis
+    using f1 f2 by presburger
 qed
 
-lemma prel_infsum_swap:
- "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 
-  (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. \<Sum>\<^sub>\<infinity>s::'a. rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))"
+lemma prfun_infsum_swap:
+  assumes "is_final_distribution (rvfun_of_prfun (P::'a prhfun))"
+  shows "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 
+  (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. \<Sum>\<^sub>\<infinity>s::'a. rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))"
   apply (rule infsum_swap_banach)
   apply (simp add: summable_on_def)
   apply (rule_tac x = "1" in exI)
-  by (smt (verit, best) has_sum_infsum infsum_cong infsum_not_exists prel_infsum_over_pair_subset_1 split_cong)
+  by (smt (verit, best) assms has_sum_infsum infsum_cong infsum_not_exists prfun_infsum_over_pair_subset_1 split_cong)
 
-lemma prel_infsum_infsum_subset_1:
-  "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) =
+lemma prfun_infsum_infsum_subset_1:
+  assumes "is_final_distribution (rvfun_of_prfun (P::'a prhfun))"
+  shows "(\<Sum>\<^sub>\<infinity>s::'a. \<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) =
        (1::\<real>)"
-  apply (simp add: prel_infsum_swap)
+  apply (simp add: assms prfun_infsum_swap)
 proof -
-  have f0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>s::'a. rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))) 
-    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * (\<Sum>\<^sub>\<infinity>s::'a. (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))))"
+  have f0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>s::'a. rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))) 
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * (\<Sum>\<^sub>\<infinity>s::'a. (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>)))))"
     apply (subst infsum_cmult_right)
     apply (simp add: infsum_singleton_summable)
     by (simp)
-  then have f1: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * 1))"
+  then have f1: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * 1))"
     by (simp add: infsum_singleton)
-  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. \<Sum>\<^sub>\<infinity>s::'a. rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = (1::\<real>)"
-    using f0 prel_sum_1 by force
+  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. \<Sum>\<^sub>\<infinity>s::'a. rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = (1::\<real>)"
+    using f0 assms rvfun_prob_sum1_summable(2) by force
 qed 
 
-
-term "prel_of_rfrel (\<lbrakk> ($x\<^sup>< = e) \<rbrakk>\<^sub>\<I>\<^sub>e)"
-
-(* This realed function is not a distribution *)
-(*
-lemma "is_final_distribution (\<lbrakk> ($x\<^sup>< = e\<^sup><) \<rbrakk>\<^sub>\<I>\<^sub>e)"
-  apply (expr_auto)
-  apply (simp add: dist_defs)
-  apply (auto)
-*)
-
-(*
-theorem prel_right_one_point: "P ; prel_of_rfrel (\<lbrakk> ($x\<^sup>< = e\<^sup><) \<rbrakk>\<^sub>\<I>\<^sub>e) 
-    = prel_of_rfrel (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(rfrel_of_prel P)))\<^sub>e"
-  apply (simp add: pfun_defs expr_defs)
-  apply (subst rvfun_inverse)
-   apply (simp add: dist_defs expr_defs)
-   apply (auto)
-  sorry
-*)
-
-(* This is not a valid law. *)
-(*
-theorem prel_right_one_point: "P ; x := e = prel_of_rfrel (([ x\<^sup>> \<leadsto> e\<^sup>> ] \<dagger> @(rfrel_of_prel P)))\<^sub>e"
+theorem prel_seqcomp_assoc: 
+  assumes "is_final_distribution (rvfun_of_prfun P)"
+          "is_final_distribution (rvfun_of_prfun Q)"
+          "is_final_distribution (rvfun_of_prfun R)"
+  shows "(P::'a prhfun) ; (Q ; R) = (P ; Q) ; R"
   apply (simp add: pfun_defs)
-  apply (simp add: prel_set_conv_assign)
-  apply (expr_auto add: rel)
-  apply (simp add: infsum_mult_subset_right)
-  apply (subst prel_of_rfrel_inject)
-  apply (simp add: dist_defs expr_defs)
-  apply (rel_auto)
-      apply (simp add: infsum_nonneg prel_in_0_1')
-     apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) 
-      \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rfrel_of_prel P (s\<^sub>1, v\<^sub>0))")
-  apply (simp add: prel_sum_1)
-     apply (rule infsum_mono)
-  apply (simp add: prel_mult_subset_right_summable)
-  apply (simp add: prel_summable)
-  apply (simp add: prel_in_0_1')
-  apply (simp add: prel_infsum_infsum_subset_1)
-  apply (simp add: dist_defs expr_defs)
-  apply (auto)
-  apply (simp add: prel_in_0_1')+
-  apply (simp add: lens_defs)
-     apply (rule infsumI)
-    apply (simp add: has_sum_def)
-    apply (subst topological_tendstoI)
-    apply (auto)
-    apply (simp add: eventually_finite_subsets_at_top)
-    apply (rule_tac x = "{v\<^sub>0. put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s}" in exI)
-     apply (auto)
-  sledgehammer
-    apply (subgoal_tac "(\<Sum>v\<^sub>0::'a\<in>Y.
-        (if put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1) = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
-        (if put\<^bsub>y\<^esub> v\<^sub>0 (f v\<^sub>0) = put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1)) (f (put\<^bsub>x\<^esub> s\<^sub>1 (e s\<^sub>1))) then 1::\<real> else (0::\<real>))) 
-      = 1")
-    apply presburger
-    apply (simp add: sum.remove)
-    apply (subst sum_nonneg_eq_0_iff)
-    apply (simp)+
-    apply force
-  apply (subst infsum_mult_singleton_right)
-  apply (simp add: infsum_mult_singleton_right_1 prel_in_0_1')
-  apply (simp add: prel_infsum_infsum_mult_singleton_1)
-  apply (simp add: dist_defs expr_defs)
-  apply (auto)
-  using prel_in_0_1' apply blast+
-  apply (simp add: lens_defs)
-  apply (simp add: prel_sum_1)
-  apply (rel_auto)
-  by (simp add: infsum_mult_singleton_left)
-*)
-(* In order to prove this law, we need to restrict P Q to distributions *)
-(*
-lemma passign_pif_simp:
-  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> 1"
-  shows "(x := c) ; (if\<^sub>p (r) then P else Q) = 
-    prel_of_rfrel (r * ([ x\<^sup>> \<leadsto> c\<^sup>> ] \<dagger> @(rfrel_of_prel P)) +  (1-r) * ([ x\<^sup>> \<leadsto> c\<^sup>> ] \<dagger> @(rfrel_of_prel Q)))\<^sub>e"
-  apply (simp add: pfun_defs expr_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (subst rvfun_inverse)
-   apply (simp add: dist_defs expr_defs)
-  apply (rel_auto)
-  apply (simp add: infsum_singleton)
+   apply (expr_auto add: dist_defs)
+  apply (simp add: infsum_nonneg is_prob ureal_is_prob)
+   apply (subst rvfun_infsum_pcomp_lessthan_1)
+  apply (simp add: assms)+
   apply (subst rvfun_inverse)
-   apply (simp add: dist_defs expr_defs)
-   apply (auto)
-     apply (simp add: assms prel_in_0_1')
-  apply (simp add: assms convex_bound_le prel_in_0_1')
-  apply (subst prel_of_rfrel_inject)
-    apply (simp add: dist_defs expr_defs)
-    apply (auto)
-     apply (simp add: assms infsum_nonneg rfrel_of_prel_in_0_1)
-  apply (rel_auto)
-  apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
-          (if put\<^bsub>x\<^esub> a (c a) = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
-          (r (v\<^sub>0, b) * rfrel_of_prel P (v\<^sub>0, b) + ((1::\<real>) - r (v\<^sub>0, b)) * rfrel_of_prel Q (v\<^sub>0, b))) = 1")
-     apply simp
-  apply (rule infsumI)
-    apply (simp add: has_sum_def)
-    apply (subst topological_tendstoI)
-    apply (auto)
-    apply (simp add: eventually_finite_subsets_at_top)
-    apply (rule_tac x = "{put\<^bsub>x\<^esub> a (c a)}" in exI)
-    apply (auto)
-  apply (subgoal_tac "(\<Sum>v\<^sub>0::'a\<in>Y.
-          (if put\<^bsub>x\<^esub> a (c a) = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
-          (r (v\<^sub>0, b) * rfrel_of_prel P (v\<^sub>0, b) + ((1::\<real>) - r (v\<^sub>0, b)) * rfrel_of_prel Q (v\<^sub>0, b))) 
-      = 1")
-    apply presburger
-    apply (simp add: sum.remove)
-    apply (subgoal_tac "(\<Sum>v\<^sub>0::'a\<in>Y - {put\<^bsub>x\<^esub> a (c a)}.
-          (if put\<^bsub>x\<^esub> a (c a) = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
-          (r (v\<^sub>0, b) * rfrel_of_prel P (v\<^sub>0, b) + ((1::\<real>) - r (v\<^sub>0, b)) * rfrel_of_prel Q (v\<^sub>0, b))) = 0")
-    apply (subgoal_tac "r (put\<^bsub>x\<^esub> a (c a), b) * rfrel_of_prel P (put\<^bsub>x\<^esub> a (c a), b) + 
-      ((1::\<real>) - r (put\<^bsub>x\<^esub> a (c a), b)) * rfrel_of_prel Q (put\<^bsub>x\<^esub> a (c a), b) = 1") 
-    defer
-    apply (smt (verit) DiffE mult_eq_0_iff singleton_iff sum.not_neutral_contains_not_neutral)
-*)
-
-theorem prel_seqcomp_assoc: "(P::'a phrel) ; (Q ; R) = (P ; Q) ; R"
-  apply (simp add: pfun_defs)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
-  apply (subst rvfun_inverse)
-  apply (expr_auto add: dist_defs)
-  apply (simp add: infsum_nonneg prel_in_0_1')
-  apply (subst prel_infsum_pcomp_lessthan_1)
-  apply (simp add: prel_is_dist)+
-  apply (simp add: prel_infsum_pcomp_sum_1 prel_is_dist)
-  apply (subst rvfun_inverse)
-  apply (expr_auto add: dist_defs)
-  apply (simp add: infsum_nonneg prel_in_0_1')
-  apply (subst prel_infsum_pcomp_lessthan_1)
-  apply (simp add: prel_is_dist)+
-  apply (simp add: prel_infsum_pcomp_sum_1 prel_is_dist)
+  using assms(1) rvfun_seqcomp_is_prob ureal_is_prob apply blast
   apply (expr_auto)
 proof -
   fix a and b :: "'a"
-  let ?q = "\<lambda>(v\<^sub>0, b). (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b))"
-  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rfrel_of_prel P (a, v\<^sub>0) *
-          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b)))"
+  let ?q = "\<lambda>(v\<^sub>0, b). (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b))"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rvfun_of_prfun P (a, v\<^sub>0) *
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b)))"
   let ?lhs' = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.(\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a.  
-      rfrel_of_prel P (a, v\<^sub>0) * rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b)))"
+      rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b)))"
   let ?rhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
-          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel P (a, v\<^sub>0') * rfrel_of_prel Q (v\<^sub>0', v\<^sub>0)) 
-          * rfrel_of_prel R (v\<^sub>0, b))"
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun P (a, v\<^sub>0') * rvfun_of_prfun Q (v\<^sub>0', v\<^sub>0)) 
+          * rvfun_of_prfun R (v\<^sub>0, b))"
   let ?rhs' = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. 
-          rfrel_of_prel P (a, v\<^sub>0') * rfrel_of_prel Q (v\<^sub>0', v\<^sub>0) * rfrel_of_prel R (v\<^sub>0, b)))"
+          rvfun_of_prfun P (a, v\<^sub>0') * rvfun_of_prfun Q (v\<^sub>0', v\<^sub>0) * rvfun_of_prfun R (v\<^sub>0, b)))"
 
-  have lhs_1: "(\<forall>v\<^sub>0::'a. rfrel_of_prel P (a, v\<^sub>0) *
-          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b))
+  have lhs_1: "(\<forall>v\<^sub>0::'a. rvfun_of_prfun P (a, v\<^sub>0) *
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b))
       = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. 
-          rfrel_of_prel P (a, v\<^sub>0) * rfrel_of_prel Q (v\<^sub>0, v\<^sub>0') * rfrel_of_prel R (v\<^sub>0', b)))"
+          rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b)))"
     apply (rule allI)
     by (metis (no_types, lifting) ab_semigroup_mult_class.mult_ac(1) infsum_cmult_right' infsum_cong)
   then have lhs_eq: "?lhs = ?lhs'"
     by presburger
 
-  have rhs_1: "(\<forall>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rfrel_of_prel P (a, v\<^sub>0') * rfrel_of_prel Q (v\<^sub>0', v\<^sub>0)) 
-          * rfrel_of_prel R (v\<^sub>0, b)
+  have rhs_1: "(\<forall>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun P (a, v\<^sub>0') * rvfun_of_prfun Q (v\<^sub>0', v\<^sub>0)) 
+          * rvfun_of_prfun R (v\<^sub>0, b)
       = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. 
-          rfrel_of_prel P (a, v\<^sub>0') * rfrel_of_prel Q (v\<^sub>0', v\<^sub>0) * rfrel_of_prel R (v\<^sub>0, b)))"
+          rvfun_of_prfun P (a, v\<^sub>0') * rvfun_of_prfun Q (v\<^sub>0', v\<^sub>0) * rvfun_of_prfun R (v\<^sub>0, b)))"
     apply (rule allI)
     by (metis (mono_tags, lifting) infsum_cmult_left' infsum_cong)
   then have rhs_eq: "?rhs = ?rhs'"
@@ -1287,35 +1312,42 @@ proof -
     apply (rule conjI)
     apply (auto)
     apply (subst abs_of_nonneg)
-    apply (simp add: prel_in_0_1')
+    apply (simp add: is_prob ureal_is_prob)
     apply (subst mult.assoc)
-    apply (rule summable_on_cmult_right)
-    apply (rule prel_product_summable')
-    apply (simp add: prel_is_dist)+
+     apply (rule summable_on_cmult_right)
+     apply (rule rvfun_product_summable')
+    apply (simp add: assms)+
     apply (subst abs_of_nonneg)
+     apply (subst abs_of_nonneg)
+      apply (simp add: is_prob ureal_is_prob)
+    apply (simp add: assms(1) assms(2) assms(3) infsum_nonneg rvfun_prob_sum1_summable(1))
     apply (subst abs_of_nonneg)
-    apply (simp add: prel_in_0_1')
-    apply (simp add: infsum_nonneg prel_in_0_1')
-    apply (subst abs_of_nonneg)
-    apply (simp add: prel_in_0_1')
+    apply (simp add: is_prob ureal_is_prob)
     apply (subst mult.assoc)
     apply (subst infsum_cmult_right)
-    apply (rule prel_product_summable')
-    apply (simp add: prel_is_dist)+
+    apply (rule rvfun_product_summable')
+    apply (simp add: assms)+
     apply (subst summable_on_iff_abs_summable_on_real)
-    apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s::'a. rfrel_of_prel P (a, s)"])
-    apply (metis prel_summable_on_subset summable_on_iff_abs_summable_on_real)
-    apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>y::'a. rfrel_of_prel Q (x, y) * rfrel_of_prel R (y, b)) \<le> 1")
-    apply (simp add: infsum_nonneg mult_right_le_one_le prel_in_0_1')
-    apply (subst prel_infsum_pcomp_lessthan_1)
-    by (simp add: prel_is_dist)+
+    apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s::'a. rvfun_of_prfun P (a, s)"])
+    using assms(1) summable_on_iff_abs_summable_on_real apply (metis pdrfun_prob_sum1_summable'(4))
+    apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>y::'a. rvfun_of_prfun Q (x, y) * rvfun_of_prfun R (y, b)) \<le> 1")
+    using infsum_nonneg mult_right_le_one_le prfun_in_0_1'
+    apply (smt (verit, ccfv_SIG) mult_nonneg_nonneg real_norm_def)
+    apply (subst rvfun_infsum_pcomp_lessthan_1)
+    by (simp add: assms)+
 
   then show "?lhs = ?rhs"
     using lhs_eq rhs_eq by presburger
 qed
 
-theorem "P ; (if\<^sub>p r then Q else R) = (if\<^sub>p r then (P ; Q) else (P ; R))"
-  oops
+theorem 
+  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> (1::\<real>)"
+  shows "P ; (if\<^sub>p (r\<^sup>\<Up>) then Q else R) = (if\<^sub>p (r\<^sup>\<Up>) then (P ; Q) else (P ; R))"
+  apply (simp add: prfun_pchoice_altdef pseqcomp_def)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (subst rvfun_pchoice_inverse)
+  apply (simp add: ureal_is_prob)+
+  apply (simp add: assms)
 
 subsection \<open> Chains \<close>
 theorem increasing_chain_mono:
