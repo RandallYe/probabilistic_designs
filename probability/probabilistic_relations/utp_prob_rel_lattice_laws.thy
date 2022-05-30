@@ -35,6 +35,16 @@ lemma ureal_lower_bound: "ureal2real x \<ge> 0"
 lemma ureal_upper_bound: "ureal2real x \<le> 1"
   using real_of_ereal_le_1 ureal2ereal ureal2real_def by auto
 
+(*
+lemma ureal_bound_fun: "`@(rvfun_of_prfun (r\<^sup>\<Up>)) \<ge> 0 \<and> @(rvfun_of_prfun (r\<^sup>\<Up>)) \<le> 1`"
+  apply (simp add: ureal_defs)
+  using real_of_ereal_le_1 real_of_ereal_pos ureal2ereal by force
+
+lemma ureal_bound_fun': "\<forall>s. rvfun_of_prfun (r\<^sup>\<Up>) s \<ge> 0 \<and> rvfun_of_prfun (r\<^sup>\<Up>) s \<le> 1"
+  apply (simp add: ureal_defs)
+  using real_of_ereal_le_1 real_of_ereal_pos ureal2ereal by force
+*)
+
 lemma ureal_minus_larger_zero:
   assumes "a \<le> (e::ureal)"
   shows "a - e = 0"
@@ -171,6 +181,13 @@ lemma ureal_1_minus_1_minus_r_r:
       ereal_diff_positive ereal_less_eq(1) ereal_times(1) max_def minus_ureal.rep_eq one_ureal.rep_eq 
       real_ereal_1 real_of_ereal_minus ureal2ereal)
 
+lemma ureal_1_minus_real: 
+  "ureal2real ((1::ureal) - s) = 1 - ureal2real s"
+  apply (simp add: ureal_defs)
+  by (metis abs_ereal_ge0 atLeastAtMost_iff ereal_diff_positive ereal_less_eq(1) ereal_times(1) 
+      max_def min.absorb2 min_def minus_ureal.rep_eq one_ureal.rep_eq real_ereal_1 
+      real_of_ereal_minus ureal2ereal)
+
 lemma ureal_zero_0: "real_of_ereal (ureal2ereal (0::ureal)) = 0"
   by (simp add: zero_ureal.rep_eq)
 
@@ -289,6 +306,9 @@ lemma is_prob: "\<lbrakk>is_prob P\<rbrakk> \<Longrightarrow> (\<forall>s. P s \
   by (simp add: is_prob_def taut_def)
 
 lemma ureal_is_prob: "is_prob (rvfun_of_prfun P)"
+  by (simp add: is_prob_def rvfun_of_prfun_def ureal_lower_bound ureal_upper_bound)
+
+lemma ureal_1_minus_is_prob: "is_prob ((1)\<^sub>e - rvfun_of_prfun P)"
   by (simp add: is_prob_def rvfun_of_prfun_def ureal_lower_bound ureal_upper_bound)
 
 lemma is_prob_final_prob: "\<lbrakk>is_prob P\<rbrakk> \<Longrightarrow> is_final_prob P"
@@ -601,71 +621,94 @@ lemma rvfun_assignment_inverse: "rvfun_of_prfun (prfun_of_rvfun (passigns_f \<si
   by (simp add: is_prob_def iverson_bracket_def rvfun_inverse)
 
 subsubsection \<open> Probabilistic choice \<close>
+term "(rvfun_of_prfun r)\<^sup>\<Up>"
 lemma rvfun_pchoice_is_prob: 
   assumes "is_prob P" "is_prob Q"
-  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> (1::\<real>)"
-  shows "is_prob (P \<oplus>\<^sub>f\<^bsub>r\<^esub> Q)"
+  shows "is_prob (P \<oplus>\<^sub>f\<^bsub>(rvfun_of_prfun r)\<^sup>\<Up>\<^esub> Q)"
   apply (simp add: dist_defs)
   apply (expr_auto)
-  apply (smt (verit, del_insts) SEXP_def assms(1) assms(2) assms(3) is_prob_def mult_nonneg_nonneg 
-      taut_def)
-  by (simp add: assms(1) assms(2) assms(3) convex_bound_le is_prob)
+  apply (simp add: assms(1) assms(2) is_prob prfun_in_0_1')
+  by (simp add: assms(1) assms(2) convex_bound_le is_final_prob_altdef is_prob_final_prob prfun_in_0_1')
+
+lemma rvfun_pchoice_is_prob': 
+  assumes "is_prob P" "is_prob Q"
+  shows "is_prob (P \<oplus>\<^sub>f\<^bsub>(\<lambda>s. ureal2real r)\<^esub> Q)"
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (simp add: assms(1) assms(2) is_prob ureal_lower_bound ureal_upper_bound)
+  by (simp add: assms(1) assms(2) convex_bound_le is_final_prob_altdef is_prob_final_prob 
+      ureal_lower_bound ureal_upper_bound)
 
 lemma rvfun_pchoice_is_dist: 
   assumes "is_final_distribution P" "is_final_distribution Q"
-  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> (1::\<real>)"
-  shows "is_final_distribution (P \<oplus>\<^sub>f\<^bsub>(r\<^sup>\<Up>)\<^esub> Q)"
+  shows "is_final_distribution (P \<oplus>\<^sub>f\<^bsub>(rvfun_of_prfun r)\<^sup>\<Up>\<^esub> Q)"
   apply (simp add: dist_defs expr_defs, auto)
-  apply (simp add: assms(1) assms(2) assms(3) is_final_distribution_prob is_final_prob_altdef)
-  apply (simp add: assms(1) assms(2) assms(3) convex_bound_le is_final_distribution_prob is_final_prob_altdef)
+  apply (simp add: assms(1) assms(2) prfun_in_0_1' rvfun_prob_sum1_summable(1))
+  apply (simp add: assms(1) assms(2) convex_bound_le prfun_in_0_1' rvfun_prob_sum1_summable(1))
   apply (subst infsum_add)
   apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
-  apply (simp add: assms(2) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+   apply (subst summable_on_cmult_right)
+  apply (simp add: assms(2) rvfun_prob_sum1_summable(3))+
   apply (subst infsum_cmult_right)
   apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
   apply (subst infsum_cmult_right)
   apply (simp add: assms(2) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
   by (simp add: assms(1) assms(2) rvfun_prob_sum1_summable(2))
 
-lemma rvfun_pchoice_inverse: 
+lemma rvfun_pchoice_is_dist': 
+  assumes "is_final_distribution P" "is_final_distribution Q"
+  shows "is_final_distribution (P \<oplus>\<^sub>f\<^bsub>(\<lambda>s. ureal2real r)\<^esub> Q)"
+  apply (simp add: dist_defs expr_defs, auto)
+  apply (simp add: assms(1) assms(2) rvfun_prob_sum1_summable(1) ureal_lower_bound ureal_upper_bound)
+  apply (simp add: assms(1) assms(2) convex_bound_le rvfun_prob_sum1_summable(1) ureal_lower_bound ureal_upper_bound)
+  apply (subst infsum_add)
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  apply (subst summable_on_cmult_right)
+  apply (simp add: assms(2) rvfun_prob_sum1_summable(3))+
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(2) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  by (simp add: assms(1) assms(2) rvfun_prob_sum1_summable(2))
+
+lemma rvfun_pchoice_inverse:
   assumes "is_prob P" "is_prob Q"
-  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> (1::\<real>)"
-  shows "rvfun_of_prfun (prfun_of_rvfun (P \<oplus>\<^sub>f\<^bsub>(r\<^sup>\<Up>)\<^esub> Q)) = (P \<oplus>\<^sub>f\<^bsub>(r\<^sup>\<Up>)\<^esub> Q)"
+  shows "rvfun_of_prfun (prfun_of_rvfun (P \<oplus>\<^sub>f\<^bsub>(rvfun_of_prfun r)\<^sup>\<Up>\<^esub> Q)) = (P \<oplus>\<^sub>f\<^bsub>(rvfun_of_prfun r)\<^sup>\<Up>\<^esub> Q)"
   apply (simp add: dist_defs expr_defs)
   apply (rule rvfun_inverse)
   apply (simp add: is_prob_def expr_defs, auto)
-  apply (simp add: assms(1) assms(2) assms(3) is_prob)
-  by (simp add: assms(1) assms(2) assms(3) convex_bound_le is_prob)
+  apply (simp add: assms(1) assms(2) is_prob prfun_in_0_1')
+  by (simp add: assms(1) assms(2) convex_bound_le is_prob prfun_in_0_1')
 
 lemma rvfun_pchoice_inverse': 
   assumes "is_prob P" "is_prob Q"
-  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> (1::\<real>)"
-  shows "rvfun_of_prfun (prfun_of_rvfun (pchoice_f P [(r\<^sup>\<Up>)]\<^sub>e Q)) = pchoice_f P [(r\<^sup>\<Up>)]\<^sub>e Q"
+  shows "rvfun_of_prfun (prfun_of_rvfun (pchoice_f P [(rvfun_of_prfun r)\<^sup>\<Up>]\<^sub>e Q)) = pchoice_f P [(rvfun_of_prfun r)\<^sup>\<Up>]\<^sub>e Q"
   apply (simp add: dist_defs expr_defs)
   apply (rule rvfun_inverse)
   apply (simp add: is_prob_def expr_defs, auto)
-  apply (simp add: assms(1) assms(2) assms(3) is_prob)
-  by (simp add: assms(1) assms(2) assms(3) convex_bound_le is_prob)
+  apply (simp add: assms(1) assms(2) is_prob prfun_in_0_1')
+  by (simp add: assms(1) assms(2) convex_bound_le is_prob prfun_in_0_1')
 
 lemma rvfun_pchoice_inverse_c: 
   assumes "is_prob P" "is_prob Q"
-  assumes "0 \<le> r \<and> r \<le> (1::\<real>)"
-  shows "rvfun_of_prfun (prfun_of_rvfun (P \<oplus>\<^sub>f\<^bsub>(\<lambda>s. r)\<^esub> Q)) = (P \<oplus>\<^sub>f\<^bsub>(\<lambda>s. r)\<^esub> Q)"
+  shows "rvfun_of_prfun (prfun_of_rvfun (P \<oplus>\<^sub>f\<^bsub>(\<lambda>s. ureal2real r)\<^esub> Q)) = (P \<oplus>\<^sub>f\<^bsub>(\<lambda>s. ureal2real r)\<^esub> Q)"
   apply (simp add: dist_defs expr_defs)
   apply (rule rvfun_inverse)
   apply (simp add: is_prob_def expr_defs, auto)
-  apply (simp add: assms(1) assms(2) assms(3) is_prob)
-  by (simp add: assms(1) assms(2) assms(3) convex_bound_le is_prob)
+   apply (simp add: assms(1) assms(2) is_prob ureal_lower_bound ureal_upper_bound)
+  by (simp add: assms(1) assms(2) convex_bound_le is_final_prob_altdef is_prob_final_prob 
+      ureal_lower_bound ureal_upper_bound)
 
 lemma rvfun_pchoice_inverse_c': 
   assumes "is_prob P" "is_prob Q"
   assumes "0 \<le> r \<and> r \<le> (1::\<real>)"
-  shows "rvfun_of_prfun (prfun_of_rvfun (pchoice_f P [(\<lambda>s. r)]\<^sub>e Q)) = (pchoice_f P [(\<lambda>s. r)]\<^sub>e Q)"
+  shows "rvfun_of_prfun (prfun_of_rvfun (pchoice_f P [(\<lambda>s. ureal2real r)]\<^sub>e Q)) = (pchoice_f P [(\<lambda>s. ureal2real r)]\<^sub>e Q)"
   apply (simp add: dist_defs expr_defs)
   apply (rule rvfun_inverse)
   apply (simp add: is_prob_def expr_defs, auto)
-  apply (simp add: assms(1) assms(2) assms(3) is_prob)
-  by (simp add: assms(1) assms(2) assms(3) convex_bound_le is_prob)
+   apply (simp add: assms(1) assms(2) is_prob ureal_lower_bound ureal_upper_bound)
+  by (simp add: assms(1) assms(2) convex_bound_le is_final_prob_altdef is_prob_final_prob 
+      ureal_lower_bound ureal_upper_bound)
 
 theorem prfun_pchoice_altdef: 
   "if\<^sub>p r then P else Q 
@@ -716,81 +759,79 @@ proof -
     by (simp add: prfun_inverse)
 qed
 
+                               
+lemma prfun_condition_pre: "(rvfun_of_prfun r)\<^sup>\<Up> (a, b) = ureal2real (r a)"
+  by (simp add: rvfun_of_prfun_def)
+
 theorem prfun_pchoice_assoc:
   fixes w\<^sub>1 :: "'a \<Rightarrow> ureal"
-  assumes "`0 \<le> w\<^sub>1 \<and> w\<^sub>1 \<le> 1`"
-  assumes "`0 \<le> w\<^sub>2 \<and> w\<^sub>2 \<le> 1`"
-  assumes "`0 \<le> r\<^sub>1 \<and> r\<^sub>1 \<le> 1`"
-  assumes "`((1 - w\<^sub>1) * (1 - w\<^sub>2)) = (1 - r\<^sub>2)`"
-  assumes "`(w\<^sub>1) = (r\<^sub>1 * r\<^sub>2)`"
-  shows "P \<oplus>\<^bsub>w\<^sub>1\<^sup>\<Up>\<^esub> (Q \<oplus>\<^bsub>w\<^sub>2\<^sup>\<Up>\<^esub> R) = (P \<oplus>\<^bsub>r\<^sub>1\<^sup>\<Up>\<^esub> Q) \<oplus>\<^bsub>r\<^sub>2\<^sup>\<Up>\<^esub> R" (is "?lhs = ?rhs")
+  assumes "\<forall>s. ((1 - ureal2real (w\<^sub>1 s)) * (1 - ureal2real (w\<^sub>2 s))) = (1 - ureal2real (r\<^sub>2 s))"
+  assumes "\<forall>s. (ureal2real (w\<^sub>1 s)) = (ureal2real (r\<^sub>1 s) * ureal2real (r\<^sub>2 s))"
+  shows "P \<oplus>\<^bsub>w\<^sub>1\<^sup>\<Up>\<^esub> (Q \<oplus>\<^bsub>(w\<^sub>2\<^sup>\<Up>)\<^esub> R) = (P \<oplus>\<^bsub>r\<^sub>1\<^sup>\<Up>\<^esub> Q) \<oplus>\<^bsub>r\<^sub>2\<^sup>\<Up>\<^esub> R" (is "?lhs = ?rhs")
 proof -
-  have f0: "`((1 - w\<^sub>1) * (1 - w\<^sub>2)) = (1 - w\<^sub>1 - w\<^sub>2 + w\<^sub>1 * w\<^sub>2)`"
-    apply (simp add: taut_def, auto)
-    by (smt (verit, del_insts) left_diff_distrib mult.commute mult_cancel_right1)
-  then have f1: "`(1 - w\<^sub>1 - w\<^sub>2 + w\<^sub>1 * w\<^sub>2) = (1 - r\<^sub>2)`"
-    by (smt (verit, ccfv_threshold) SEXP_def assms(4) taut_def)
-  then have f2: "`(r\<^sub>2) = (w\<^sub>1 + w\<^sub>2 - w\<^sub>1 * w\<^sub>2)`"
-    by (smt (verit, del_insts) SEXP_apply taut_def)
-  then have f3: "`0 \<le> r\<^sub>2 \<and> r\<^sub>2 \<le> 1`"
-    using assms(1-2) by (smt (verit) SEXP_def f0 mult_le_one mult_nonneg_nonneg taut_def)
-  have f4: "`(w\<^sub>1) = (r\<^sub>1 * (w\<^sub>1 + w\<^sub>2 - w\<^sub>1 * w\<^sub>2))`"
-    using assms(5) f2 by (simp add: taut_def)
-  have f5: "\<forall>s. ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * ((1::\<real>) - (w\<^sub>2\<^sup>\<Up>) s) = (1 - (r\<^sub>2\<^sup>\<Up>) s)"
-    using assms(4) by (simp add: taut_def)
-  have f6: "pchoice_f (rvfun_of_prfun P) (w\<^sub>1\<^sup>\<Up>)
-    (\<lambda>\<s>::'a \<times> 'b. (w\<^sub>2\<^sup>\<Up>) \<s> * rvfun_of_prfun Q \<s> + ((1::\<real>) - (w\<^sub>2\<^sup>\<Up>) \<s>) * rvfun_of_prfun R \<s>) = 
-    (\<lambda>s::'a \<times> 'b. (w\<^sub>1\<^sup>\<Up>) s * rvfun_of_prfun P s + 
-        ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * ((w\<^sub>2\<^sup>\<Up>) s * rvfun_of_prfun Q s + ((1::\<real>) - (w\<^sub>2\<^sup>\<Up>) s) * rvfun_of_prfun R s))"
-    using SEXP_def by blast
-  then have f7: "... = (\<lambda>s::'a \<times> 'b. (w\<^sub>1\<^sup>\<Up>) s * rvfun_of_prfun P s + 
-        ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * (w\<^sub>2\<^sup>\<Up>) s * rvfun_of_prfun Q s + ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * ((1::\<real>) - (w\<^sub>2\<^sup>\<Up>) s) * rvfun_of_prfun R s)" 
-    apply (simp add: distrib_left)
-    by (simp add: add.assoc mult.commute mult.left_commute)
-  then have f8: "... = (\<lambda>s::'a \<times> 'b. (w\<^sub>1\<^sup>\<Up>) s * rvfun_of_prfun P s + 
-        ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * (w\<^sub>2\<^sup>\<Up>) s * rvfun_of_prfun Q s + (1 - (r\<^sub>2\<^sup>\<Up>) s) * rvfun_of_prfun R s)"
-    using f5 by fastforce
-  have f5': "\<forall>s. (r\<^sub>2\<^sup>\<Up>) s * (r\<^sub>1\<^sup>\<Up>) s = (w\<^sub>1\<^sup>\<Up>) s"
-    using assms(5) by (simp add: taut_def)
-  have f5'': "\<forall>s. (r\<^sub>2\<^sup>\<Up>) s * ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) = ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * (w\<^sub>2\<^sup>\<Up>) s"
-    by (smt (verit, best) f5 f5' mult_cancel_left1 right_diff_distrib')
-  have f9: "pchoice_f (\<lambda>s::'a \<times> 'b. (r\<^sub>1\<^sup>\<Up>) s * rvfun_of_prfun P s + ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) * rvfun_of_prfun Q s) (r\<^sub>2\<^sup>\<Up>) (rvfun_of_prfun R) 
-    =  (\<lambda>s::'a \<times> 'b. (r\<^sub>2\<^sup>\<Up>) s * ((r\<^sub>1\<^sup>\<Up>) s * rvfun_of_prfun P s + ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) * rvfun_of_prfun Q s) + 
-      ((1::\<real>) - (r\<^sub>2\<^sup>\<Up>) s) * rvfun_of_prfun R s)"
-    using SEXP_def by blast
-  then have f10: "... = (\<lambda>s::'a \<times> 'b. (r\<^sub>2\<^sup>\<Up>) s * (r\<^sub>1\<^sup>\<Up>) s * rvfun_of_prfun P s + (r\<^sub>2\<^sup>\<Up>) s * ((1::\<real>) - (r\<^sub>1\<^sup>\<Up>) s) * rvfun_of_prfun Q s + 
-      ((1::\<real>) - (r\<^sub>2\<^sup>\<Up>) s) * rvfun_of_prfun R s)"
-    apply (simp add: distrib_left)
-    by (simp add: add.assoc mult.commute mult.left_commute)
-  then have f11: "... = (\<lambda>s::'a \<times> 'b. (w\<^sub>1\<^sup>\<Up>) s * rvfun_of_prfun P s + 
-        ((1::\<real>) - (w\<^sub>1\<^sup>\<Up>) s) * (w\<^sub>2\<^sup>\<Up>) s * rvfun_of_prfun Q s + (1 - (r\<^sub>2\<^sup>\<Up>) s) * rvfun_of_prfun R s)"
-    using f5' f5'' by fastforce
+  have f0: "\<forall>s. ((1 - ureal2real (w\<^sub>1 s)) * (1 - ureal2real (w\<^sub>2 s))) = 
+    (1 - ureal2real (w\<^sub>1 s) - ureal2real (w\<^sub>2 s) + ureal2real (w\<^sub>1 s) * ureal2real (w\<^sub>2 s))"
+    by (metis diff_add_eq diff_diff_eq2 left_diff_distrib mult.commute mult_1)
+  then have f1: "\<forall>s. (1 - ureal2real (w\<^sub>1 s) - ureal2real (w\<^sub>2 s) + ureal2real (w\<^sub>1 s) * ureal2real (w\<^sub>2 s))
+    = ((1 - ureal2real (r\<^sub>2 s)))"
+    using assms(1) by presburger
+  then have f2: "\<forall>s. (ureal2real (r\<^sub>2 s)) = (ureal2real (w\<^sub>1 s) + ureal2real (w\<^sub>2 s) - ureal2real (w\<^sub>1 s) * ureal2real (w\<^sub>2 s))"
+    by (smt (verit, del_insts) SEXP_apply)
+  have f3: "\<forall>s. (ureal2real (w\<^sub>1 s)) = (ureal2real (r\<^sub>1 s) * (ureal2real (w\<^sub>1 s) + ureal2real (w\<^sub>2 s) - ureal2real (w\<^sub>1 s) * ureal2real (w\<^sub>2 s)))"
+    using assms(2) f2 by (simp)
+  have P_eq: "\<forall>a b. ((rvfun_of_prfun w\<^sub>1)\<^sup>\<Up> (a, b) * (rvfun_of_prfun P) (a, b) = 
+      ((rvfun_of_prfun r\<^sub>2)\<^sup>\<Up> (a, b) * ((rvfun_of_prfun r\<^sub>1)\<^sup>\<Up> (a, b) * (rvfun_of_prfun P) (a, b))))"
+    apply (auto)
+    by (simp add: assms(2) rvfun_of_prfun_def)
+  have Q_eq: "\<forall>a b. ((((1::\<real>) - (rvfun_of_prfun w\<^sub>1)\<^sup>\<Up> (a, b)) * ((rvfun_of_prfun w\<^sub>2)\<^sup>\<Up> (a, b) * (rvfun_of_prfun Q) (a, b)))
+    = ((rvfun_of_prfun r\<^sub>2)\<^sup>\<Up> (a, b) * (((1::\<real>) - (rvfun_of_prfun r\<^sub>1)\<^sup>\<Up> (a, b)) * (rvfun_of_prfun Q) (a, b))))"
+    apply (simp add: prfun_condition_pre)
+    apply (rule allI)
+    apply (rule disjI2)
+  proof -
+    fix a
+    have "rvfun_of_prfun r\<^sub>2 a * ((1::\<real>) - rvfun_of_prfun r\<^sub>1 a) = rvfun_of_prfun r\<^sub>2 a - rvfun_of_prfun r\<^sub>2 a * rvfun_of_prfun r\<^sub>1 a"
+      by (simp add: right_diff_distrib)
+    also have "... = rvfun_of_prfun r\<^sub>2 a - rvfun_of_prfun w\<^sub>1 a"
+      by (simp add: assms(2) rvfun_of_prfun_def)
+    also have "... = rvfun_of_prfun w\<^sub>2 a - rvfun_of_prfun w\<^sub>1 a * rvfun_of_prfun w\<^sub>2 a"
+      using f2 by (simp add: rvfun_of_prfun_def)
+    then show "((1::\<real>) - rvfun_of_prfun w\<^sub>1 a) * rvfun_of_prfun w\<^sub>2 a = rvfun_of_prfun r\<^sub>2 a * ((1::\<real>) - rvfun_of_prfun r\<^sub>1 a)"
+      by (simp add: calculation left_diff_distrib)
+  qed
+  have R_eq: "\<forall>a b. ((((1::\<real>) - (rvfun_of_prfun w\<^sub>1)\<^sup>\<Up> (a, b)) * (((1::\<real>) - (rvfun_of_prfun w\<^sub>2)\<^sup>\<Up> (a, b)) * (rvfun_of_prfun R) (a, b)))
+    = (((1::\<real>) - (rvfun_of_prfun r\<^sub>2)\<^sup>\<Up> (a, b)) * (rvfun_of_prfun R) (a, b)))"
+    apply (simp add: prfun_condition_pre)
+    apply (rule allI)
+    apply (rule disjI2)
+    by (simp add: assms(1) rvfun_of_prfun_def)
+  
   show ?thesis
     apply (simp add: pfun_defs)
     apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-    apply (subst rvfun_pchoice_inverse)
-    using assms(2) apply (simp add: taut_def)
-    using ureal_is_prob apply blast
-    using ureal_is_prob apply blast
-     apply (metis (mono_tags, lifting) SEXP_def assms(2) taut_def)
-    apply (subst rvfun_pchoice_inverse)
-    using ureal_is_prob apply blast
-    using ureal_is_prob apply blast
-    using assms(3) apply (simp add: taut_def)
-    by (simp add: f10 f5 f5' f5'' f7)
+    apply (simp add: dist_defs expr_defs)
+    apply (subst rvfun_inverse)
+     apply (smt (verit, del_insts) SEXP_apply is_prob_def mult_nonneg_nonneg mult_right_le_one_le prfun_in_0_1' taut_def)
+    apply (subst rvfun_inverse)
+     apply (smt (verit, del_insts) SEXP_apply is_prob_def mult_nonneg_nonneg mult_right_le_one_le prfun_in_0_1' taut_def)
+    apply (subst fun_eq_iff)
+    apply (auto)
+    apply (subst distrib_left)+
+    using P_eq Q_eq R_eq by (smt (verit, ccfv_SIG) SEXP_def prod.simps(2) rvfun_of_prfun_def)
 qed
 
 theorem prfun_pchoice_assigns:
-  "(if\<^sub>p r then x := e else y := f) = prfun_of_rvfun (r * \<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e + (1 - r) * \<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  "(if\<^sub>p r then x := e else y := f) = 
+    prfun_of_rvfun (@(rvfun_of_prfun r) * \<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e + (1 - @(rvfun_of_prfun r)) * \<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   apply (simp add: pfun_defs)
   apply (simp add: rvfun_assignment_inverse)
   by (expr_auto)
 
+(*
 lemma prfun_pchoice_assigns_inverse:
-  assumes "\<forall>s. 0 \<le> r s \<and> r s \<le> 1"
-  shows "rvfun_of_prfun (if\<^sub>p (r\<^sup>\<Up>) then (x := e) else (y := f)) 
-       = (pchoice_f (\<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e) (r\<^sup>\<Up>)\<^sub>e (\<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e))"
-  apply (simp add: pfun_defs)
+  shows "rvfun_of_prfun ((x := e) \<oplus>\<^bsub>r\<^sup>\<Up>\<^esub> (y := f)) 
+       = (pchoice_f (\<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>) ((rvfun_of_prfun r)\<^sup>\<Up>)\<^sub>e (\<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>))"
+  apply (simp only: passigns_def pchoice_def)
   apply (simp add: rvfun_assignment_inverse)
   apply (subst rvfun_pchoice_inverse)
   apply (simp add: rvfun_assignment_is_prob)+
@@ -818,6 +859,7 @@ lemma prfun_pchoice_assigns_inverse_c':
   apply (simp add: rvfun_assignment_is_prob)+
   apply (simp add: assms)
   by (simp add: SEXP_def)
+*)
 
 subsubsection \<open> Conditional choice \<close>
 lemma rvfun_pcond_is_prob: 
