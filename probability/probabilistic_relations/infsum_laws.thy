@@ -477,7 +477,6 @@ lemma infsum_mult_subset_left_summable:
   apply simp
   by simp+
 
-
 lemma infsum_mult_subset_right: 
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. ((P v\<^sub>0) * (if b v\<^sub>0 then (1::\<real>) else 0))) = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> {v\<^sub>0. b v\<^sub>0}. (P v\<^sub>0))"
   apply (rule infsum_cong_neutral)

@@ -22,11 +22,20 @@ definition is_prob:: "(real, 's) expr \<Rightarrow> bool" where
 definition is_sum_1:: "(real, 's) expr \<Rightarrow> bool" where
 [dist_defs]: "is_sum_1 e = ((\<Sum>\<^sub>\<infinity> s. e s) = (1::\<real>))"
 
+text \<open>We treat a real function whose probability is always zero for any state as not a subdistribution,
+which allows us to conclude this function is summable or convergent. \<close>
+definition is_sum_leq_1:: "(real, 's) expr \<Rightarrow> bool" where
+[dist_defs]: "is_sum_leq_1 e = (((\<Sum>\<^sub>\<infinity> s. e s) \<le> (1::\<real>)) \<and> ((\<Sum>\<^sub>\<infinity> s. e s) > (0::\<real>)))"
+
 definition is_dist:: "(real, 's) expr \<Rightarrow> bool" where
 [dist_defs]: "is_dist e = (is_prob e \<and> is_sum_1 e)"
 
+definition is_sub_dist:: "(real, 's) expr \<Rightarrow> bool" where
+[dist_defs]: "is_sub_dist e = (is_prob e \<and> is_sum_leq_1 e)"
+
 (* The final states of a program characterised by f is a distribution *)
 abbreviation "is_final_distribution f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_dist ((curry f) s\<^sub>1))"
+abbreviation "is_final_sub_dist f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_sub_dist ((curry f) s\<^sub>1))"
 abbreviation "is_final_prob f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_prob ((curry f) s\<^sub>1))"
 
 (*
@@ -97,9 +106,33 @@ lemma is_final_distribution_prob:
   shows "is_final_prob f"
   using assms is_dist_def by blast
 
+lemma is_final_prob_prob:
+  assumes "is_final_prob f"
+  shows "is_prob f"
+  by (smt (verit, best) SEXP_def assms curry_conv is_prob_def prod.collapse taut_def)
+
+lemma is_prob_final_prob: "\<lbrakk>is_prob P\<rbrakk> \<Longrightarrow> is_final_prob P"
+  by (simp add: is_prob_def taut_def)
+
+lemma is_prob: "\<lbrakk>is_prob P\<rbrakk> \<Longrightarrow> (\<forall>s. P s \<ge> 0 \<and> P s \<le> 1)"
+  by (simp add: is_prob_def taut_def)
+
 lemma is_final_prob_altdef:
   assumes "is_final_prob f"
   shows "\<forall>s s'. f (s, s') \<ge> 0 \<and> f (s, s') \<le> 1"
   by (metis (mono_tags, lifting) SEXP_def assms curry_conv is_prob_def taut_def)
+
+lemma is_final_dist_subdist:
+  assumes "is_final_distribution f"
+  shows "is_final_sub_dist f"
+  apply (simp add: dist_defs)
+  by (smt (z3) SEXP_def assms cond_case_prod_eta curry_case_prod is_dist_def is_prob_def 
+      is_sum_1_def order.refl taut_def)
+
+lemma is_final_sub_dist_prob:
+  assumes "is_final_sub_dist f"
+  shows "is_final_prob f"
+  apply (simp add: dist_defs)
+  by (metis (mono_tags, lifting) SEXP_def assms curry_def is_prob is_sub_dist_def tautI)
 
 end
