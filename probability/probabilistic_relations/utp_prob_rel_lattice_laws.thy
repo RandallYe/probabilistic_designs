@@ -1509,9 +1509,9 @@ P ; if b then Q else R
 theorem prfun_seqcomp_pcond_subdist:
   fixes Q R ::"'a prhfun"
   assumes "is_final_sub_dist (rvfun_of_prfun (P::'a prhfun))"
-  shows "P ; (if\<^sub>c b\<^sup>\<Up> then Q else R) = 
-    prfun_of_rvfun (@(pseqcomp_f (rvfun_of_prfun P) (rvfun_of_prfun (\<lbrakk>b\<^sup>\<Up>\<rbrakk>\<^sub>\<I> * Q)\<^sub>e)) + 
-        @(pseqcomp_f (rvfun_of_prfun P) (rvfun_of_prfun (\<lbrakk>\<not>((b)\<^sup>\<Up>)\<rbrakk>\<^sub>\<I>\<^sub>e *  R)\<^sub>e)))\<^sub>e"
+  shows "P ; (if\<^sub>c b\<^sup>\<Up> then Q else R) = prfun_of_rvfun (
+        @(pseqcomp_f (rvfun_of_prfun P) (rvfun_of_prfun (\<lbrakk>b\<^sup>\<Up>\<rbrakk>\<^sub>\<I> * Q)\<^sub>e)) + 
+        @(pseqcomp_f (rvfun_of_prfun P) (rvfun_of_prfun (\<lbrakk>\<not>((b)\<^sup>\<Up>)\<rbrakk>\<^sub>\<I>\<^sub>e * R)\<^sub>e)))\<^sub>e"
     apply (simp add: pchoice_def pseqcomp_def pcond_def)
     apply (subst rvfun_pcond_inverse)
     using ureal_is_prob apply blast+
@@ -1552,31 +1552,6 @@ theorem prfun_seqcomp_pcond_subdist:
        apply simp
       by simp
 qed
-
-theorem 
-  assumes "is_final_distribution (rvfun_of_prfun (P::'a prhfun))"
-  shows "P ; (if\<^sub>p (r)\<^sup>\<Up> then Q else R) = (if\<^sub>p (r)\<^sup>\<Up> then (P ; Q) else (P ; R))"
-  apply (simp add: prfun_pchoice_altdef pseqcomp_def)
-  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  apply (subst rvfun_seqcomp_inverse)
-  apply (simp add: assms)
-  apply (simp add: ureal_is_prob)
-  apply (subst rvfun_seqcomp_inverse)
-  apply (simp add: assms)
-  apply (simp add: ureal_is_prob)
-  apply (subst rvfun_pchoice_inverse)
-  apply (simp add: ureal_is_prob)+
-  apply (subst fun_eq_iff)
-  apply (rel_auto)
-proof -
-  fix a b
-  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
-          (rvfun_of_prfun P) (a, v\<^sub>0) * ((rvfun_of_prfun r)\<^sup>\<Up> (v\<^sub>0, b) * (rvfun_of_prfun Q) (v\<^sub>0, b) +
-           ((1::\<real>) - (rvfun_of_prfun r)\<^sup>\<Up> (v\<^sub>0, b)) * (rvfun_of_prfun R) (v\<^sub>0, b))) =
-       (rvfun_of_prfun r)\<^sup>\<Up> (a, b) * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (rvfun_of_prfun P) (a, v\<^sub>0) * (rvfun_of_prfun Q) (v\<^sub>0, b)) +
-       ((1::\<real>) - (rvfun_of_prfun r)\<^sup>\<Up> (a, b)) * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (rvfun_of_prfun P) (a, v\<^sub>0) * (rvfun_of_prfun R) (v\<^sub>0, b))"
-  apply (subst infsum_add)
-  apply (subst prfun_condition_pre)
 
 subsection \<open> Chains \<close>
 theorem increasing_chain_mono:
@@ -1776,8 +1751,8 @@ theorem Fwhile_mono:
   shows "mono (Fwhile b P)"
   apply (simp add: mono_def Fwhile_def)
   apply (auto)
-  apply (subst pcond_mono)
-  apply (subst pseqcomp_mono)
+  apply (subst prfun_pcond_mono)
+  apply (subst prfun_pseqcomp_mono)
   apply (auto)
   by (simp add: assms pdrfun_product_summable'')+
 
@@ -1803,14 +1778,119 @@ theorem mono_func_decreasing_chain_is_decreasing:
 
 lemma 
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_prob (rvfun_of_prfun (X::('s, 's) prfun))"
+  assumes "is_final_prob (rvfun_of_prfun (Y::('s, 's) prfun))"
+  shows "(rvfun_of_prfun (Fwhile b P X) - rvfun_of_prfun (Fwhile b P Y)) = 
+    rvfun_of_prfun ((P ; (X - Y)))" (is "?lhs = ?rhs")
+proof -
+  have f1: "ureal2real (prfun_of_rvfun
+       [\<lambda>\<s>::'s \<times> 's.
+           (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; X) \<s> + (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e
+       (s, s')) = 
+  ureal2real (
+      prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; X) \<s>]\<^sub>e (s, s') + 
+      prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e (s, s'))"
+    apply (simp add: prfun_of_rvfun_def)
+    by (smt (verit, ccfv_SIG) SEXP_def add.commute add.right_neutral iverson_bracket_def mult.commute 
+        mult_cancel_right1 mult_zero_left o_def real_of_ereal.simps(1) ureal2real_def ureal2real_eq 
+        ureal_lower_bound ureal_real2ureal_smaller zero_ereal_def zero_ureal.rep_eq)
+  then have f1': "... = 
+      ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; X) \<s>]\<^sub>e (s, s')) + 
+      ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e (s, s'))"
+    by (smt (verit, ccfv_threshold) SEXP_def f1 iverson_bracket_def mult_cancel_left2 mult_zero_left 
+        mult_zero_right nle_le prfun_of_rvfun_def ureal2real_def ureal_lower_bound ureal_real2ureal_smaller 
+        zero_ereal_def)
+  have f2: "ureal2real (prfun_of_rvfun
+       [\<lambda>\<s>::'s \<times> 's.
+           (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; Y) \<s> + (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e
+       (s, s')) = 
+    ureal2real (
+      prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; Y) \<s>]\<^sub>e (s, s') + 
+      prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e (s, s'))"
+    apply (simp add: prfun_of_rvfun_def)
+    by (smt (verit, ccfv_SIG) SEXP_def add.commute add.right_neutral iverson_bracket_def mult.commute 
+        mult_cancel_right1 mult_zero_left o_def real_of_ereal.simps(1) ureal2real_def ureal2real_eq 
+        ureal_lower_bound ureal_real2ureal_smaller zero_ereal_def zero_ureal.rep_eq)
+  then have f2': "... = 
+      ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; Y) \<s>]\<^sub>e (s, s')) + 
+      ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e (s, s'))"
+    by (smt (verit, ccfv_threshold) SEXP_def f2 iverson_bracket_def mult_cancel_left2 mult_zero_left 
+        mult_zero_right nle_le prfun_of_rvfun_def ureal2real_def ureal_lower_bound ureal_real2ureal_smaller 
+        zero_ereal_def)
+  have f3: "?lhs = rvfun_of_prfun (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; X) \<s>]\<^sub>e) -
+    rvfun_of_prfun (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; Y) \<s>]\<^sub>e)"
+    apply (simp add: Fwhile_def)
+    apply (simp add: prfun_pcond_altdef)
+    by (simp add: f1 f2 f1' f2')
+
+  show ?thesis
+    apply (simp add: f3)
+    (* apply (simp add: prfun_of_rvfun_def rvfun_of_prfun_def) *)
+    apply (simp add: pfun_defs)
+    apply (subst rvfun_seqcomp_inverse)
+    apply (simp add: assms(1))
+    apply (simp add: ureal_is_prob)
+    apply (subst rvfun_seqcomp_inverse)
+    apply (simp add: assms(1))
+    apply (simp add: ureal_is_prob)
+
+lemma 
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes "is_final_prob (rvfun_of_prfun (X::('s, 's) prfun))"
+  assumes "is_final_prob (rvfun_of_prfun (Y::('s, 's) prfun))"
   shows "(ureal2real (Fwhile b P X (s,s')) - ureal2real (Fwhile b P Y (s,s'))) = 
-    ureal2real 1"
-  apply (simp add: Fwhile_def)
-  apply (simp add: prel_pcond_pchoice_eq)
-  apply (simp add: pfun_defs)
-  apply (simp add: rvfun_skip_inverse)
-  apply (expr_auto add: rel)
-  oops
+    ureal2real ((P ; (X - Y)) (s,s'))" (is "?lhs = ?rhs")
+proof -
+  have f1: "ureal2real (prfun_of_rvfun
+       [\<lambda>\<s>::'s \<times> 's.
+           (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; X) \<s> + (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e
+       (s, s')) = 
+  ureal2real (
+      prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; X) \<s>]\<^sub>e (s, s') + 
+      prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e (s, s'))"
+    apply (simp add: prfun_of_rvfun_def)
+    by (smt (verit, ccfv_SIG) SEXP_def add.commute add.right_neutral iverson_bracket_def mult.commute 
+        mult_cancel_right1 mult_zero_left o_def real_of_ereal.simps(1) ureal2real_def ureal2real_eq 
+        ureal_lower_bound ureal_real2ureal_smaller zero_ereal_def zero_ureal.rep_eq)
+  then have f1': "... = 
+      ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; X) \<s>]\<^sub>e (s, s')) + 
+      ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e (s, s'))"
+    by (smt (verit, ccfv_threshold) SEXP_def f1 iverson_bracket_def mult_cancel_left2 mult_zero_left 
+        mult_zero_right nle_le prfun_of_rvfun_def ureal2real_def ureal_lower_bound ureal_real2ureal_smaller 
+        zero_ereal_def)
+  have f2: "ureal2real (prfun_of_rvfun
+       [\<lambda>\<s>::'s \<times> 's.
+           (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; Y) \<s> + (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e
+       (s, s')) = 
+    ureal2real (
+      prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; Y) \<s>]\<^sub>e (s, s') + 
+      prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e (s, s'))"
+    apply (simp add: prfun_of_rvfun_def)
+    by (smt (verit, ccfv_SIG) SEXP_def add.commute add.right_neutral iverson_bracket_def mult.commute 
+        mult_cancel_right1 mult_zero_left o_def real_of_ereal.simps(1) ureal2real_def ureal2real_eq 
+        ureal_lower_bound ureal_real2ureal_smaller zero_ereal_def zero_ureal.rep_eq)
+  then have f2': "... = 
+      ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; Y) \<s>]\<^sub>e (s, s')) + 
+      ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>[\<lambda>\<s>::'s \<times> 's. \<not> b \<s>]\<^sub>e\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun II \<s>]\<^sub>e (s, s'))"
+    by (smt (verit, ccfv_threshold) SEXP_def f2 iverson_bracket_def mult_cancel_left2 mult_zero_left 
+        mult_zero_right nle_le prfun_of_rvfun_def ureal2real_def ureal_lower_bound ureal_real2ureal_smaller 
+        zero_ereal_def)
+  have f3: "?lhs = ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's. (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; X) \<s>]\<^sub>e  (s, s')) -
+    ureal2real (prfun_of_rvfun [\<lambda>\<s>::'s \<times> 's.  (\<lbrakk>b\<rbrakk>\<^sub>\<I>) \<s> * rvfun_of_prfun (P ; Y) \<s>]\<^sub>e (s, s'))"
+    apply (simp add: Fwhile_def)
+    apply (simp add: prfun_pcond_altdef)
+    by (simp add: f1 f2 f1' f2')
+
+  show ?thesis
+    apply (simp add: f3)
+    (* apply (simp add: prfun_of_rvfun_def rvfun_of_prfun_def) *)
+    apply (simp add: pfun_defs)
+    apply (subst rvfun_seqcomp_inverse)
+    apply (simp add: assms(1))
+    apply (simp add: ureal_is_prob)
+    apply (subst rvfun_seqcomp_inverse)
+    apply (simp add: assms(1))
+    apply (simp add: ureal_is_prob)
 
 theorem pwhile_unfold:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
@@ -1818,8 +1898,8 @@ theorem pwhile_unfold:
 proof -
   have m:"mono (\<lambda>X. (if\<^sub>c b then (P ; X) else II))"
     apply (simp add: mono_def, auto)
-    apply (subst pcond_mono)
-    apply (subst pseqcomp_mono)
+    apply (subst prfun_pcond_mono)
+    apply (subst prfun_pseqcomp_mono)
     apply (auto)
     by (simp add: assms pdrfun_product_summable'')+
   have "(while\<^sub>p b do P od) = (\<mu>\<^sub>p X \<bullet> (if\<^sub>c b then (P ; X) else II))"
