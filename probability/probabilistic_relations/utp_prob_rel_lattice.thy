@@ -646,6 +646,7 @@ abbreviation iteratet ("iterate\<^sub>t") where "iteratet n b P X \<equiv> itera
 
 term "iterate\<^sub>t 0 b P \<^bold>0 = \<^bold>0"
 
+print_classes
 subsubsection \<open> Lifting operators for ureal \<close>
 (*
 E = \<lbrakk>coin' = chead \<and> t' \<ge> t + 1\<rbrakk> * (1/2)^(t' - t - 1) * (1/2)

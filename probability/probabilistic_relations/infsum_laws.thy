@@ -127,6 +127,16 @@ lemma not_summable_on_cdiv_left':
   apply (simp only : divide_inverse)
   by (simp add: assms summable_on_cmult_left')
 
+lemma summable_on_minus: 
+  fixes f g :: "'a \<Rightarrow> \<real>"
+  assumes \<open>f summable_on A\<close>
+  assumes \<open>g summable_on A\<close>
+  shows \<open>(\<lambda>x. f x - g x) summable_on A\<close>
+  apply (subst add_uminus_conv_diff[symmetric])
+  apply (subst summable_on_add)
+  using assms(1) apply blast
+  by (simp add: assms(2) summable_on_uminus)+
+
 lemma infsum_geq_element:
   fixes f :: "'a \<Rightarrow> \<real>"
   assumes "\<forall>s. f s \<ge> 0"
@@ -155,6 +165,17 @@ lemma infsum_geq_element':
   shows "f s \<le> x"
   by (metis assms(1) assms(2) assms(3) assms(4) infsum_geq_element)
 
+lemma infsum_on_singleton:
+  "(\<Sum>\<^sub>\<infinity>s \<in> {x}. f s) = f x"
+  apply (rule infsumI)
+  apply (simp add: has_sum_def)
+  apply (subst topological_tendstoI)
+  apply (auto)
+  apply (simp add: eventually_finite_subsets_at_top)
+  apply (rule_tac x = "{x}" in exI)
+  by (metis add.right_neutral finite.emptyI finite_insert insert_absorb insert_not_empty 
+      subset_antisym subset_singleton_iff sum.empty sum.insert)
+  
 lemma infsum_singleton: 
   "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if c = v\<^sub>0 then (m::\<real>) else 0)) = m"
   apply (rule infsumI)
@@ -503,5 +524,45 @@ lemma infsum_mult_subset_left_summable':
   apply blast
   apply simp
   by auto
+
+lemma infsum_mono_strict:
+  fixes f :: "'a \<Rightarrow> \<real>"
+  assumes "f summable_on A" and "g summable_on A"
+  assumes \<open>\<And>x. x \<in> A \<Longrightarrow> f x < g x\<close>
+  assumes "A \<noteq> {}"
+  shows "infsum f A < infsum g A"
+proof -
+  have f0: \<open>\<And>x. x \<in> A \<Longrightarrow> f x \<le> g x\<close>
+    using assms(3) nless_le by blast
+  then have f1: "infsum f A \<le> infsum g A"
+    by (simp add: assms(1) assms(2) infsum_mono)
+  have f2: "infsum g A = infsum (\<lambda>x. (g x - f x) + f x) A"
+    by auto
+  also have f3: "... = infsum (\<lambda>x. (g x - f x)) A + infsum f A"
+    apply (subst infsum_add)
+    using summable_on_minus assms(1) assms(2) apply blast
+    apply (simp add: assms(1))
+    by simp
+  obtain x where P_x: "x \<in> A"
+    using assms(4) by blast
+  have f4: "\<And>x. x \<in> A \<Longrightarrow> (g x - f x) > 0"
+    using assms(3) by auto
+  have f5: "infsum (\<lambda>x. (g x - f x)) ((A - {x}) \<union> {x}) = infsum (\<lambda>x. (g x - f x)) (A - {x}) + infsum (\<lambda>x. (g x - f x)) {x}"
+    apply (subst infsum_Un_disjoint)
+    apply (simp add: P_x assms(1) assms(2) summable_on_Diff summable_on_minus)
+    apply simp
+    apply blast
+    by (simp)
+  have f6: "... \<ge> infsum (\<lambda>x. (g x - f x)) {x}"
+    by (smt (verit) DiffD1 f0 infsum_nonneg)
+  have f7: "... > 0"
+    using f4 P_x f6 by fastforce
+  have f8: "infsum (\<lambda>x. (g x - f x)) A > 0"
+    by (metis P_x Un_commute f5 f7 insert_Diff insert_is_Un)
+  then have "infsum f A \<noteq> infsum g A"
+    using f2 f3 by linarith
+  then show "infsum f A < infsum g A"
+    using f1 nless_le by blast
+qed
 
 end
