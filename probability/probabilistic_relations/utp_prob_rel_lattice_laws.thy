@@ -1934,12 +1934,13 @@ lemma Inter_atLeast_not_empty:
   sorry
 *)
 
-lemma 
-  assumes "m \<in> s" "s \<noteq> {}" "finite s" "Max s \<le> n"
+lemma max_bounded_e:
+  assumes "m \<in> A" "A \<noteq> {}" "finite A" "Max A \<le> n"
   shows "m \<le> n"
   by (meson Max.boundedE assms(1) assms(2) assms(3) assms(4))
 
-theorem increasing_chain_limit_is_lub'':
+text \<open> \<close>
+theorem increasing_chain_limit_is_lub_all:
   fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "increasing_chain f"
   (* Suppose there are finite state pairs such that for each pair, it supreme is strictly larger than 
@@ -1958,22 +1959,24 @@ proof -
   then have dist_equal: "\<forall>s s'. \<forall>n. \<bar>ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s'))\<bar> = 
       ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s'))"
     by auto
-  have f1: "\<forall>s s'. (\<lambda>n. ureal2real (f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n (s, s')))"
+  have limit_is_lub: "\<forall>s s'. (\<lambda>n. ureal2real (f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n (s, s')))"
     by (simp add: assms increasing_chain_limit_is_lub)
-  then have f2: "\<forall>s s'. (\<exists>no::\<nat>. \<forall>n\<ge>no. norm (ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s'))) < r)"
+  then have limit_is_lub_def: "\<forall>s s'. (\<exists>no::\<nat>. \<forall>n\<ge>no. norm (ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s'))) < r)"
     using LIMSEQ_iff by (metis a1)
-  then have f3: "\<forall>s s'. \<exists>no::nat. \<forall>n \<ge> no. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
+  then have limit_is_lub_def': "\<forall>s s'. \<exists>no::nat. \<forall>n \<ge> no. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
     by (simp add: dist_equal)
 
-  (* If the distance between the supreme of an increasing chain and the initial value (f 0) is larger than  
-  or equal to r, then there must be a unique turning point (no+1). 
-  *)
+\<comment> \<open>The supreme of @{text "f"} is larger than its initial value @{text "f 0"} and the difference is at 
+  least @{text "r"}. Therefore, a unique number @{text "no+1"} must exist such that @{text "f (no+1)"}
+  inside the supreme minus @{text "r"} and @{text "f no"} outside the supreme minus @{text "r"}.
+\<close>
+  let ?P_larger_sup = "\<lambda>s s'. ((ureal2real (\<Squnion>n::\<nat>. f n (s, s')) > ureal2real (f 0 (s, s'))) \<and> 
+      (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f 0 (s, s'))) \<ge> r)"
   let ?P_mu_no = "\<lambda>s s'. \<lambda>no. (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no+1) (s, s')) < r \<and> 
       ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) \<ge> r)"
-  let ?P_F_inc_larger_sup = "\<lambda>s s'. ((ureal2real (\<Squnion>n::\<nat>. f n (s, s')) > ureal2real (f 0 (s, s'))) \<and> 
-      (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f 0 (s, s'))) \<ge> r)"
+\<comment> \<open>The uniqueness is proved. \<close>
   have f_larger_supreme_unique_no: 
-   "\<forall>s s'. ?P_F_inc_larger_sup s s' \<longrightarrow> (\<exists>!no::nat. ?P_mu_no s s' no)"
+   "\<forall>s s'. ?P_larger_sup s s' \<longrightarrow> (\<exists>!no::nat. ?P_mu_no s s' no)"
     apply (auto)
     defer
     apply (smt (verit, best) assms(1) increasing_chain_mono le_fun_def nle_le not_less_eq_eq ureal2real_mono)
@@ -1994,7 +1997,7 @@ proof -
        ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r"
         by auto
       have f111: "\<exists>no::nat. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r"
-        using f3 by blast
+        using limit_is_lub_def' by blast
       obtain no where P_no: "ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r"
         using f111 by blast
       have "\<forall>m::nat. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no - m) (s, s')) < r"
@@ -2010,6 +2013,8 @@ proof -
     qed
   qed
 
+\<comment> \<open>If @{text "f n"} is constant or @{text "f 0"} is inside the supreme minus @{text "r"}, then for 
+  any number, the distance between @{text "f n"} and the supreme is less than @{text "r"}.\<close>
   have f_const_or_larger_dist_universal: "\<forall>s s'. 
       ((ureal2real (\<Squnion>n::\<nat>. f n (s, s')) = ureal2real (f 0 (s, s'))) \<or>
       (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f 0 (s, s'))) < r)
@@ -2019,92 +2024,61 @@ proof -
     apply (smt (verit) SUP_cong a1 assms(1) increasing_chain_sup_eq_f0_constant ureal2real_eq)
     by (smt (verit, best) assms(1) bot_nat_0.extremum increasing_chain_mono le_fun_def ureal2real_mono)
 
-  have f_const_or_larger_dist_universal': "\<forall>s s'. \<not> ?P_F_inc_larger_sup s s'
+(*
+  have f_const_or_larger_dist_universal': "\<forall>s s'. \<not> ?P_larger_sup s s'
       \<longrightarrow>
       (\<forall>no. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r)"
     apply (auto)
     apply (metis abs_ge_zero diff_ge_0_iff_ge dist_equal f_const_or_larger_dist_universal nless_le)
     using f_const_or_larger_dist_universal linorder_not_le by blast
-
-  (* Close to limit *)
-  let ?Ps_n = "\<lambda>s s'. \<lambda>no. \<forall>n \<ge> no. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
-  (* If for any (s, s'), a n satisfies ?Ps_n, then for all m \<ge> n, ?Ps_n also holds. *)
-  (*
-  have f4: "\<forall>s s'. ?Ps_n s s' n \<longrightarrow> (\<forall>m \<ge> n. ?Ps_n s s' m)"
-    by (auto)
-  *)
-(*
-  have not_all: "\<exists>s s'. \<not> ?Ps_n s s' 0"
-    sorry
-
-  let ?Ps = "\<lambda>s s'. {m. \<exists>no. ?Ps_n s s' no \<and> m \<ge> no}"
-  let ?PPs = "\<Inter>s s'. ?Ps s s'"
-  let ?PPs' = "\<Inter> {?Ps s s' | s s'. True}"
-
-  have f5: "\<forall>s s'. ?Ps s s' \<noteq> {}"
-    using f3 by fastforce
-
-  have f6: "\<forall>n \<in> ?PPs'. \<forall>s s'. n \<in> ?Ps s s'"
-    by blast
-
-  have f7: "?PPs = ?PPs'"
-    by (auto)
-
-  have f8: "0 \<notin> ?PPs'"
-    using not_all by blast
-
-  have f9: "?PPs' \<noteq> UNIV"
-    using f8 by blast
-
-  have f8': "\<exists>n. \<forall>s s'. n \<in> ?Ps s s'"
-    apply (simp)
-    using nat_exists by (metis UNIV_I empty_iff f3 mem_Collect_eq)
-
-  have "?PPs' \<noteq> {}"
-    by (smt (verit, best) Inter_iff emptyE f8' mem_Collect_eq)
-*)
-(*
-  let ?Ps1 = "\<lambda>s s'. SOME no. ?Ps_n s s' no"
-  let ?PPs1 = "{?Ps1 s s' | s s'. True}"
-
-  have "?PPs1 \<noteq> {}"
-    by blast
-
-  have "\<exists>no. \<forall>n \<in> ?PPs1. no \<ge> n"
-    apply (auto)
 *)
 
-  let ?P = "\<lambda>no. \<forall>n \<ge> no. \<forall>s s'. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
-  let ?no_set = "{THE no. ?P_mu_no s s' no | s s'. 
-      ureal2real (\<Squnion>n::\<nat>. f n (s, s')) > ureal2real (f 0 (s, s')) \<and> 
-     (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f 0 (s, s'))) \<ge> r}"
-  (* obtain no where P_no: "no = (SOME no::nat. ?P no)" by blast *)
-  obtain no where P_no:
-    "no = (if ?no_set = {} then 0 else Max ?no_set)"
-    by blast
+  let ?mu_no_set = "{THE no. ?P_mu_no s s' no | s s'. ?P_larger_sup s s'}"
+\<comment> \<open>We use another form @{text "?mu_no_set1"} in order to prove it is finite more conveniently using 
+ @{thm "finite_Collect_bounded_ex"}
+\<close>
+  let ?mu_no_set1 = "{THE no. ?P_mu_no (fst s) (snd s) no | s. ?P_larger_sup (fst s) (snd s)}"
 
-  thm "finite_Collect_bounded_ex"
-  have no_set_eq: "?no_set = (\<Union>(s, s') \<in> 
-    {(s, s'). ureal2real (\<Squnion>n::\<nat>. f n (s, s')) > ureal2real (f 0 (s, s')) \<and> 
-     (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f 0 (s, s'))) \<ge> r}. 
-      {uu. uu = (THE no::\<nat>.
-              ureal2real (\<Squnion>n::\<nat>. (f::\<nat> \<Rightarrow> 's\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> ureal) n (s, s')) - ureal2real (f (no + (1::\<nat>)) (s, s')) < (r::\<real>) \<and>
-              r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')))})"
+  have mu_no_set_eq: "?mu_no_set = ?mu_no_set1"
     by auto
-  have "finite {(s, s'). ureal2real (\<Squnion>n::\<nat>. f n (s, s')) > ureal2real (f 0 (s, s')) \<and> 
-          (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f 0 (s, s'))) \<ge> r}"
-  proof -
-    
-  have "finite ?no_set \<longleftrightarrow> 
-    (\<forall>s s'. (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) > ureal2real (f 0 (s, s')) \<and> 
-     (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f 0 (s, s'))) \<ge> r) \<longrightarrow> 
-        finite {uu. uu = (THE no::\<nat>.
-              ureal2real (\<Squnion>n::\<nat>. (f::\<nat> \<Rightarrow> 's\<^sub>1 \<times> 's\<^sub>2 \<Rightarrow> ureal) n (s, s')) - ureal2real (f (no + (1::\<nat>)) (s, s')) < (r::\<real>) \<and>
-              r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')))})"
-    (* apply (subst finite_Collect_bounded_ex) *)
-    apply (simp add: no_set_eq)
 
-  have "\<exists>no::\<nat>. \<forall>n\<ge>no. \<forall>(s::'s\<^sub>1) s'::'s\<^sub>2. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
+\<comment> \<open>A @{text "no"} is obtained as the maximum number of unique numbers for all states, and so for 
+any number @{text "n \<ge> no"}, the distance between @{text "f n"} and the supreme is less than 
+@{text "r"} for any state.
+\<close>
+  obtain no where P_no:
+    "no = (if ?mu_no_set = {} then 0 else (Max ?mu_no_set + 1))"
+    by blast
+
+  have mu_no_set_rewrite: "?mu_no_set = (\<Union>(s, s') \<in> {(s, s'). ?P_larger_sup s s'}. 
+      {uu. uu = (THE no::\<nat>. ?P_mu_no s s' no)})"
+    by auto
+
+  have f_larger_sup_finite: "finite {(s, s'). ?P_larger_sup s s'}"
+  proof -
+    have "{(s, s'). ?P_larger_sup s s'} \<subseteq> {s. ureal2real (\<Squnion>n::\<nat>. f n s) > ureal2real (f 0 s)}"
+      by blast
+    then show ?thesis
+      using assms(2) rev_finite_subset by blast
+  qed
+
+  have "(\<forall>s s'. ?P_larger_sup s s' \<longrightarrow> finite {uu. uu = (THE no::\<nat>. ?P_mu_no s s' no)})"
+    by simp
+
+  have mu_no_set1_finite_iff: "(finite ?mu_no_set1) \<longleftrightarrow> (\<forall>s. ?P_larger_sup (fst s) (snd s) \<longrightarrow> 
+        finite {uu. uu = (THE no. ?P_mu_no (fst s) (snd s) no)}) "
+  proof -
+    have "?mu_no_set1 = (\<Union>s\<in>{s. ?P_larger_sup (fst s) (snd s)}. 
+            {uu. uu = (THE no. ?P_mu_no (fst s) (snd s) no)})"
+      by auto
+    with assms show ?thesis
+      by simp
+  qed
+
+  then have mu_no_set1_finite: "finite ?mu_no_set1"
+    by auto
+
+  show "\<exists>no::\<nat>. \<forall>n\<ge>no. \<forall>(s::'s\<^sub>1) s'::'s\<^sub>2. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
     apply (rule_tac x = "no" in exI)
     apply (auto)
     apply (simp add: P_no)
@@ -2115,11 +2089,8 @@ proof -
               \<not> r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (0::\<nat>) (s, s'))
         then 0::\<nat>
         else Max {uu::\<nat>. \<exists>(s::'s\<^sub>1) s'::'s\<^sub>2.
-             uu = (THE no::\<nat>.
-                 ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no + (1::\<nat>)) (s, s')) < r \<and>
-                 r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s'))) \<and>
-             ureal2real (f (0::\<nat>) (s, s')) < ureal2real (\<Squnion>n::\<nat>. f n (s, s')) \<and>
-             r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (0::\<nat>) (s, s'))})
+             uu = (THE no::\<nat>. ?P_mu_no s s' no) \<and>
+             ?P_larger_sup s s'} + 1)
           \<le> n"
 
     show "ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
@@ -2132,40 +2103,27 @@ proof -
         using True f_const_or_larger_dist_universal by fastforce
     next
       case False
-      then have "(Max {uu::\<nat>. \<exists>(s::'s\<^sub>1) s'::'s\<^sub>2.
-             uu = (THE no::\<nat>.
-                 ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no + (1::\<nat>)) (s, s')) < r \<and>
-                 r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s'))) \<and>
-             ureal2real (f (0::\<nat>) (s, s')) < ureal2real (\<Squnion>n::\<nat>. f n (s, s')) \<and>
-             r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (0::\<nat>) (s, s'))})
-          \<le> n"
+      then have max_leq_n: "(Max {uu::\<nat>. \<exists>(s::'s\<^sub>1) s'::'s\<^sub>2.
+             uu = (THE no::\<nat>. ?P_mu_no s s' no) \<and> ?P_larger_sup s s'} + 1) \<le> n"
         by (smt (verit, ccfv_SIG) SUP_cong a1 a11)
-      then have "(THE no::\<nat>. ?P_mu_no s s' no) \<in> ?no_set"
+      then have mu_no_in: "(THE no::\<nat>. ?P_mu_no s s' no) \<in> ?mu_no_set"
         apply (subst mem_Collect_eq)
         using False a1 by fastforce
-      then have "(THE no::\<nat>. ?P_mu_no s s' no) \<le> n"
-        apply (subst Max.boundedE[where A = "?no_set"])
-      then show ?thesis 
+      have mu_no_le_n: "(THE no::\<nat>. ?P_mu_no s s' no) \<le> n - 1"
+        apply (rule max_bounded_e[where A = "?mu_no_set"])
+        using mu_no_in apply blast
+        using mu_no_in apply blast
+        using mu_no_set1_finite mu_no_set_eq apply presburger
+        using max_leq_n by (meson Nat.le_diff_conv2 add_leE)
+      have P_mu_no: "?P_mu_no s s' (THE no::\<nat>. ?P_mu_no s s' no)"
+        apply (rule theI')
+        by (smt (verit, best) False Sup.SUP_cong f_larger_supreme_unique_no sup_upper)
+      have "ureal2real (f ((THE no::\<nat>. ?P_mu_no s s' no) + (1::\<nat>)) (s, s')) \<le> ureal2real (f n (s,s'))"
+        using mu_no_le_n by (metis (mono_tags, lifting) Nat.le_diff_conv2 add_leE assms(1) increasing_chain_mono le_fun_def max_leq_n ureal2real_mono)
+      then show ?thesis
+        using P_mu_no by linarith
     qed
-    
   qed
-
-  show "\<exists>no::\<nat>. \<forall>n\<ge>no. \<forall>(s::'s\<^sub>1) s'::'s\<^sub>2. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
-    apply (rule_tac x = "no" in exI)
-    apply (auto)
-    apply (simp add: P_no)
-    proof -
-      fix n s s'
-      assume a11: "(SOME no::\<nat>. ?P no) \<le> n"
-      from a11 have f11: "ureal2real (f (SOME no::\<nat>. ?P no) (s, s')) \<le> ureal2real (f n (s, s'))"
-        by (metis (no_types, lifting) assms increasing_chain_mono le_fun_def ureal2real_mono)
-      have f12: "?P (SOME no::\<nat>. ?P no)"
-        apply (rule someI2)
-        (* How to give a witness to make ?P x hold??? *)
-        sorry
-      then show "ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
-        using a11 by blast
-    qed
 qed
 
 lemma decreasing_chain_limit_exists_element:
@@ -2550,7 +2508,7 @@ obtain N where P_N: "\<forall>n\<ge>N. \<bar>ureal2real (?f n (s, s')) - ureal2r
 
   have exist_NN: "\<exists>no::nat. \<forall>n \<ge> no.
             \<forall>s s'. ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')) - ureal2real (?f n (s, s')) < r"
-    apply (subst increasing_chain_limit_is_lub'')
+    apply (subst increasing_chain_limit_is_lub_all)
     apply (simp add: assms iterate_increasing_chain)
     by (simp add: a1)+
 
