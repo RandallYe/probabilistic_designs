@@ -2395,6 +2395,7 @@ theorem pwhile_true: "while\<^sub>p (true)\<^sub>e do P od = 0\<^sub>p"
   apply (simp add: ureal_zero ureal_zero')
   by (rule ureal_bottom_least)
 
+subsubsection \<open> Iteration \<close>
 text \<open> Can we use approximation chain in UTP (Ch. 2.7) to prove a unique fix point for a probabilistic 
 iteration?
 \<close>
@@ -2456,8 +2457,30 @@ lemma iterate_increasing_chain:
   apply (simp add: increasing_chain_def)
   by (simp add: assms iterate_increasing2)
 
+lemma iterate_not_zero_strict_increasing:
+  shows "(\<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0) \<longleftrightarrow> 
+        (ureal2real (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s))"
+  apply (rule iffI)
+proof (rule ccontr)
+  assume a1: "\<exists>n::\<nat>. \<not> iterate\<^sub>p n b P 0\<^sub>p s = (0::ureal)"
+  assume a2: "\<not> ureal2real (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s)"
+  then have "(\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s) = (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s)"
+    by (metis not_le_imp_less pzero_def ureal2real_mono_strict ureal_minus_larger_zero 
+        ureal_minus_larger_zero_unit utp_prob_rel_lattice.iterate.simps(1))
+  then have "\<forall>n. iterate n b P 0\<^sub>p s = (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s)"
+    by (metis SUP_upper bot.extremum bot_ureal.rep_eq iso_tuple_UNIV_I nle_le pzero_def 
+        ureal2ereal_inverse utp_prob_rel_lattice.iterate.simps(1) zero_ureal.rep_eq)
+  then show "false"
+    by (metis a1 pzero_def utp_prob_rel_lattice.iterate.simps(1))
+next
+  assume "ureal2real (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s)"
+  then show "\<exists>n::\<nat>. \<not> iterate\<^sub>p n b P 0\<^sub>p s = (0::ureal)"
+    by (smt (verit, best) SUP_bot_conv(2) bot_ureal.rep_eq ureal2ereal_inverse zero_ureal.rep_eq)
+  qed
+
 lemma iterate_continuous_limit:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
   shows "(\<lambda>n. ureal2real (Fwhile b P (iterate n b P 0\<^sub>p) (s, s'))) \<longlonglongrightarrow> 
     ureal2real ((Fwhile b P (\<Squnion>n::nat. iterate n b P 0\<^sub>p)) (s, s'))"
   apply (subst LIMSEQ_iff)
@@ -2509,7 +2532,8 @@ obtain N where P_N: "\<forall>n\<ge>N. \<bar>ureal2real (?f n (s, s')) - ureal2r
   have exist_NN: "\<exists>no::nat. \<forall>n \<ge> no.
             \<forall>s s'. ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')) - ureal2real (?f n (s, s')) < r"
     apply (subst increasing_chain_limit_is_lub_all)
-    apply (simp add: assms iterate_increasing_chain)
+       apply (simp add: assms iterate_increasing_chain)
+    using assms(2) iterate_not_zero_strict_increasing apply (smt (verit) Collect_cong Sup.SUP_cong)
     by (simp add: a1)+
 
   obtain NN where P_NN: "\<forall>n\<ge>NN. \<forall>s s'. \<bar>ureal2real (?f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. ?f n (s, s'))\<bar> < r"
