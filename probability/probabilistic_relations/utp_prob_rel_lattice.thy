@@ -390,11 +390,12 @@ abbreviation one_f ("\<^bold>1") where
 abbreviation zero_f ("\<^bold>0") where
   "zero_f \<equiv> (\<lambda> s. 0::ureal)"
 
-(* This is underspecified and could be assigned an arbitrary value. 
-TODO: How to deal with this?
-*)
 definition pzero :: "('s\<^sub>1, 's\<^sub>2) prfun" ("0\<^sub>p") where
 [pfun_defs]: "pzero = zero_f"
+
+definition pone :: "('s\<^sub>1, 's\<^sub>2) prfun" ("1\<^sub>p") where
+[pfun_defs]: "pone = one_f"
+
 
 (*
 lemma deadlock_always: "`@(deadlock_state pzero)`"
@@ -632,6 +633,9 @@ definition Fwhile :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow
 
 definition pwhile :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("while\<^sub>p _ do _ od") where
 [pfun_defs]: "pwhile b P = (\<mu>\<^sub>p X \<bullet> Fwhile b P X)"
+
+definition pwhile_top :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("while\<^sub>p\<^sup>\<top> _ do _ od") where
+[pfun_defs]: "pwhile_top b P = (\<nu>\<^sub>p X \<bullet> Fwhile b P X)"
 
 primrec iterate :: "\<nat> \<Rightarrow> ('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("iterate\<^sub>p") where
     "iterate 0 b P X = X"
