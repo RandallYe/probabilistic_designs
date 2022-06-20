@@ -563,7 +563,7 @@ term "([] \<parallel> [a])"
 
 subsubsection \<open> Recursion \<close>
 alphabet time = 
-  t :: enat
+  t :: nat
 
 text \<open>In UTP, @{text "\<mu>"} and @{text "\<nu>"} are the weakest and strongest fix point, but there are 
 gfp and lfp in Isabelle (see @{text "utp_pred.thy"}).
@@ -644,7 +644,7 @@ primrec iterate :: "\<nat> \<Rightarrow> ('a \<times> 'a) pred \<Rightarrow> 'a 
 abbreviation "Ftwhile b P X \<equiv> Fwhile b (P ; t := $t + 1) X"
 definition ptwhile :: "('a time_scheme \<times> 'a time_scheme) pred \<Rightarrow> 'a time_scheme prhfun \<Rightarrow> 'a time_scheme prhfun" 
 ("while\<^sub>p\<^sub>t _ do _ od") where
-[pfun_defs]: "ptwhile b P = (\<mu>\<^sub>p X \<bullet> Ftwhile b P X)"
+[pfun_defs]: "ptwhile b P = pwhile b (P ; t := $t + 1)"
 
 abbreviation iteratet ("iterate\<^sub>t") where "iteratet n b P X \<equiv> iterate n b (P ; t := $t + 1) X"
 
