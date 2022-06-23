@@ -382,13 +382,19 @@ definition rvfun_of_prfun where
 [ureal_defs]: "rvfun_of_prfun f = (ureal2real f)\<^sub>e "
 
 subsection \<open> Syntax \<close>
+(* deadlock: zero and not a distribution *)
+abbreviation one_r ("1\<^sub>R") where
+  "one_r \<equiv> (\<lambda>s. 1::real)"
+
+abbreviation zero_r ("0\<^sub>R") where
+  "zero_r \<equiv> (\<lambda>s. 0::real)"
 
 (* deadlock: zero and not a distribution *)
 abbreviation one_f ("\<^bold>1") where
-  "one_f \<equiv> (\<lambda> s. 1::ureal)"
+  "one_f \<equiv> (\<lambda>s. 1::ureal)"
 
 abbreviation zero_f ("\<^bold>0") where
-  "zero_f \<equiv> (\<lambda> s. 0::ureal)"
+  "zero_f \<equiv> (\<lambda>s. 0::ureal)"
 
 definition pzero :: "('s\<^sub>1, 's\<^sub>2) prfun" ("0\<^sub>p") where
 [pfun_defs]: "pzero = zero_f"
@@ -641,12 +647,13 @@ primrec iterate :: "\<nat> \<Rightarrow> ('a \<times> 'a) pred \<Rightarrow> 'a 
     "iterate 0 b P X = X"
   | "iterate (Suc n) b P X = (Fwhile b P (iterate n b P X))"
 
-abbreviation "Ftwhile b P X \<equiv> Fwhile b (P ; t := $t + 1) X"
+definition "Pt (P::'a time_scheme prhfun) \<equiv> (P ; t := $t + 1)"
+
 definition ptwhile :: "('a time_scheme \<times> 'a time_scheme) pred \<Rightarrow> 'a time_scheme prhfun \<Rightarrow> 'a time_scheme prhfun" 
 ("while\<^sub>p\<^sub>t _ do _ od") where
-[pfun_defs]: "ptwhile b P = pwhile b (P ; t := $t + 1)"
+[pfun_defs]: "ptwhile b P = pwhile b (Pt P)"
 
-abbreviation iteratet ("iterate\<^sub>t") where "iteratet n b P X \<equiv> iterate n b (P ; t := $t + 1) X"
+abbreviation iteratet ("iterate\<^sub>t") where "iteratet n b P X \<equiv> iterate n b (Pt P) X"
 
 term "iterate\<^sub>t 0 b P \<^bold>0 = \<^bold>0"
 

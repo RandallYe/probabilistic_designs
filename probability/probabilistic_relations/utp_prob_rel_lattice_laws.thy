@@ -220,7 +220,7 @@ lemma ereal_div:
 
 lemma real2uereal_inverse:
   assumes "r \<ge> 0" "r \<le> 1"
-  shows "real_of_ereal (ureal2ereal (ereal2ureal' r)) = r"
+  shows "real_of_ereal (ureal2ereal (ereal2ureal' r)) = real_of_ereal r"
   apply (subst ereal2ureal'_inverse)
   apply (simp add: atLeastAtMost_def)
   apply (simp add: assms(1) assms(2) divide_le_eq_1 order_less_le)
@@ -235,6 +235,12 @@ lemma real2uereal_min_inverse':
   assumes "r \<ge> 0" "r \<le> 1"
   shows "real_of_ereal (ureal2ereal (ereal2ureal' (min (ereal r) (1::ereal)))) = r"
   by (simp add: assms(1) assms(2) real2uereal_inverse')
+
+lemma ureal2rereal_inverse: "ereal2ureal (ereal (ureal2real u)) = u"
+  apply (simp add: ureal_defs)
+  by (smt (verit, best) Orderings.order_eq_iff atLeastAtMost_iff ereal_less(2) ereal_less_eq(1) 
+      ereal_max ereal_real ereal_times(1) min_def real_of_ereal_le_0 type_definition.Rep_inverse 
+      type_definition_ureal ureal2ereal)
 
 (*
 lemma real2uereal_inverse:
@@ -757,6 +763,16 @@ theorem prfun_skip':
   shows "rvfun_of_prfun (II) = pskip\<^sub>_f"
   apply (simp add: pfun_defs)
   using rvfun_skip_inverse by blast
+
+lemma prfun_skip_id: "II\<^sub>p (s, s) = 1"
+  apply (simp add: pfun_defs ureal_defs)
+  by (simp add: ereal2ureal_def iverson_bracket_def one_ereal_def one_ureal_def rel_skip)
+
+lemma prfun_skip_not_id: 
+  assumes "s \<noteq> s'"
+  shows "II\<^sub>p (s, s') = 0"
+  apply (simp add: pfun_defs ureal_defs)
+  by (simp add: assms ereal2ureal_def iverson_bracket_def rel_skip zero_ureal_def)
 
 subsubsection \<open> Assignment \<close>
 lemma rvfun_assignment_is_prob: "is_prob (passigns_f \<sigma>)"
@@ -1364,10 +1380,16 @@ lemma prfun_zero_right: "P ; \<^bold>0 = \<^bold>0"
   apply (simp add: ureal_defs)
   by (simp add: SEXP_def ereal2ureal_def subst_app_expr_def zero_ureal_def)
 
+lemma prfun_zero_right': "P ; 0\<^sub>p = 0\<^sub>p"
+  by (simp add: prfun_zero_right pzero_def)
+
 lemma prfun_zero_left: "\<^bold>0 ; P = \<^bold>0"
   apply (simp add: pfun_defs ureal_zero)
   apply (simp add: ureal_defs)
   by (simp add: SEXP_def ereal2ureal_def subst_app_expr_def zero_ureal_def)
+
+lemma prfun_zero_left': "0\<^sub>p ; P = 0\<^sub>p"
+  by (simp add: prfun_zero_left pzero_def)
 
 print_classes
 lemma prfun_pseqcomp_mono: 
