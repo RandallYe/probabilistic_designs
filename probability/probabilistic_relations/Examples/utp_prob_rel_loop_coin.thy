@@ -103,7 +103,7 @@ lemma sum_geometric_series_ureal:
   apply (simp add: max_def)
   by (smt (z3) one_le_power)
 
-lemma iterate_simp:
+lemma iterate_cflip_bottom_simp:
   shows "iterate\<^sub>p 0 (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p = 0\<^sub>p"
         "iterate\<^sub>p (Suc 0) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p = (\<lbrakk>$c\<^sup>< = chead \<and> $c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)"
         "iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p = 
@@ -118,7 +118,7 @@ lemma iterate_simp:
   apply (simp add: ureal_defs)
   apply (subst fun_eq_iff)
   apply (expr_auto)
-   apply (meson Tcoin.exhaust)
+  apply (meson Tcoin.exhaust)
   apply (induct_tac n)
   apply (simp)
   apply (simp add: Fwhile_def)
@@ -207,22 +207,26 @@ proof -
     using f1 f2 by presburger
 qed
 
-lemma fj: "(\<Squnion>n::\<nat>. iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p) = (\<Squnion>n::\<nat>. iterate\<^sub>p (n) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p)"
+lemma cflip_drop_initial_segments_eq: 
+  "(\<Squnion>n::\<nat>. iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p) = (\<Squnion>n::\<nat>. iterate\<^sub>p (n) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p)"
   apply (rule increasing_chain_sup_subset_eq)
   apply (rule iterate_increasing_chain)
   by (simp add: cflip_is_dist)
 
-lemma ff:
+lemma cflip_iterate_limit_sup:
   assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p))"
   shows "(\<lambda>n. ureal2real (f n s)) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n s))"
   apply (simp only: assms)
   apply (subst LIMSEQ_ignore_initial_segment[where k = "2"])
+  apply (subst increasing_chain_sup_subset_eq[where m = "2"])
+  apply (rule increasing_chain_fun)
+  apply (rule iterate_increasing_chain)
+  apply (simp add: cflip_is_dist)
   apply (subst increasing_chain_limit_is_lub')
-   apply (simp only: increasing_chain_def)
-   apply (auto)
-  apply (simp only: assms)
-  (* apply (subst iterate_increasing2) *)
-  sorry
+  apply (simp add: increasing_chain_def)
+  apply (auto)
+  apply (rule le_funI)
+  by (smt (verit, ccfv_threshold) cflip_is_dist iterate_increasing2 le_fun_def)
 
 lemma fa: "(\<lambda>n::\<nat>. ureal2real (ereal2ureal (ereal ((1::\<real>) - (1::\<real>) / ((2::\<real>) * (2::\<real>) ^ n)))))
   = (\<lambda>n::\<nat>. ((1::\<real>) - (1::\<real>) / ((2::\<real>) * (2::\<real>) ^ n)))"
@@ -259,11 +263,11 @@ proof -
     using f0 f1 by auto
 qed
 
-lemma fg:
+lemma cflip_iterate_limit_cH:
   assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p))"
   shows "(\<lambda>n. ureal2real (f n s)) \<longlonglongrightarrow> ((\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e s)"
   apply (simp only: assms)
-  apply (subst iterate_simp(3))
+  apply (subst iterate_cflip_bottom_simp(3))
   apply (subst sum_geometric_series_1)
   apply (rel_auto)
   apply (simp add: fa)
@@ -278,8 +282,8 @@ lemma fh:
   shows "((\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e s) = (ureal2real (\<Squnion>n::\<nat>. f n s))"
   apply (subst LIMSEQ_unique[where X = "(\<lambda>n. ureal2real (f n s))" and a = "((\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e s)" and 
           b = "(ureal2real (\<Squnion>n::\<nat>. f n s))"])
-  using fg apply (simp add: assms)
-  using ff apply (simp add: assms)
+  using cflip_iterate_limit_cH apply (simp add: assms)
+  using cflip_iterate_limit_sup apply (simp add: assms)
   by auto
 
 lemma fi: "(\<Squnion>n::\<nat>. iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p) = 
@@ -295,7 +299,7 @@ lemma coin_flip_loop: "cflip_loop = cH"
   apply (rule finite_subset[where B = "{s::cstate \<times> cstate. True}"])
   apply force
    apply (metis cstate_rel_UNIV_set finite.emptyI finite.insertI)
-  apply (simp only: fj[symmetric])
+  apply (simp only: cflip_drop_initial_segments_eq[symmetric])
   apply (simp only: fi)
   by auto
 

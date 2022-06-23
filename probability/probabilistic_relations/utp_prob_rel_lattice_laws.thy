@@ -3298,6 +3298,10 @@ any number @{text "n \<ge> no"}, the distance between @{text "f n"} and the supr
   qed
 qed
 
+lemma increasing_chain_fun:
+  assumes "increasing_chain f"
+  shows "increasing_chain (\<lambda>n. f n s)"
+  by (metis (mono_tags, lifting) assms increasing_chain_def le_funE)
 
 subsubsection \<open> Decreasing chains \<close>
 theorem decreasing_chain_antitone:
