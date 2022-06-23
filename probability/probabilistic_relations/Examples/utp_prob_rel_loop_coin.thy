@@ -298,7 +298,7 @@ lemma coin_flip_loop: "cflip_loop = cH"
   apply (simp add: cflip_is_dist)
   apply (rule finite_subset[where B = "{s::cstate \<times> cstate. True}"])
   apply force
-   apply (metis cstate_rel_UNIV_set finite.emptyI finite.insertI)
+  apply (metis cstate_rel_UNIV_set finite.emptyI finite.insertI)
   apply (simp only: cflip_drop_initial_segments_eq[symmetric])
   apply (simp only: fi)
   by auto

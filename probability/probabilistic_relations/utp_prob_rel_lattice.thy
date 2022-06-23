@@ -595,9 +595,12 @@ term "\<mu>\<^sub>p X  \<bullet>  (X::'s prhfun)"
 term "lfp (\<lambda>X. (P::'s prhfun))"
 
 subsection \<open> Chains \<close> 
+text \<open>There is another similar definition @{term "incseq"} in the topological space. Might consider 
+replacing this one @{text "increasing_chain"} with that one. \<close>
 definition increasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Rightarrow> bool" where
 [chains_defs]: "increasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<le> f n)"
 
+text \<open>Similarly @{term "decseq"}. \<close>
 definition decreasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Rightarrow> bool" where
 [chains_defs]: "decreasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<ge> f n)"
 

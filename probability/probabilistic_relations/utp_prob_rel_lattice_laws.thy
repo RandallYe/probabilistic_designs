@@ -242,6 +242,16 @@ lemma ureal2rereal_inverse: "ereal2ureal (ereal (ureal2real u)) = u"
       ereal_max ereal_real ereal_times(1) min_def real_of_ereal_le_0 type_definition.Rep_inverse 
       type_definition_ureal ureal2ereal)
 
+lemma ereal2real_inverse:
+  fixes e::"ereal"  
+  assumes "0 \<le> e" "e \<le> (1::ereal)"
+  shows "ureal2real (ereal2ureal e) = real_of_ereal e"
+  apply (simp add: ureal_defs)
+  by (simp add: assms(1) assms(2) real2uereal_inverse)
+
+lemma rvfun_of_prfun_simp: "rvfun_of_prfun [\<lambda>\<s>::'a \<times> 'a. u]\<^sub>e = (\<lambda>s. ureal2real u)"
+  by (simp add: SEXP_def rvfun_of_prfun_def)
+
 (*
 lemma real2uereal_inverse:
   assumes "n \<ge> 0" "d \<ge> 0" "n \<le> d"
@@ -837,6 +847,40 @@ lemma rvfun_pchoice_is_dist':
   apply (simp add: assms(2) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
   by (simp add: assms(1) assms(2) rvfun_prob_sum1_summable(2))
 
+lemma rvfun_pchoice_is_dist_c: 
+  assumes "is_final_distribution P" "is_final_distribution Q"
+          "r \<ge> 0" "r \<le> 1"
+  shows "is_final_distribution (P \<oplus>\<^sub>f\<^bsub>(\<lambda>s. r)\<^esub> Q)"
+  apply (simp add: dist_defs expr_defs, auto)
+  apply (simp add: assms(1) assms(2) assms(3) assms(4) rvfun_prob_sum1_summable(1))
+  apply (simp add: assms(1) assms(2) assms(3) assms(4) convex_bound_le rvfun_prob_sum1_summable(1))
+  apply (subst infsum_add)
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  apply (subst summable_on_cmult_right)
+  apply (simp add: assms(2) rvfun_prob_sum1_summable(3))+
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(2) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  by (simp add: assms(1) assms(2) rvfun_prob_sum1_summable(2))
+
+lemma rvfun_pchoice_is_dist_c': 
+  assumes "is_final_distribution P" "is_final_distribution Q"
+          "r \<ge> 0" "r \<le> 1"
+  shows "is_final_distribution (P \<oplus>\<^sub>f\<^bsub>[(\<lambda>s. r)]\<^sub>e\<^esub> Q)"
+  apply (simp add: dist_defs expr_defs, auto)
+  apply (simp add: assms(1) assms(2) assms(3) assms(4) rvfun_prob_sum1_summable(1))
+  apply (simp add: assms(1) assms(2) assms(3) assms(4) convex_bound_le rvfun_prob_sum1_summable(1))
+  apply (subst infsum_add)
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  apply (subst summable_on_cmult_right)
+  apply (simp add: assms(2) rvfun_prob_sum1_summable(3))+
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(2) rvfun_prob_sum1_summable(3) summable_on_cmult_right)
+  by (simp add: assms(1) assms(2) assms(3) assms(4) rvfun_prob_sum1_summable(2))
+
 lemma rvfun_pchoice_inverse:
   assumes "is_prob P" "is_prob Q"
   shows "rvfun_of_prfun (prfun_of_rvfun (P \<oplus>\<^sub>f\<^bsub>(rvfun_of_prfun r)\<^esub> Q)) = (P \<oplus>\<^sub>f\<^bsub>(rvfun_of_prfun r)\<^esub> Q)"
@@ -876,7 +920,7 @@ lemma rvfun_pchoice_inverse_c:
 
 lemma rvfun_pchoice_inverse_c': 
   assumes "is_prob P" "is_prob Q"
-  assumes "0 \<le> r \<and> r \<le> (1::\<real>)"
+  assumes "0 \<le> r \<and> r \<le> (1::ureal)"
   shows "rvfun_of_prfun (prfun_of_rvfun (pchoice_f P [(\<lambda>s. ureal2real r)]\<^sub>e Q)) = (pchoice_f P [(\<lambda>s. ureal2real r)]\<^sub>e Q)"
   apply (simp add: dist_defs expr_defs)
   apply (rule rvfun_inverse)
@@ -884,6 +928,16 @@ lemma rvfun_pchoice_inverse_c':
    apply (simp add: assms(1) assms(2) is_prob ureal_lower_bound ureal_upper_bound)
   by (simp add: assms(1) assms(2) convex_bound_le is_final_prob_altdef is_prob_final_prob 
       ureal_lower_bound ureal_upper_bound)
+
+lemma rvfun_pchoice_inverse_c'': 
+  assumes "is_prob P" "is_prob Q"
+  assumes "0 \<le> r \<and> r \<le> (1::\<real>)"
+  shows "rvfun_of_prfun (prfun_of_rvfun (pchoice_f P [(\<lambda>s. r)]\<^sub>e Q)) = (pchoice_f P [(\<lambda>s. r)]\<^sub>e Q)"
+  apply (simp add: dist_defs expr_defs)
+  apply (rule rvfun_inverse)
+  apply (simp add: is_prob_def expr_defs, auto)
+  apply (simp add: assms(1) assms(2) assms(3) is_prob)
+  by (simp add: assms(1) assms(2) assms(3) convex_bound_le is_prob)
 
 theorem prfun_pchoice_altdef: 
   "if\<^sub>p r then P else Q 
@@ -1049,6 +1103,28 @@ lemma rvfun_pcond_is_dist:
   apply (simp add: assms is_final_distribution_prob is_final_prob_altdef)+
   by (smt (verit, best) assms(1) assms(2) curry_conv infsum_cong is_dist_def is_sum_1_def)
 
+lemma rvfun_pcond_is_dist':
+  assumes "is_final_distribution P" "is_final_distribution Q"
+    "\<forall>s s\<^sub>1 s\<^sub>2. b (s, s\<^sub>1) = b (s, s\<^sub>2)"
+  shows "is_final_distribution (P \<lhd>\<^sub>f (b) \<rhd> Q)"
+  apply (simp add: dist_defs expr_defs, auto)
+  apply (simp add: assms is_final_distribution_prob is_final_prob_altdef)+
+proof -
+  fix s\<^sub>1
+  show "(\<Sum>\<^sub>\<infinity>s::'b. if b (s\<^sub>1, s) then P (s\<^sub>1, s) else Q (s\<^sub>1, s)) = (1::\<real>)"
+  proof (cases "\<forall>s. b (s\<^sub>1, s)")
+    case True
+    then show ?thesis 
+      by (smt (verit, best) assms(1) curry_conv infsum_cong is_dist_def is_sum_1_def)
+  next
+    case False
+    then have "\<forall>s. b (s\<^sub>1, s) = False"
+      using assms(3) by blast
+    then show ?thesis
+      by (smt (verit, best) assms(2) curry_conv infsum_cong is_dist_def is_sum_1_def)
+  qed
+qed
+  
 lemma rvfun_pcond_inverse:
   assumes "is_prob P" "is_prob Q"
   shows "rvfun_of_prfun (prfun_of_rvfun (P \<lhd>\<^sub>f b \<rhd> Q)) = (P \<lhd>\<^sub>f b \<rhd> Q)"
@@ -1551,7 +1627,7 @@ proof -
     using f0 assms rvfun_prob_sum1_summable(2) by force
 qed 
 
-theorem prel_seqcomp_assoc: 
+theorem prfun_seqcomp_assoc: 
   assumes "is_final_distribution (rvfun_of_prfun P)"
           "is_final_distribution (rvfun_of_prfun Q)"
           "is_final_distribution (rvfun_of_prfun R)"
@@ -2777,6 +2853,10 @@ qed
 *)
 
 subsection \<open> Chains \<close>
+text \<open>For the @{term "increasing_chain"} and @{term "decreasing_chain"}, similar definitions 
+@{term "incseq"} and @{term "decseq"} exist. Other useful theorems for those definitions include 
+@{thm "LIMSEQ_const_iff"}, @{thm "LIMSEQ_SUP"}, and more.
+\<close>
 subsubsection \<open> Increasing chains \<close>
 theorem increasing_chain_mono:
   assumes "increasing_chain f"
@@ -4062,8 +4142,8 @@ obtain N where P_N: "\<forall>n\<ge>N. \<bar>ureal2real (?f n (s, s')) - ureal2r
       let ?rhs = "\<lambda>v\<^sub>0. ureal2real (P (s, v\<^sub>0)) * r"
       obtain v\<^sub>0 where P_v\<^sub>0: "P (s, v\<^sub>0) > 0"
         using assms rvfun_prob_sum1_summable(4)
-        by (metis SEXP_def bot.extremum bot_ureal.rep_eq linorder_not_le nle_le rvfun_of_prfun_def 
-            ureal2ereal_inverse ureal2real_mono ureal_lower_bound ureal_real2ureal_smaller zero_ureal.rep_eq)
+        by (smt (verit, best) SEXP_def bot.extremum bot_ureal.rep_eq nless_le rvfun_of_prfun_def 
+            ureal2ereal_inverse ureal2real_mono_strict ureal_lower_bound ureal_real2ureal_smaller zero_ureal.rep_eq)
       have lhs_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. ?lhs v\<^sub>0) = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s \<in> ({v\<^sub>0} \<union> (-{v\<^sub>0})). ?lhs v\<^sub>0)"
         by auto
       have lhs_1: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s \<in> {v\<^sub>0}. ?lhs v\<^sub>0) + (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s \<in> -{v\<^sub>0}. ?lhs v\<^sub>0)"
