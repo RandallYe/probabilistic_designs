@@ -2105,19 +2105,22 @@ lemma rvfun_parallel_f_is_prob:
   shows "is_prob (p \<parallel>\<^sub>f q)"
   apply (simp add: dist_defs)
   apply (expr_auto)
-   apply (simp add: assms infsum_nonneg)
+  apply (simp add: assms infsum_nonneg)
 proof -
   fix a b
-  show "p (a, b) * q (a, b) / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<le> (1::\<real>)"
+  show "p (a, b) * q (a, b) / (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<le> (1::\<real>)"
   proof (cases "(\<lambda>s'. p (a, s') * q (a, s')) summable_on UNIV")
-    assume "(\<lambda>s'::'b. p (a, s') * q (a, s')) summable_on UNIV"
-    then show "p (a, b) * q (a, b) / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<le> (1::\<real>)"
-      oops
+    assume "(\<lambda>s'. p (a, s') * q (a, s')) summable_on UNIV"
+    then have "(\<Sum>\<^sub>\<infinity>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<ge> p (a, b) * q (a, b)"
+      by (meson UNIV_I assms infsum_geq_element)
+    then show "p (a, b) * q (a, b) / (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<le> (1::\<real>)"
+      by (smt (verit) assms divide_le_eq_1)
   next
-    assume "\<not> ((\<lambda>s'::'b. p (a, s') * q (a, s')) summable_on UNIV)"
+    assume "\<not> ((\<lambda>s'. p (a, s') * q (a, s')) summable_on UNIV)"
     (* division_ring_divide_zero *)
-    then show "p (a, b) * q (a, b) / (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<le> (1::\<real>)" 
+    then show "p (a, b) * q (a, b) / (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<le> (1::\<real>)" 
       by (simp add: infsum_not_exists)
+  qed
 qed
 
 lemma divide_eq: "\<lbrakk>p = q \<and> P = Q\<rbrakk> \<Longrightarrow> (p::\<real>) / P = q / Q"
@@ -2469,8 +2472,14 @@ proof -
     using qr_summable by presburger
 qed
 
-(*
-theorem prel_parallel_assoc_f:
+lemma rvfun_parallel_inverse: 
+  assumes "\<forall>s. p s * q s \<ge> 0"
+  shows "rvfun_of_prfun (prfun_of_rvfun (pparallel_f p q)) = pparallel_f p q"
+  apply (subst rvfun_inverse)
+  apply (simp add: assms(1) rvfun_parallel_f_is_prob)
+  by simp
+
+theorem prfun_rvfun_parallel_assoc_f:
   fixes P Q R :: "('s\<^sub>1, 's\<^sub>2) rvfun"
   assumes "\<forall>s. P s \<ge> 0" "\<forall>s. Q s \<ge> 0" "\<forall>s. R s \<ge> 0"
     "\<forall>s. ((\<lambda>v\<^sub>0. P (s, v\<^sub>0) * Q (s, v\<^sub>0)) summable_on UNIV)"
@@ -2480,169 +2489,88 @@ theorem prel_parallel_assoc_f:
   shows "(P \<parallel> Q) \<parallel> R = P \<parallel> (Q \<parallel> R)"
   apply (simp add: pfun_defs)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  apply (subst prel_of_rfrel_inverse)
-  apply (expr_auto add: dist_defs)
-  apply (simp add: assms(1) assms(2) infsum_nonneg)
-  apply (subgoal_tac "P (s\<^sub>1, s) * Q (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s\<^sub>2.  P (s\<^sub>1, v\<^sub>0) * Q (s\<^sub>1, v\<^sub>0))")
-  apply (smt (verit, ccfv_SIG) assms(1) assms(2) divide_le_eq_1 mult_nonneg_nonneg)
-  apply (rule infsum_geq_element)
-  apply (simp add: assms(1) assms(2))
-  apply (simp add: assms(4))+
-  apply (subst infsum_cdiv_left)
-  apply (simp add: assms(4))
-  apply (simp)
-  defer
-  apply (subst prel_of_rfrel_inverse)
-  apply (expr_auto add: dist_defs)
-  apply (simp add: assms(2) assms(3) infsum_nonneg)
-  apply (subgoal_tac "Q (s\<^sub>1, s) * R (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s\<^sub>2.  Q (s\<^sub>1, v\<^sub>0) * R (s\<^sub>1, v\<^sub>0))")
-  apply (smt (verit, ccfv_SIG) assms(2) assms(3) divide_le_eq_1 mult_nonneg_nonneg)
-  apply (rule infsum_geq_element)
+  apply (subst rvfun_inverse)
+  apply (simp add: assms(1) assms(2) rvfun_parallel_f_is_prob)
+  apply (subst rvfun_parallel_inverse)
   apply (simp add: assms(2) assms(3))
-  apply (simp add: assms(5))+
-  apply (subst infsum_cdiv_left)
-  apply (simp add: assms(5))
-  apply (simp)
-  defer
-  apply (rule prel_parallel_f_assoc_nonneg)
+  apply (rule rvfun_parallel_f_assoc_nonneg)
   apply (simp add: assms(1-3))+
   apply (simp add: assms(4))
-  apply (simp add: assms(5))
-  apply (smt (verit, ccfv_threshold) assms(1) assms(2) assms(4) assms(6) infsum_geq_element 
-      iso_tuple_UNIV_I mult_nonneg_nonneg mult_pos_pos)
-  by (smt (verit, ccfv_threshold) assms(2) assms(3) assms(5) assms(7) infsum_geq_element 
-      iso_tuple_UNIV_I mult_nonneg_nonneg mult_pos_pos)
+  by (simp add: assms(5))
 
-theorem prel_parallel_assoc_p:
-  fixes P Q R :: "('s\<^sub>1, 's\<^sub>2) prel"
-  assumes "\<forall>s\<^sub>1. \<exists>s'. (rfrel_of_prel P) (s\<^sub>1, s') > 0 \<and> (rfrel_of_prel Q) (s\<^sub>1, s') > 0"
-  assumes "\<forall>s\<^sub>1. \<exists>s'. (rfrel_of_prel Q) (s\<^sub>1, s') > 0 \<and> (rfrel_of_prel R) (s\<^sub>1, s') > 0"
+theorem prfun_parallel_assoc_p:
+  fixes P Q R :: "('s\<^sub>1, 's\<^sub>2) prfun"
+  assumes "\<forall>s::'s\<^sub>1. (\<lambda>y::'s\<^sub>2. rvfun_of_prfun Q (s, y)) summable_on UNIV"
   shows "(P \<parallel> Q) \<parallel> R = P \<parallel> (Q \<parallel> R)"
-  apply (simp add: prel_defs)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
-  apply (subst prel_of_rfrel_inverse)
-  apply (expr_auto add: dist_defs)
-  apply (simp add: infsum_nonneg prel_in_0_1')
-  apply (subgoal_tac "rfrel_of_prel P (s\<^sub>1, s) * rfrel_of_prel Q (s\<^sub>1, s) \<le>
-       (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s\<^sub>2. rfrel_of_prel P (s\<^sub>1, v\<^sub>0) * rfrel_of_prel Q (s\<^sub>1, v\<^sub>0))")
-  apply (smt (verit, ccfv_SIG) divide_le_eq_1_pos divide_nonneg_nonpos mult_nonneg_nonneg prel_in_0_1')
-  apply (rule infsum_geq_element)
-  apply (simp add: prel_in_0_1')
-  apply (subst prel_joint_prob_summable_on_product_dist')
-  apply (simp add: prel_is_dist)+
-  apply (subst infsum_cdiv_left)
-  using prel_joint_prob_summable_on_product_dist' apply (simp add: infsum_not_zero_summable)
-  apply (simp)
-  defer
-  apply (subst prel_of_rfrel_inverse)
-  apply (expr_auto add: dist_defs)
-  apply (simp add: infsum_nonneg prel_in_0_1')
-  apply (subgoal_tac "rfrel_of_prel Q (s\<^sub>1, s) * rfrel_of_prel R (s\<^sub>1, s) \<le>
-       (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s\<^sub>2. rfrel_of_prel Q (s\<^sub>1, v\<^sub>0) * rfrel_of_prel R (s\<^sub>1, v\<^sub>0))")
-  apply (smt (verit, ccfv_SIG) divide_le_eq_1_pos divide_nonneg_nonpos mult_nonneg_nonneg prel_in_0_1')
-  apply (rule infsum_geq_element)
-  apply (simp add: prel_in_0_1')
-  apply (subst prel_joint_prob_summable_on_product_dist')
-  apply (simp add: prel_is_dist)+
-  apply (subst infsum_cdiv_left)
-  using prel_joint_prob_summable_on_product_dist' apply (simp add: infsum_not_zero_summable)
-  apply (simp)
-  defer
-  apply (rule prel_parallel_f_assoc_prob)
-  apply (simp add: prel_is_prob)+
-  apply (smt (verit) infsum_not_exists is_dist_def is_sum_1_def prel_is_dist)
-proof -
-  fix s\<^sub>1
-  let ?P = "\<lambda>s'. (rfrel_of_prel P) (s\<^sub>1, s') > 0 \<and> (rfrel_of_prel Q) (s\<^sub>1, s') > 0"
-  have f1: "?P (SOME s'. ?P s')"
-    apply (rule someI_ex[where P="?P"])
-    using assms by blast
-  have f2: "(\<lambda>s. (rfrel_of_prel P) (s\<^sub>1, s) * (rfrel_of_prel Q) (s\<^sub>1, s)) (SOME s'. ?P s') \<le> 
-    (\<Sum>\<^sub>\<infinity>s'. (rfrel_of_prel P) (s\<^sub>1, s') * (rfrel_of_prel Q) (s\<^sub>1, s'))"
-    apply (rule infsum_geq_element)
-    apply (simp add: prel_in_0_1')
-    apply (subst prel_joint_prob_summable_on_product)
-    apply (simp add: prel_is_prob)+
-    by (simp add: prel_summable)+
-  also have f3: "... > 0"
-    by (smt (verit, ccfv_threshold) f1 f2 mult_pos_pos)
-  then show "\<not> (\<Sum>\<^sub>\<infinity>s::'s\<^sub>2. rfrel_of_prel P (s\<^sub>1, s) * rfrel_of_prel Q (s\<^sub>1, s)) = (0::\<real>)"
-    by linarith
-next
-  fix s\<^sub>1
-  let ?P = "\<lambda>s'. (rfrel_of_prel Q) (s\<^sub>1, s') > 0 \<and> (rfrel_of_prel R) (s\<^sub>1, s') > 0"
-  have f1: "?P (SOME s'. ?P s')"
-    apply (rule someI_ex[where P="?P"])
-    using assms by blast
-  have f2: "(\<lambda>s. (rfrel_of_prel Q) (s\<^sub>1, s) * (rfrel_of_prel R) (s\<^sub>1, s)) (SOME s'. ?P s') \<le> 
-    (\<Sum>\<^sub>\<infinity>s'. (rfrel_of_prel Q) (s\<^sub>1, s') * (rfrel_of_prel R) (s\<^sub>1, s'))"
-    apply (rule infsum_geq_element)
-    apply (simp add: prel_in_0_1')
-    apply (subst prel_joint_prob_summable_on_product)
-    apply (simp add: prel_is_prob)+
-    by (simp add: prel_summable)+
-  also have f3: "... > 0"
-    by (smt (verit, ccfv_threshold) f1 f2 mult_pos_pos)
-  then show "\<not> (\<Sum>\<^sub>\<infinity>s::'s\<^sub>2. rfrel_of_prel Q (s\<^sub>1, s) * rfrel_of_prel R (s\<^sub>1, s)) = (0::\<real>)"
-    by linarith
-qed
+  apply (simp add: pfun_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (subst rvfun_inverse)
+  apply (simp add: prfun_in_0_1' rvfun_parallel_f_is_prob)
+  apply (subst rvfun_inverse)
+  apply (simp add: prfun_in_0_1' rvfun_parallel_f_is_prob)
+  apply (rule rvfun_parallel_f_assoc_prob)
+  apply (simp add: is_prob_final_prob ureal_is_prob)+
+  apply (simp add: curry_def)
+  using assms by blast
 
-theorem prel_parallel_commute:
-  fixes P Q::"('a, 'b) rfrel"
+theorem prfun_parallel_commute_ff:
+  fixes P Q::"('a, 'b) rvfun"
   shows "P \<parallel> Q = Q \<parallel> P"
-  apply (simp add: prel_defs)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (simp add: pfun_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   by (simp add: mult.commute)
 
-theorem prel_parallel_commute':
-  fixes P Q::"('a, 'b) prel"
+theorem prfun_parallel_commute_pp:
+  fixes P Q::"('a, 'b) prfun"
   shows "P \<parallel> Q = Q \<parallel> P"
-  apply (simp add: prel_defs)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (simp add: pfun_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   by (simp add: mult.commute)
 
-theorem prel_parallel_commute'':
-  fixes P ::"('a, 'b) rfrel" and Q :: "('a, 'b) prel"
+theorem prfun_parallel_commute_rp:
+  fixes P ::"('a, 'b) rvfun" and Q :: "('a, 'b) prfun"
   shows "P \<parallel> Q = Q \<parallel> P"
-  apply (simp add: prel_defs)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (simp add: pfun_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   by (simp add: mult.commute)
 
-theorem prel_parallel_commute''':
-  fixes P ::"('a, 'b) prel" and Q :: "('a, 'b) rfrel"
+theorem prfun_parallel_commute_pf:
+  fixes P ::"('a, 'b) prfun" and Q :: "('a, 'b) rvfun"
   shows "P \<parallel> Q = Q \<parallel> P"
-  apply (simp add: prel_defs)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (simp add: pfun_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   by (simp add: mult.commute)
 
 text \<open>Any nonzero constant is a left identity in parallel with a distribution. \<close>
-theorem prel_parallel_left_identity:
-  assumes "is_final_distribution Q"
+theorem prel_parallel_left_identity_ff:
+  fixes c::"\<real>"
+  assumes "is_final_distribution P"
   assumes "c \<noteq> 0"
-  shows "(\<lambda>s. c) \<parallel> Q = prel_of_rfrel Q"
-  apply (simp add: prel_defs dist_defs)
+  shows "(\<lambda>s. c) \<parallel> P = prfun_of_rvfun P"
+  apply (simp add: pfun_defs dist_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto)
   apply (subst infsum_cmult_right)
-  apply (simp add: assms prel_prob_sum1_summable(3))
-  by (simp add: assms prel_prob_sum1_summable(2))
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3))
+  by (simp add: assms rvfun_prob_sum1_summable(2))
 
-theorem prel_parallel_left_identity':
+theorem prel_parallel_left_identity_fp:
+  fixes c::"\<real>"
   assumes "c \<noteq> 0"
-  shows "(\<lambda>s. c) \<parallel> Q = Q"
-  apply (simp add: prel_defs dist_defs)
+    "\<forall>s. ((\<lambda>v\<^sub>0. rvfun_of_prfun P (s, v\<^sub>0)) summable_on UNIV)"
+  shows "(\<lambda>s. c) \<parallel> P = P"
+  apply (simp add: pfun_defs dist_defs)
   apply (expr_auto)
   apply (subst infsum_cmult_right)
-  apply (simp add: prel_summable)
+  using assms(2) apply force
   apply (simp add: assms)
-  apply (subst prel_sum_1)
-  apply (simp)
-  by (simp add: rfrel_of_prel_inverse)
+  apply (simp add: ureal_defs)
 
 text \<open>Any nonzero constant is a right identity in parallel with a distribution. \<close>
 theorem prel_parallel_right_identity:
   assumes "is_final_distribution Q"
   assumes "c \<noteq> 0"
-  shows "Q \<parallel> (\<lambda>s. c) = prel_of_rfrel Q"
+  shows "Q \<parallel> (\<lambda>s. c) = prfun_of_rvfun Q"
   apply (simp add: prel_defs dist_defs)
   apply (expr_auto)
   apply (subst infsum_cmult_left)
@@ -2659,7 +2587,7 @@ theorem prel_parallel_right_identity':
   apply (simp add: assms)
   apply (subst prel_sum_1)
   apply (simp)
-  by (simp add: rfrel_of_prel_inverse)
+  by (simp add: rvfun_of_prfun_inverse)
 
 theorem prel_parallel_right_zero:
   fixes Q :: "('a, 'b) rfrel"
@@ -2686,12 +2614,12 @@ theorem prel_parallel_uniform_dist:
   assumes "vwb_lens x"
   assumes "A \<noteq> {}"
   shows "(x \<^bold>\<U> A) \<parallel> P = 
-    prel_of_rfrel ((\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))
+    prfun_of_rvfun ((\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))
                       / (\<Sum> v\<in>\<guillemotleft>A\<guillemotright>. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
   apply (subst uniform_dist_altdef)
   apply (simp add: assms(1-3))+
   apply (simp add: dist_defs prel_defs)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto add: rel)
 proof -
   fix a and xa
@@ -2768,11 +2696,11 @@ lemma prel_parallel_uniform_dist':
   assumes "\<forall>s. P s \<ge> 0"
   (* assumes "(\<exists>v \<in> A. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P) > 0)\<^sub>e" *)
   assumes "\<forall>s. \<exists>v \<in> A. P (s, put\<^bsub>x\<^esub> s v) > 0"
-  shows "rfrel_of_prel ((x \<^bold>\<U> A) \<parallel> P) = 
+  shows "rvfun_of_prfun ((x \<^bold>\<U> A) \<parallel> P) = 
       ((\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P))) / (\<Sum> v\<in>\<guillemotleft>A\<guillemotright>. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
   apply (subst prel_parallel_uniform_dist) 
   apply (simp add: assms)+
-  apply (subst prel_of_rfrel_inverse)
+  apply (subst rvfun_inverse)
   apply (expr_auto add: dist_defs rel)
   prefer 4
   apply (simp)

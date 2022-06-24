@@ -18,7 +18,7 @@ alphabet cstate =
   c :: Tcoin
 
 definition cflip:: "cstate prhfun" where
-"cflip = if\<^sub>p 0.5 then (c:=chead) else (c:=ctail)"
+"cflip = if\<^sub>p 0.5 then (c := chead) else (c := ctail)"
 
 definition cflip_loop where
 "cflip_loop = while\<^sub>p (c\<^sup>< = ctail)\<^sub>e do cflip od"
@@ -440,7 +440,7 @@ lemma "flip_loop = H"
   apply (simp add: flip_loop_def H_def)
   apply (simp add: ptwhile_def)
   apply (subst sup_continuous_lfp_iteration)
-    apply (metis flip_t flip_t_is_dist is_dist_def is_final_prob_prob rvfun_inverse)
+  apply (metis flip_t flip_t_is_dist is_dist_def is_final_prob_prob rvfun_inverse)
   apply (simp)
   apply (subst rvfun_inverse)
      apply (simp add: is_prob_def iverson_bracket_def)
