@@ -8,7 +8,20 @@ theory utp_prob_rel_lattice_laws
     (* "utp_prob_rel_prog" *)
 begin 
 
-term "convergent"
+text \<open> This version of @{term "expr_simp"} removes @{thm "fun_eq_iff"} because this method will 
+prevent the application of 
+@{text \<open>apply (rule HOL.arg_cong[where f="prfun_of_rvfun"]\<close>} to prove subgoals similar to 
+@{text "prfun_of_rvfun A = prfun_of_rvfun B"}. This method will simplify it to something like 
+@{text "\<And> s s'. (prfun_of_rvfun A) (s, s') = (prfun_of_rvfun B) (s, s')"}. Then 
+@{text \<open>apply (rule HOL.arg_cong[where f="prfun_of_rvfun"]\<close>} cannot be applied. 
+
+Our intention is to simplify @{text \<open>A\<close>} and @{text \<open>B\<close>} only with @{text "expr_simp_1"}
+\<close>
+method expr_simp_1 uses add = 
+  ((simp add: expr_simps)? \<comment> \<open> Perform any possible simplifications retaining the lens structure \<close>
+   ;((simp add: prod.case_eq_if alpha_splits expr_defs lens_defs add) ; \<comment> \<open> Explode the rest \<close>
+     (simp add: expr_defs lens_defs add)?))
+
 subsection \<open> @{text "ureal"} laws \<close>
 lemma ureal2ereal_mono:
   "\<lbrakk>a < b\<rbrakk> \<Longrightarrow> ureal2ereal a < ureal2ereal b"
@@ -1069,7 +1082,7 @@ lemma prfun_pchoice_assigns_inverse:
   by (simp add: rvfun_of_prfun_def)+
 
 lemma prfun_pchoice_assigns_inverse_c:
-  shows "rvfun_of_prfun ((x := e) \<oplus>\<^bsub>(\<lambda>s. ureal2real r)\<^esub> (y := f)) 
+  shows "rvfun_of_prfun ((x := e) \<oplus>\<^bsub>(\<lambda>s. r)\<^esub> (y := f)) 
        = (pchoice_f (\<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e) (ureal2real \<guillemotleft>r\<guillemotright>)\<^sub>e (\<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e))"
   apply (simp add: pfun_defs)
   apply (simp add: rvfun_assignment_inverse)
@@ -1078,14 +1091,13 @@ lemma prfun_pchoice_assigns_inverse_c:
   apply (simp add: is_prob_def prfun_in_0_1')
   apply (subst fun_eq_iff)
   apply (auto)
-  by (metis SEXP_def abs_ereal_ge0 atLeastAtMost_iff comp_def ereal2ureal_def ereal_less_eq(1) 
-      ereal_real ereal_times(1) max.absorb1 max.absorb2 min_def rvfun_of_prfun_def 
-      type_definition.Rep_inverse type_definition_ureal ureal2ereal ureal2real_def)+
+   apply (simp add: rvfun_of_prfun_def)
+  by (simp add: rvfun_of_prfun_def)
 
 lemma prfun_pchoice_assigns_inverse_c':
-  shows "rvfun_of_prfun ((x := e) \<oplus>\<^bsub>[(\<lambda>s. ureal2real r)]\<^sub>e\<^esub> (y := f)) 
+  shows "rvfun_of_prfun ((x := e) \<oplus>\<^bsub>[(\<lambda>s. r)]\<^sub>e\<^esub> (y := f)) 
        = (pchoice_f (\<lbrakk>\<lbrakk>x := e\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e) (ureal2real \<guillemotleft>r\<guillemotright>)\<^sub>e (\<lbrakk>\<lbrakk>y := f\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e))"
-  by (simp add: prfun_pchoice_assigns_inverse_c)
+  using prfun_pchoice_assigns_inverse_c SEXP_def by metis
 
 subsubsection \<open> Conditional choice \<close>
 lemma rvfun_pcond_is_prob: 
@@ -2542,7 +2554,7 @@ theorem prfun_parallel_commute_pf:
   by (simp add: mult.commute)
 
 text \<open>Any nonzero constant is a left identity in parallel with a distribution. \<close>
-theorem prel_parallel_left_identity_ff:
+theorem prfun_parallel_left_identity_ff:
   fixes c::"\<real>"
   assumes "is_final_distribution P"
   assumes "c \<noteq> 0"
@@ -2554,52 +2566,78 @@ theorem prel_parallel_left_identity_ff:
   apply (simp add: assms(1) rvfun_prob_sum1_summable(3))
   by (simp add: assms rvfun_prob_sum1_summable(2))
 
-theorem prel_parallel_left_identity_fp:
+theorem prfun_parallel_left_identity_fp:
   fixes c::"\<real>"
   assumes "c \<noteq> 0"
-    "\<forall>s. ((\<lambda>v\<^sub>0. rvfun_of_prfun P (s, v\<^sub>0)) summable_on UNIV)"
+  assumes "is_final_distribution (rvfun_of_prfun P)"
   shows "(\<lambda>s. c) \<parallel> P = P"
   apply (simp add: pfun_defs dist_defs)
   apply (expr_auto)
   apply (subst infsum_cmult_right)
-  using assms(2) apply force
-  apply (simp add: assms)
+  apply (simp add: assms(2) pdrfun_prob_sum1_summable'(4))
   apply (simp add: ureal_defs)
+  apply (auto)
+  using assms(1) apply presburger
+  apply (subst rvfun_prob_sum1_summable(2))
+  defer
+  apply (metis abs_ereal_ge0 atLeastAtMost_iff div_by_1 ereal_less_eq(1) ereal_real ereal_times(1) 
+      max.absorb2 min.orderE nle_le ureal2ereal ureal2ereal_inverse)
+proof -
+  have "is_final_distribution ((real_of_ereal \<circ> ureal2ereal) P)\<^sub>e"
+    using assms(2) ureal_defs 
+    by (smt (verit, best) case_prod_curry cond_case_prod_eta curry_def)
+  then show "is_final_distribution (\<lambda>a::'a \<times> 'b. real_of_ereal (ureal2ereal (P a)))"
+    by (simp add: comp_def SEXP_def)
+qed
 
 text \<open>Any nonzero constant is a right identity in parallel with a distribution. \<close>
-theorem prel_parallel_right_identity:
-  assumes "is_final_distribution Q"
+theorem prfun_parallel_right_identity_ff:
+  fixes c::"\<real>"
+  assumes "is_final_distribution P"
   assumes "c \<noteq> 0"
-  shows "Q \<parallel> (\<lambda>s. c) = prfun_of_rvfun Q"
-  apply (simp add: prel_defs dist_defs)
+  shows "P \<parallel> (\<lambda>s. c) = prfun_of_rvfun P"
+  apply (simp add: pfun_defs dist_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto)
   apply (subst infsum_cmult_left)
-  apply (simp add: assms prel_prob_sum1_summable(3))
-  by (simp add: assms prel_prob_sum1_summable(2))
+  apply (simp add: assms(1) rvfun_prob_sum1_summable(3))
+  by (simp add: assms rvfun_prob_sum1_summable(2))
 
-theorem prel_parallel_right_identity':
+theorem prel_parallel_right_identity_pf:
+  fixes c::"\<real>"
   assumes "c \<noteq> 0"
-  shows "Q \<parallel> (\<lambda>s. c) = Q"
-  apply (simp add: prel_defs dist_defs)
+  assumes "is_final_distribution (rvfun_of_prfun P)"
+  shows "P \<parallel> (\<lambda>s. c) = P"
+  apply (simp add: pfun_defs dist_defs)
   apply (expr_auto)
   apply (subst infsum_cmult_left)
-  apply (simp add: prel_summable)
-  apply (simp add: assms)
-  apply (subst prel_sum_1)
-  apply (simp)
-  by (simp add: rvfun_of_prfun_inverse)
+  apply (simp add: assms(2) pdrfun_prob_sum1_summable'(4))
+  apply (simp add: ureal_defs)
+  apply (auto)
+  using assms(1) apply presburger
+  apply (subst rvfun_prob_sum1_summable(2))
+  defer
+  apply (metis abs_ereal_ge0 atLeastAtMost_iff div_by_1 ereal_less_eq(1) ereal_real ereal_times(1) 
+      max.absorb2 min.orderE nle_le ureal2ereal ureal2ereal_inverse)
+proof -
+  have "is_final_distribution ((real_of_ereal \<circ> ureal2ereal) P)\<^sub>e"
+    using assms(2) ureal_defs 
+    by (smt (verit, best) case_prod_curry cond_case_prod_eta curry_def)
+  then show "is_final_distribution (\<lambda>a::'a \<times> 'b. real_of_ereal (ureal2ereal (P a)))"
+    by (simp add: comp_def SEXP_def)
+qed
 
-theorem prel_parallel_right_zero:
-  fixes Q :: "('a, 'b) rfrel"
-  shows "(Q \<parallel> 0\<^sub>f) = 0\<^sub>p"
-  apply (simp add: prel_defs dist_defs)
-  by (expr_auto)
+theorem prfun_parallel_right_zero:
+  fixes P :: "('a, 'b) rvfun"
+  shows "(P \<parallel> 0\<^sub>R) = 0\<^sub>p"
+  apply (simp add: pfun_defs dist_defs ureal_defs)
+  by (metis SEXP_apply ureal2ereal_inverse zero_ureal.rep_eq)
 
-theorem prel_parallel_left_zero:
-  fixes Q :: "('a, 'b) rfrel"
-  shows "(0\<^sub>f \<parallel> Q) = 0\<^sub>p"
-  apply (simp add: prel_defs dist_defs)
-  by (expr_auto)
+theorem prfun_parallel_left_zero:
+  fixes Q :: "('a, 'b) rvfun"
+  shows "(0\<^sub>R \<parallel> Q) = 0\<^sub>p"
+  apply (simp add: pfun_defs dist_defs ureal_defs)
+  by (metis SEXP_apply ureal2ereal_inverse zero_ureal.rep_eq)
 
 term "(\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P))\<^sub>e"
 term "([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)\<^sub>e"
@@ -2608,17 +2646,17 @@ term "(\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>\<lbrakk>x := \
 
 text \<open> The parallel composition of a @{text "P"} with a uniform distribution is just a normalised 
 summation of @{text "P"} with @{text "x"} in its final states substituted for each value in @{text "A"}.\<close>
-theorem prel_parallel_uniform_dist:
-  fixes P ::"('a, 'a) rfrel"
+theorem prfun_parallel_uniform_dist:
+  fixes P ::"('a, 'a) rvfun"
   assumes "finite A"
   assumes "vwb_lens x"
   assumes "A \<noteq> {}"
   shows "(x \<^bold>\<U> A) \<parallel> P = 
     prfun_of_rvfun ((\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))
                       / (\<Sum> v\<in>\<guillemotleft>A\<guillemotright>. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
-  apply (subst uniform_dist_altdef)
+  apply (subst rvfun_uniform_dist_altdef)
   apply (simp add: assms(1-3))+
-  apply (simp add: dist_defs prel_defs)
+  apply (simp add: dist_defs pfun_defs)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto add: rel)
 proof -
@@ -2688,8 +2726,8 @@ qed
 
 term "([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)\<^sub>e"
 term "(\<exists>v \<in> A. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P) > 0)\<^sub>e"
-lemma prel_parallel_uniform_dist':
-  fixes P ::"('a, 'a) rfrel"
+lemma prfun_parallel_uniform_dist':
+  fixes P ::"('a, 'a) rvfun"
   assumes "finite A"
   assumes "vwb_lens x"
   assumes "A \<noteq> {}"
@@ -2698,87 +2736,13 @@ lemma prel_parallel_uniform_dist':
   assumes "\<forall>s. \<exists>v \<in> A. P (s, put\<^bsub>x\<^esub> s v) > 0"
   shows "rvfun_of_prfun ((x \<^bold>\<U> A) \<parallel> P) = 
       ((\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P))) / (\<Sum> v\<in>\<guillemotleft>A\<guillemotright>. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
-  apply (subst prel_parallel_uniform_dist) 
+  apply (subst prfun_parallel_uniform_dist) 
   apply (simp add: assms)+
   apply (subst rvfun_inverse)
   apply (expr_auto add: dist_defs rel)
-  prefer 4
-  apply (simp)
-  using assms(4) apply (simp add: sum_nonneg)
+  apply (simp add: assms(4) sum_nonneg)
   apply (smt (verit, ccfv_SIG) assms(4) divide_le_eq_1 mult_cancel_right1 mult_not_zero sum_mono sum_nonneg)
-proof -
-  fix s\<^sub>1
-  let ?set = "{put\<^bsub>x\<^esub> s\<^sub>1 xa | xa. xa \<in> A}"
-  let ?lhs_1 = "\<lambda>s. (\<Sum>v::'b\<in>A. (if put\<^bsub>x\<^esub> s\<^sub>1 v = s then 1::\<real> else (0::\<real>)) * P (s\<^sub>1, put\<^bsub>x\<^esub> s v))"
-  let ?lhs_2 = "\<lambda>s. (\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> s v))"
-  let ?lhs = "(\<Sum>\<^sub>\<infinity>s::'a. ?lhs_1 s / ?lhs_2 s)"
-
-  have finite_set: "finite {put\<^bsub>x\<^esub> s\<^sub>1 xa | xa. xa \<in> A}"
-    apply (rule finite_image_set)
-    using assms(1) by auto
-
-  have sum_not_zero: "(\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> s\<^sub>1 v)) \<noteq> 0"
-    using assms(5) by (smt (verit, del_insts) assms(1) assms(4) sum_nonneg_0)
-
-  have "?lhs = (\<Sum>\<^sub>\<infinity>s::'a \<in> ?set \<union> (UNIV - ?set). ?lhs_1 s / ?lhs_2 s)"
-    by auto
-  also have "... = (\<Sum>\<^sub>\<infinity>s::'a \<in> ?set. ?lhs_1 s / ?lhs_2 s)"
-    apply (rule infsum_cong_neutral)
-    apply fastforce
-    apply (smt (verit, del_insts) CollectI DiffD2 divide_eq_0_iff mult_eq_0_iff 
-        sum.not_neutral_contains_not_neutral)
-    by fastforce
-  also have "... = (\<Sum>s::'a \<in> ?set. ?lhs_1 s / ?lhs_2 s)"
-    using finite_set infsum_finite by blast
-  also have "... = (\<Sum>s::'a \<in> ?set. P (s\<^sub>1, s) / (\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> s\<^sub>1 v)))"
-    apply (subst sum.cong[where A = "?set" and B = "?set" and 
-          h = "\<lambda>s. P (s\<^sub>1, s) / (\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> s\<^sub>1 v))"])
-    apply (simp)
-    defer
-    apply (simp)
-    proof -
-      fix xa
-      assume a1: "xa \<in> {uu::'a. \<exists>xa::'b. uu = put\<^bsub>x\<^esub> s\<^sub>1 xa \<and> xa \<in> A}"
-      let ?lhs_1 = "(\<Sum>v::'b\<in>A. (if put\<^bsub>x\<^esub> s\<^sub>1 v = xa then 1::\<real> else (0::\<real>)) * P (s\<^sub>1, put\<^bsub>x\<^esub> xa v))"
-  
-      have denominator_eq: "(\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> xa v)) = (\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> s\<^sub>1 v))"
-        using a1 assms(2) by force
-      
-      have numerator_eq: "?lhs_1 = (\<Sum>v::'b\<in>{get\<^bsub>x\<^esub> xa} \<union> (A - {get\<^bsub>x\<^esub> xa}). 
-        (if put\<^bsub>x\<^esub> s\<^sub>1 v = xa then 1::\<real> else (0::\<real>)) * P (s\<^sub>1, put\<^bsub>x\<^esub> xa v))"
-        using a1 assms(2) insert_Diff by fastforce
-      also have "... = (\<Sum>v::'b\<in>{get\<^bsub>x\<^esub> xa}.  
-                    (if put\<^bsub>x\<^esub> s\<^sub>1 v = xa then 1::\<real> else (0::\<real>)) * P (s\<^sub>1, put\<^bsub>x\<^esub> xa v))"
-        apply (subst sum_Un[where A = "{get\<^bsub>x\<^esub> xa}" and B = "A - {get\<^bsub>x\<^esub> xa}" and 
-          f = "\<lambda>v. (if put\<^bsub>x\<^esub> s\<^sub>1 v = xa then 1::\<real> else (0::\<real>)) * P (s\<^sub>1, put\<^bsub>x\<^esub> xa v)"])
-        apply blast
-        using assms(1) apply blast
-        by (smt (verit) Diff_disjoint Diff_iff add_cancel_left_right assms(2) finite.emptyI 
-            insert_disjoint(2) mult_not_zero sum.empty sum.not_neutral_contains_not_neutral 
-            vwb_lens_def wb_lens_weak weak_lens.put_get)
-      also have "... = P (s\<^sub>1, put\<^bsub>x\<^esub> xa (get\<^bsub>x\<^esub> xa))"
-        using a1 assms(2) by force
-      also have "... = P (s\<^sub>1, xa)"
-        by (simp add: assms(2))
-      then show "(\<Sum>v::'b\<in>A. (if put\<^bsub>x\<^esub> s\<^sub>1 v = xa then 1::\<real> else (0::\<real>)) * P (s\<^sub>1, put\<^bsub>x\<^esub> xa v)) /
-         (\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> xa v)) =
-         P (s\<^sub>1, xa) / (\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> s\<^sub>1 v))"
-        using calculation denominator_eq by presburger
-    qed
-  also have "... = (\<Sum>s::'a \<in> ?set. P (s\<^sub>1, s)) / (\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> s\<^sub>1 v))"
-    by (smt (verit) sum.cong sum_divide_distrib)
-  also have "... = 1"
-    apply (subgoal_tac "(\<Sum>s::'a \<in> ?set. P (s\<^sub>1, s)) = (\<Sum>v::'b\<in>A. P (s\<^sub>1, put\<^bsub>x\<^esub> s\<^sub>1 v))")
-    apply (simp add: sum_not_zero)
-    apply (rule sum.reindex_cong[where l = "(\<lambda>xa. put\<^bsub>x\<^esub> s\<^sub>1 xa)" and B = "A"])
-    apply (metis assms(2) inj_on_inverseI vwb_lens.axioms(1) wb_lens_weak weak_lens.put_get)
-    apply (simp add: Setcompr_eq_image)
-    by simp
-  
-  finally show "?lhs = (1::\<real>)"
-    by meson
-qed
-*)
+  by (simp)
 
 subsection \<open> Chains \<close>
 text \<open>For the @{term "increasing_chain"} and @{term "decreasing_chain"}, similar definitions 

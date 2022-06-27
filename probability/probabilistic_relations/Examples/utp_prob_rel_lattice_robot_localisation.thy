@@ -1,8 +1,8 @@
 section \<open> Example of probabilistic relation programming: Robot localisation \<close>
 
-theory utp_prob_rel_robot_localisation
+theory utp_prob_rel_lattice_robot_localisation
   imports 
-    "../utp_prob_rel_laws" 
+    "../utp_prob_rel_lattice_laws" 
 begin 
 
 unbundle UTP_Syntax
@@ -16,35 +16,35 @@ alphabet robot_local_state =
 
 definition "door p = ((p = (0::\<nat>)) \<or> (p = 2))"
 
-definition init :: "robot_local_state rfhrel" where
+definition init :: "robot_local_state rvhfun" where
 "init = bel \<^bold>\<U> {(0::\<nat>), 1, 2}"
 
 text \<open> A noisy sensor is more likely to get a right reading than a wrong reading: 4 vs. 1.\<close>
-definition scale_door :: "robot_local_state rfhrel"  where
+definition scale_door :: "robot_local_state rvhfun"  where
 "scale_door = (3 * \<lbrakk>\<guillemotleft>door\<guillemotright> (bel\<^sup>>)\<rbrakk>\<^sub>\<I>\<^sub>e + 1)\<^sub>e"
 
-definition scale_wall :: "robot_local_state rfhrel"  where
+definition scale_wall :: "robot_local_state rvhfun"  where
 "scale_wall = (3 * \<lbrakk>\<not>\<guillemotleft>door\<guillemotright> (bel\<^sup>>)\<rbrakk>\<^sub>\<I>\<^sub>e + 1)\<^sub>e"
 
-definition move_right :: "robot_local_state phrel"  where
+definition move_right :: "robot_local_state prhfun"  where
 "move_right = (bel := (bel + 1) mod 3)"
 
 definition robot_localisation where 
 "robot_localisation = ((((init \<parallel> scale_door) ; move_right) \<parallel> scale_door) ; move_right) \<parallel> scale_wall"
 
-definition believe_1::"robot_local_state rfhrel" where 
+definition believe_1::"robot_local_state rvhfun" where 
 "believe_1 \<equiv> (4/9 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 1/9 * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 4/9 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
 
-definition move_right_1::"robot_local_state rfhrel" where 
+definition move_right_1::"robot_local_state rvhfun" where 
 "move_right_1 \<equiv> (4/9 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 4/9 * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 1/9 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
 
-definition believe_2::"robot_local_state rfhrel" where 
+definition believe_2::"robot_local_state rvhfun" where 
 "believe_2 \<equiv> (2/3 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 1/6 * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 1/6 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
 
-definition move_right_2::"robot_local_state rfhrel" where 
+definition move_right_2::"robot_local_state rvhfun" where 
 "move_right_2 \<equiv> (1/6 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 2/3 * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 1/6 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
 
-definition believe_3::"robot_local_state rfhrel" where 
+definition believe_3::"robot_local_state rvhfun" where 
 "believe_3 \<equiv> (1/18 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 8/9 * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 1/18 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
 
 lemma init_knowledge_sum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
@@ -86,11 +86,11 @@ proof -
     using calculation by presburger
 qed
 
-lemma believe_1_simp: "(init \<parallel> scale_door) = prel_of_rfrel believe_1"
+lemma believe_1_simp: "(init \<parallel> scale_door) = prfun_of_rvfun believe_1"
   apply (simp add: pparallel_def init_def scale_door_def believe_1_def)
   apply (simp add: dist_norm_def)
-  apply (simp add: uniform_dist_altdef)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (simp add: rvfun_uniform_dist_altdef)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp add: door_def)
   apply (simp add: expr_defs)
   apply (rel_auto)
@@ -100,29 +100,29 @@ lemma believe_1_simp: "(init \<parallel> scale_door) = prel_of_rfrel believe_1"
   using init_knowledge_sum by auto[1]
 
 (* Use algebraic laws *)
-lemma believe_1_simp': "(init \<parallel> scale_door) = prel_of_rfrel believe_1"
+lemma believe_1_simp': "(init \<parallel> scale_door) = prfun_of_rvfun believe_1"
   apply (simp add: init_def believe_1_def)
-  apply (subst prel_parallel_uniform_dist)
+  apply (subst prfun_parallel_uniform_dist)
   apply (simp)+
   apply (simp add: scale_door_def)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp add: door_def)
   apply (simp add: expr_defs)
   by (rel_auto)
 
-lemma move_right_1_simp: "(init \<parallel> scale_door) ; move_right = prel_of_rfrel move_right_1"
+lemma move_right_1_simp: "(init \<parallel> scale_door) ; move_right = prfun_of_rvfun move_right_1"
   apply (simp add: pseqcomp_def move_right_1_def)
   (* apply (simp add: pparallel_def dist_norm_def) *)
   apply (simp add: init_def)
-  apply (subst prel_parallel_uniform_dist')
+  apply (subst prfun_parallel_uniform_dist')
   apply (simp)+
   apply (simp add: scale_door_def door_def)
   apply (expr_auto)
   apply (simp add: scale_door_def door_def)
    apply (expr_auto)
-  apply (simp add: prel_defs dist_norm_def move_right_def scale_door_def door_def )
-  apply (subst prel_set_conv_assign)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (simp add: pfun_defs dist_norm_def move_right_def scale_door_def door_def )
+  apply (subst rvfun_assignment_inverse)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto add: rel)
 proof -
   let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. ((if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * (4::\<real>) +
@@ -240,7 +240,7 @@ next
     by linarith
 qed
 
-lemma move_right_1_dist: "rfrel_of_prel (prel_of_rfrel move_right_1) = move_right_1"
+lemma move_right_1_dist: "rvfun_of_prfun (prfun_of_rvfun move_right_1) = move_right_1"
 proof -
   have summable_1: "(\<lambda>s::robot_local_state. (4::\<real>) * (if bel\<^sub>v s = (0::\<nat>) then 1::\<real> else (0::\<real>)) / (9::\<real>)) 
         summable_on UNIV"
@@ -316,18 +316,9 @@ have sum_2: "(\<Sum>\<^sub>\<infinity>s::robot_local_state. (4::\<real>) * (if b
 
   show ?thesis
     apply (simp add: move_right_1_def)
-    apply (subst prel_of_rfrel_inverse)
-    apply (expr_auto add: dist_defs)
-    apply (subst infsum_add)
-    apply (subst summable_on_add)
-    apply (simp add: summable_1)
-    apply (simp add: summable_2)
-    apply (simp)
-    apply (simp add: summable_3)
-    apply (subst infsum_add)
-    apply (simp add: summable_1)
-    apply (simp add: summable_2)
-    by (simp add: sum_1 sum_2 sum_3)+
+    apply (subst rvfun_inverse)
+     apply (expr_auto add: dist_defs)
+    by simp
 qed
 
 lemma believe_2_sum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
@@ -518,19 +509,19 @@ proof -
 qed
   
 lemma believe_2_simp: "(((init \<parallel> scale_door) ; move_right) \<parallel> scale_door) = 
-  prel_of_rfrel believe_2"
+  prfun_of_rvfun believe_2"
   apply (simp add: move_right_1_simp believe_2_def)
-  apply (simp add: scale_door_def door_def prel_defs)
+  apply (simp add: scale_door_def door_def pfun_defs)
   apply (simp add: move_right_1_dist)
   apply (simp add: move_right_1_def dist_defs)
-  apply (expr_auto add: rel)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (expr_simp_1)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp add: ring_distribs(2))
   apply (subst fun_eq_iff, rule allI)
   apply (auto)
   by (simp add: believe_2_sum)+
 
-lemma believe_2_dist: "rfrel_of_prel (prel_of_rfrel believe_2) = believe_2"
+lemma believe_2_dist: "rvfun_of_prfun (prfun_of_rvfun believe_2) = believe_2"
 proof -
   have summable_1: "(\<lambda>s::robot_local_state. (2::\<real>) * (if bel\<^sub>v s = (0::\<nat>) then 1::\<real> else (0::\<real>)) / (3::\<real>)) 
         summable_on UNIV"
@@ -600,29 +591,20 @@ proof -
 
   show ?thesis
     apply (simp add: believe_2_def)
-    apply (subst prel_of_rfrel_inverse)
+    apply (subst rvfun_inverse)
     apply (expr_auto add: dist_defs)
-    apply (subst infsum_add)
-    apply (subst summable_on_add)
-    apply (simp add: summable_1)
-    apply (simp add: summable_2)
-    apply (simp)
-    apply (simp add: summable_3)
-    apply (subst infsum_add)
-    apply (simp add: summable_1)
-    apply (simp add: summable_2)
-    by (simp add: sum_1 sum_2 sum_3)+
+    by (simp)
 qed
 
 lemma move_right_2_simp: 
-  "((((init \<parallel> scale_door) ; move_right) \<parallel> scale_door) ; move_right) = prel_of_rfrel move_right_2"
+  "((((init \<parallel> scale_door) ; move_right) \<parallel> scale_door) ; move_right) = prfun_of_rvfun move_right_2"
   apply (simp add: believe_2_simp)
   apply (simp add: move_right_2_def move_right_def)
-  apply (simp add: prel_defs)
+  apply (simp add: pfun_defs)
   apply (simp add: believe_2_dist)
-  apply (subst prel_set_conv_assign)
+  apply (subst rvfun_assignment_inverse)
   apply (simp add: believe_2_def)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto add: rel)
   apply (simp_all add: ring_distribs(2))
   apply (simp add: mult.assoc)+
@@ -755,7 +737,7 @@ next
 qed
 
 
-lemma move_right_2_dist: "rfrel_of_prel (prel_of_rfrel move_right_2) = move_right_2"
+lemma move_right_2_dist: "rvfun_of_prfun (prfun_of_rvfun move_right_2) = move_right_2"
 proof -
   have summable_1: "(\<lambda>s::robot_local_state. (if bel\<^sub>v s = (0::\<nat>) then 1::\<real> else (0::\<real>)) / (6::\<real>)) 
         summable_on UNIV"
@@ -825,18 +807,9 @@ proof -
 
   show ?thesis
     apply (simp add: move_right_2_def)
-    apply (subst prel_of_rfrel_inverse)
+    apply (subst rvfun_inverse)
     apply (expr_auto add: dist_defs)
-    apply (subst infsum_add)
-    apply (subst summable_on_add)
-    apply (simp add: summable_1)
-    apply (simp add: summable_2)
-    apply (simp)
-    apply (simp add: summable_3)
-    apply (subst infsum_add)
-    apply (simp add: summable_1)
-    apply (simp add: summable_2)
-    by (simp add: sum_1 sum_2 sum_3)+
+    by (simp)
 qed
 
 lemma believe_3_sum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
@@ -1013,14 +986,14 @@ proof -
     by (simp add: sum_1 sum_2 sum_3)
 qed
 
-lemma believe_3_simp: "robot_localisation = prel_of_rfrel believe_3"
+lemma believe_3_simp: "robot_localisation = prfun_of_rvfun believe_3"
   apply (simp add: robot_localisation_def)
   apply (simp add: move_right_2_simp believe_3_def)
-  apply (simp add: scale_wall_def door_def prel_defs)
+  apply (simp add: scale_wall_def door_def pfun_defs)
   apply (simp add: move_right_2_dist)
   apply (simp add: move_right_2_def dist_defs)
-  apply (expr_auto add: rel)
-  apply (rule HOL.arg_cong[where f="prel_of_rfrel"])
+  apply (expr_simp_1)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp add: ring_distribs(2))
   apply (subst fun_eq_iff, rule allI)
   apply (auto)

@@ -2744,10 +2744,9 @@ proof -
     apply (subst Forgetful_Monty''')
     apply (subst rvfun_inverse)
     apply (simp add: Forgetful_Monty'_learned_dist is_final_distribution_prob is_final_prob_prob)
-    using Forgetful_Monty'_learned_dist apply blast
     apply (simp add: Forgetful_Monty'_learned_def dist_defs)
     apply (expr_auto)
     by (simp add: infsum_1_2)
 qed
-                        
+
 end
