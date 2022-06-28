@@ -38,7 +38,7 @@ lemma cflip_is_dist: "is_final_distribution (rvfun_of_prfun cflip)"
   using rvfun_pchoice_is_dist'
   using rvfun_assignment_is_dist by fastforce
 
-lemma flip_altdef: "rvfun_of_prfun cflip = (\<lbrakk>\<lbrakk>\<Union> v \<in> {ctail, chead}. c := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
+lemma cflip_altdef: "rvfun_of_prfun cflip = (\<lbrakk>\<lbrakk>\<Union> v \<in> {ctail, chead}. c := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
   apply (simp add: cflip_def pfun_defs)
   apply (subst rvfun_assignment_inverse)+
   apply (simp add: r_simp)
@@ -129,7 +129,7 @@ lemma iterate_cflip_bottom_simp:
   apply (subst rvfun_pcond_inverse)
   apply (metis ureal_is_prob ureal_zero)
   apply (simp add: rvfun_skip_f_is_prob)
-  apply (subst flip_altdef)
+  apply (subst cflip_altdef)
   apply (subst rvfun_inverse)
   apply (simp add: dist_defs)
   apply (expr_auto)
@@ -157,7 +157,7 @@ lemma iterate_cflip_bottom_simp:
   apply (subst Fwhile_def)
   apply (subst pseqcomp_def)
   apply (subst pcond_def)
-  apply (subst flip_altdef)
+  apply (subst cflip_altdef)
   apply (subst rvfun_inverse)
   apply (simp add: dist_defs)
   apply (expr_auto)
@@ -368,7 +368,6 @@ lemma flip_t_is_dist: "is_final_distribution flip_t_alt"
       coin_state.ext_inject field_sum_of_halves finite.emptyI finite.insertI insert_absorb 
       insert_not_empty of_nat_1 of_nat_add one_add_one singletonD time.ext_inject)
 
-(*
 lemma H_is_dist: "is_final_distribution H"
   apply (simp add: dist_defs H_def)
   apply (simp add: expr_defs)
@@ -435,7 +434,7 @@ proof -
   ultimately show "?lhs = (1::\<real>)"
     by presburger
 qed
-*)
+
 lemma "flip_loop = H"
   apply (simp add: flip_loop_def H_def)
   apply (simp add: ptwhile_def)
