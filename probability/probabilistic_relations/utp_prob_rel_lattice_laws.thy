@@ -262,6 +262,12 @@ lemma ereal2real_inverse:
   apply (simp add: ureal_defs)
   by (simp add: assms(1) assms(2) real2uereal_inverse)
 
+lemma real2eureal_inverse:
+  assumes "0 \<le> e" "e \<le> 1"
+  shows "ureal2real (ereal2ureal (ereal e)) = e"
+  apply (simp add: ureal_defs)
+  by (simp add: assms(1) assms(2) real2uereal_inverse')
+
 lemma rvfun_of_prfun_simp: "rvfun_of_prfun [\<lambda>\<s>::'a \<times> 'a. u]\<^sub>e = (\<lambda>s. ureal2real u)"
   by (simp add: SEXP_def rvfun_of_prfun_def)
 
@@ -759,6 +765,9 @@ lemma ureal_top_greatest: "P \<le> \<^bold>1"
 
 lemma ureal_top_greatest': "P \<le> 1\<^sub>p"
   by (metis le_fun_def one_ureal.rep_eq pone_def top_greatest top_ureal.rep_eq ureal2ereal_inject)
+
+lemma ureal_rzero_0: "[0\<^sub>R]\<^sub>e s = 0"
+  by simp
 
 subsubsection \<open> Skip \<close>
 lemma rvfun_skip_f_is_prob: "is_prob II\<^sub>f"
