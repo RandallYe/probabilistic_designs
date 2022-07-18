@@ -1190,7 +1190,7 @@ proof -
       show "?lhs \<le> (1::\<real>)"
         using f2 f3 f4 f5 by presburger
     next
-       fix fd1 fd2 fd2\<^sub>v'::"Tdice"
+      fix fd1 fd2 fd2\<^sub>v'::"Tdice"
   
       have card_lhs_eq: "{v\<^sub>0::fdstate. ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 \<and> 
           v\<^sub>0 = \<lparr>fd1\<^sub>v = fd2\<^sub>v', fd2\<^sub>v = fd2\<^sub>v'\<rparr>} = {v\<^sub>0::fdstate. v\<^sub>0 = \<lparr>fd1\<^sub>v = fd2\<^sub>v', fd2\<^sub>v = fd2\<^sub>v'\<rparr>}"
@@ -1237,14 +1237,6 @@ proof -
           (if \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>))))"
       let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 then 1::\<real> else (0::\<real>)) *
             (if ?lhs2_b v\<^sub>0 then 1::\<real> else (0::\<real>)) * ?lhs3 v\<^sub>0 / (36::\<real>))"
-      (*
-      have f1: "ureal2real (ereal2ureal (ereal (sum_5_6 n / (36::\<real>)))) = (sum_5_6 n / (36::\<real>))"
-        apply (subst real2eureal_inverse)
-        apply (smt (verit) divide_nonneg_nonneg sum_5_6_in_0_6)
-        apply (simp)
-        apply (smt (verit, del_insts) divide_nonneg_nonneg one_le_power power_divide)
-        by simp
-      *)
       have lhs1'_set_eq: "{s::fdstate.
         (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd1\<^sub>v s = nat2td (2::\<nat>) \<or> fd1\<^sub>v s = nat2td (3::\<nat>) \<or> fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>)) \<and>
         (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd2\<^sub>v s = nat2td (2::\<nat>) \<or> fd2\<^sub>v s = nat2td (3::\<nat>) \<or> fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>)) \<and>
@@ -1272,7 +1264,15 @@ proof -
         using lhs1'_set_card by linarith
 
       have lhs2'_card: "card {s::fdstate. ?lhs1_b s \<and> ?lhs2_b s \<and> \<not> fd1\<^sub>v s = fd2\<^sub>v s} = 30"
-        sorry
+        proof -
+          have "{x::fdstate. \<not>fd1\<^sub>v x = fd2\<^sub>v x} = {s::fdstate. ?lhs1_b s \<and> ?lhs2_b s \<and> \<not> fd1\<^sub>v s = fd2\<^sub>v s}"
+            apply (subst set_eq_iff)
+            apply (auto)
+            apply (metis One_nat_def fd1_mem insert_iff singletonD)
+            by (metis One_nat_def fd2_mem insert_iff singletonD)
+          then show ?thesis
+            using fdstate_set_d1d2_neq_card by presburger
+        qed
       have lhs2'_simp: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
               sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>) / (36::\<real>)) 
           = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
@@ -1352,6 +1352,141 @@ proof -
         qed
       then show "?lhs \<le> 1"
         using f3 f4 f5 f6 by presburger
+    next
+      fix n::"\<nat>" and b::"fdstate"
+      assume a1: "\<not> fd1\<^sub>v b = fd2\<^sub>v b"
+      let ?lhs3 = "\<lambda>v\<^sub>0. ureal2real (ereal2ureal (ereal ((if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) 
+          * (if fd1\<^sub>v b = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v b = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)))))"
+      let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+            (if ?lhs2_b v\<^sub>0 then 1::\<real> else (0::\<real>)) * ?lhs3 v\<^sub>0 / 36)"
+      have f1: "\<forall>v\<^sub>0. ?lhs3 v\<^sub>0 = 0"
+        apply (subst real2eureal_inverse)
+        apply auto[1]
+         apply simp
+        using a1 by force
+      have f2: "\<forall>v\<^sub>0. (if ?lhs1_b v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+            (if ?lhs2_b v\<^sub>0 then 1::\<real> else (0::\<real>)) * ?lhs3 v\<^sub>0 / 36  = 0"
+        apply (subst f1)
+        by simp
+      then show "?lhs \<le> 1"
+        by (simp add: infsum_0)
+    next
+      fix n::"\<nat>" and fd1 fd2 fd2\<^sub>v'::"Tdice"
+      let ?lhs3 = "\<lambda>v\<^sub>0. ureal2real (ereal2ureal (ereal
+         ((if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) +
+          (if \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>))))"
+      let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+            (if ?lhs2_b v\<^sub>0 then 1::\<real> else (0::\<real>)) * ?lhs3 v\<^sub>0 / (36::\<real>))"
+
+      have lhs1'_set_eq: "{s::fdstate.
+        (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd1\<^sub>v s = nat2td (2::\<nat>) \<or> fd1\<^sub>v s = nat2td (3::\<nat>) \<or> fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd2\<^sub>v s = nat2td (2::\<nat>) \<or> fd2\<^sub>v s = nat2td (3::\<nat>) \<or> fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        fd1\<^sub>v s = fd2\<^sub>v s \<and> fd2\<^sub>v' = fd1\<^sub>v s \<and> fd2\<^sub>v' = fd2\<^sub>v s} = {s::fdstate. fd2\<^sub>v' = fd1\<^sub>v s \<and> fd2\<^sub>v' = fd2\<^sub>v s}"
+        apply (subst set_eq_iff)
+        apply (auto)
+        using fd2_mem apply auto[1]
+        using fd2_mem by auto[1]
+      have lhs1'_set_card: "card {s::fdstate.
+        (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd1\<^sub>v s = nat2td (2::\<nat>) \<or> fd1\<^sub>v s = nat2td (3::\<nat>) \<or> fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd2\<^sub>v s = nat2td (2::\<nat>) \<or> fd2\<^sub>v s = nat2td (3::\<nat>) \<or> fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        fd1\<^sub>v s = fd2\<^sub>v s \<and> fd2\<^sub>v' = fd1\<^sub>v s \<and> fd2\<^sub>v' = fd2\<^sub>v s} = Suc 0"
+        apply (subst lhs1'_set_eq)
+        apply (subst card_1_singleton_iff)
+        apply (rule_tac x = "\<lparr>fd1\<^sub>v = fd2\<^sub>v', fd2\<^sub>v = fd2\<^sub>v'\<rparr>" in exI)
+        by (auto)
+      have lhs1'_simp: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (
+          (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / 36)) = 1 / 36"
+        apply (subst infsum_cdiv_left)
+        apply (rule infsum_constant_finite_states_summable)
+        apply (meson fdstate_finite rev_finite_subset subset_UNIV)
+        apply (simp)
+        apply (subst infsum_constant_finite_states)
+        apply (meson fdstate_finite rev_finite_subset subset_UNIV)
+        using lhs1'_set_card by linarith
+
+      have lhs2'_card: "card {s::fdstate. ?lhs1_b s \<and> ?lhs2_b s \<and> \<not> fd1\<^sub>v s = fd2\<^sub>v s} = 30"
+        proof -
+          have "{x::fdstate. \<not>fd1\<^sub>v x = fd2\<^sub>v x} = {s::fdstate. ?lhs1_b s \<and> ?lhs2_b s \<and> \<not> fd1\<^sub>v s = fd2\<^sub>v s}"
+            apply (subst set_eq_iff)
+            apply (auto)
+            apply (metis One_nat_def fd1_mem insert_iff singletonD)
+            by (metis One_nat_def fd2_mem insert_iff singletonD)
+          then show ?thesis
+            using fdstate_set_d1d2_neq_card by presburger
+        qed
+      have lhs2'_simp: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+              sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>) / (36::\<real>)) 
+          = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+              (sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>) / (36::\<real>)))"
+        by auto
+      have lhs2'_simp': "... = 
+        (30) * sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>) / (36::\<real>)"
+        apply (subst infsum_cmult_left)
+        apply (rule infsum_constant_finite_states_summable)
+        apply (meson fdstate_finite rev_finite_subset subset_UNIV)
+        apply (subst infsum_constant_finite_states)
+        apply (meson fdstate_finite rev_finite_subset subset_UNIV)
+        by (simp add: lhs2'_card)
+
+      have f1: "\<forall>v\<^sub>0. ?lhs3 v\<^sub>0
+          = ((if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) +
+             (if \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>))"
+        apply (auto)
+        apply (simp add: sum_geometric_series_5_6)
+        apply (subst real2eureal_inverse)
+        apply (induction n)
+        apply (simp)
+        apply fastforce
+        apply (simp)
+        apply (smt (verit, del_insts) divide_nonneg_nonneg one_le_power power_divide)
+        apply (simp)
+        using real2eureal_inverse apply auto[1]
+        using real2eureal_inverse by auto[1]
+
+      have f2: "\<forall>v\<^sub>0. (if ?lhs1_b v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+            (if ?lhs2_b v\<^sub>0 then 1::\<real> else (0::\<real>)) * ?lhs3 v\<^sub>0
+        = (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) +
+          (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+              sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>)"
+        apply (rule allI)
+        apply (subst f1)
+        by simp
+
+      have f3: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (
+          (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) 
+        + (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+              sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>)) / (36::\<real>))"
+        using f2 infsum_cong by presburger
+      have f4: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (
+          (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / 36 
+        + (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+              sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>) / (36::\<real>)))"
+        apply (rule infsum_cong)
+        using add_divide_distrib by blast
+      have f5: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (
+          (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / 36)) 
+        + (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+              sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>) / (36::\<real>))"
+        apply (subst infsum_add)
+        apply (rule summable_on_cdiv_left)
+        apply (rule infsum_constant_finite_states_summable)
+        apply (meson fdstate_finite rev_finite_subset subset_UNIV)
+        apply (rule summable_on_cdiv_left)
+        apply (rule summable_on_cdiv_left)
+        apply (rule summable_on_cmult_left)
+        apply (rule infsum_constant_finite_states_summable)
+        apply (meson fdstate_finite rev_finite_subset subset_UNIV)
+        by simp
+      have f6: "... = 1 / 36 + (30) * sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} / (36::\<real>) / (36::\<real>)"
+        by (simp only: lhs1'_simp lhs2'_simp lhs2'_simp')
+      have f7: "... = ((sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} + (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ n / (6::\<real>)) / (36::\<real>))"
+        apply (subst sum_geometric_series_5_6)+
+        by (auto)
+      then show "ereal2ureal (ereal ?lhs) = ereal2ureal (ereal ((sum ((^) ((5::\<real>) / (6::\<real>))) {0::\<nat>..n} 
+        + (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ n / (6::\<real>)) / (36::\<real>)))"
+        using f3 f4 f5 f6 by presburger
+    qed
+qed
 
 lemma fdice_throw_iterate_limit_dH:
   assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p))"
