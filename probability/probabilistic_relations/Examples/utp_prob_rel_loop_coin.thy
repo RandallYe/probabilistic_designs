@@ -23,8 +23,15 @@ definition cflip:: "cstate prhfun" where
 definition cflip_loop where
 "cflip_loop = while\<^sub>p (c\<^sup>< = ctail)\<^sub>e do cflip od"
 
-definition cH:: "cstate rvhfun" where 
+definition cH :: "cstate rvhfun" where 
 "cH = (\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+
+definition cH':: "cstate rvhfun" where  
+"cH' = (\<lbrakk>c\<^sup>< = chead\<rbrakk>\<^sub>\<I>\<^sub>e * (\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e) + \<lbrakk>\<not>c\<^sup>< = chead\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+
+lemma "cH = cH'"
+  apply (simp add: cH_def cH'_def)
+  by (expr_auto)
 
 lemma r_simp: "rvfun_of_prfun [\<lambda>\<s>::cstate \<times> cstate. p]\<^sub>e = (\<lambda>s. ureal2real p)"
   by (simp add: SEXP_def rvfun_of_prfun_def)
@@ -50,6 +57,10 @@ lemma cflip_altdef: "rvfun_of_prfun cflip = (\<lbrakk>\<lbrakk>\<Union> v \<in> 
 lemma cstate_UNIV_set: "(UNIV::\<bbbP> cstate) = {\<lparr>c\<^sub>v = chead\<rparr>, \<lparr>c\<^sub>v = ctail\<rparr>}"
   apply (auto)
   by (metis Tcoin.exhaust cstate.cases)
+
+lemma cstate_head: "{s::cstate. c\<^sub>v s = chead} = {\<lparr>c\<^sub>v = chead\<rparr>}"
+  apply (subst set_eq_iff)
+  by (auto)
 
 lemma cstate_rel_UNIV_set:
   "{s::cstate \<times> cstate. True} = {(\<lparr>c\<^sub>v = chead\<rparr>, \<lparr>c\<^sub>v = chead\<rparr>), 
@@ -292,8 +303,8 @@ lemma fi: "(\<Squnion>n::\<nat>. iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub
   apply (simp add: ureal2rereal_inverse)
   using SUP_apply by fastforce
 
-lemma coin_flip_loop: "cflip_loop = cH"
-  apply (simp add: cflip_loop_def cH_def)
+lemma coin_flip_loop: "cflip_loop = prfun_of_rvfun cH"
+  apply (simp add: cflip_loop_def cH_def prfun_of_rvfun_def real2ureal_def)
   apply (subst sup_continuous_lfp_iteration)
   apply (simp add: cflip_is_dist)
   apply (rule finite_subset[where B = "{s::cstate \<times> cstate. True}"])
@@ -302,6 +313,39 @@ lemma coin_flip_loop: "cflip_loop = cH"
   apply (simp only: cflip_drop_initial_segments_eq[symmetric])
   apply (simp only: fi)
   by auto
+
+text \<open> The probability of @{text "c'"} being @{text "head"} is 1, and so almost-sure termination.\<close>
+lemma coin_flip_termination_prob: "cH ; \<lbrakk>c\<^sup>< = chead\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
+  apply (simp add: cH_def)
+  apply (expr_auto)
+proof -
+  let ?lhs_f = "\<lambda>v\<^sub>0. (if c\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>))"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate. ?lhs_f v\<^sub>0 * ?lhs_f v\<^sub>0 )"
+  have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate. ?lhs_f v\<^sub>0)"
+    apply (rule infsum_cong)
+    by (auto)
+  also have "... = 1"
+    apply (subst infsum_constant_finite_states)
+    apply (metis cstate_UNIV_set finite.emptyI finite.insertI rev_finite_subset top_greatest)
+    by (simp add: cstate_head)
+  then show "?lhs = (1::\<real>)"
+    using calculation by presburger
+qed
+
+text \<open> The probability of @{text "c'"} not being @{text "head"} is 0, and so impossible for non-termination.\<close>
+lemma coin_flip_nontermination_prob: "cH ; \<lbrakk>\<not>c\<^sup>< = chead\<rbrakk>\<^sub>\<I>\<^sub>e = (0)\<^sub>e"
+  apply (simp add: cH_def)
+  apply (expr_auto)
+proof -
+  let ?lhs_t = "\<lambda>v\<^sub>0. (if c\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>))"
+  let ?lhs_f = "\<lambda>v\<^sub>0. (if \<not>c\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>))"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate. ?lhs_t v\<^sub>0 * ?lhs_f v\<^sub>0 )"
+  have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate. 0)"
+    apply (rule infsum_cong)
+    by (auto)
+  then show "?lhs = (0::\<real>)"
+    by force
+qed
 
 subsection \<open> Coin flip with time \<close>
 alphabet coin_state = time +
@@ -442,7 +486,7 @@ lemma "flip_loop = H"
   apply (metis flip_t flip_t_is_dist is_dist_def is_final_prob_prob rvfun_inverse)
   apply (simp)
   apply (subst rvfun_inverse)
-     apply (simp add: is_prob_def iverson_bracket_def)
+  apply (simp add: is_prob_def iverson_bracket_def)
   using H_is_dist H_def sledgehammer
   apply (simp add: dist_defs expr_defs, auto)
   apply (simp add: )
@@ -450,15 +494,15 @@ lemma "flip_loop = H"
   apply (subst rvfun_seqcomp_inverse)
   apply (simp add: flip_is_dist)
   using ureal_is_prob apply blast
-    apply (subst rvfun_seqcomp_is_dist)
-      apply (simp add: flip_is_dist)
+  apply (subst rvfun_seqcomp_is_dist)
+  apply (simp add: flip_is_dist)
   apply (expr_auto)
-     apply (simp add: passigns_def rvfun_assignment_inverse rvfun_assignment_is_dist)
-    apply (simp)
-   apply (simp add: pfun_defs)
+  apply (simp add: passigns_def rvfun_assignment_inverse rvfun_assignment_is_dist)
+  apply (simp)
+  apply (simp add: pfun_defs)
   apply (simp add: flip_altdef)
-   apply (expr_auto)
-   apply (subst rvfun_inverse)
-    apply (simp add: is_prob_def)
-   apply (rel_simp)
+  apply (expr_auto)
+  apply (subst rvfun_inverse)
+  apply (simp add: is_prob_def)
+  apply (rel_simp)
 end

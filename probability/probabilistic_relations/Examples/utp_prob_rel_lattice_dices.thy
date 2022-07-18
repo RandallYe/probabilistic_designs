@@ -835,7 +835,7 @@ definition fdice_throw_loop where
 "fdice_throw_loop = while\<^sub>p (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e do fdice_throw od"
 
 definition fH:: "fdstate rvhfun" where 
-"fH = (\<lbrakk>fd1\<^sup>> = fd2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+"fH = ((\<lbrakk>fd1\<^sup>< = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>fd1\<^sup>> = fd1\<^sup>< \<and> fd2\<^sup>> = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) + \<lbrakk>\<not>fd1\<^sup>< = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>fd1\<^sup>> = fd2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e / 6)\<^sub>e"
 
 definition fdice_iterate_n :: "\<nat> \<Rightarrow> fdstate prhfun" where
 "fdice_iterate_n = (\<lambda>n. iterate\<^sub>p n (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p)"
@@ -1024,7 +1024,7 @@ lemma sum_5_6_in_0_6: "sum_5_6 n \<ge> 1 \<and> sum_5_6 n \<le> 6"
 lemma sum_5_6_in_0_6': "sum_5_6 n \<le> 6"
   using sum_5_6_in_0_6 by blast
 
-lemma iterate_dice_throw_bottom_simp:
+lemma iterate_fdice_throw_bottom_simp:
   shows "iterate\<^sub>p 0 (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p = 0\<^sub>p"
         "iterate\<^sub>p (Suc 0) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p 
               = (\<lbrakk>$fd1\<^sup>< = $fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>$fd1\<^sup>> = $fd1\<^sup>< \<and> $fd2\<^sup>> = $fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
@@ -1488,44 +1488,148 @@ proof -
     qed
 qed
 
-lemma fdice_throw_iterate_limit_dH:
-  assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p))"
-  shows "(\<lambda>n. ureal2real (f n s)) \<longlonglongrightarrow> ((\<lbrakk>fd1\<^sup>> = fd2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e s)"
-  apply (simp only: assms)
-  apply (subst iterate_dice_throw_bottom_simp(3))
-  apply (subst sum_geometric_series_1)
-  apply (rel_auto)
-  apply (simp add: fa)
-  apply (simp add: fb)
-  apply (metis LIMSEQ_const_iff nle_le real2ureal_def ureal_lower_bound ureal_real2ureal_smaller)
-  apply (metis comp_def one_ereal_def one_ureal.rep_eq one_ureal_def real_ereal_1 tendsto_const ureal2real_def)
-  apply (metis LIMSEQ_const_iff nle_le real2ureal_def ureal_lower_bound ureal_real2ureal_smaller)
-  by (meson Tcoin.exhaust)+
+lemma sum_5_6_by_36_tendsto_1_6: 
+  "(\<lambda>n::\<nat>. ureal2real (ereal2ureal (ereal (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ n) / (36::\<real>))))) \<longlonglongrightarrow> (1::\<real>) / 6"
+proof -
+  have f0: "(\<lambda>n::\<nat>. ureal2real (ereal2ureal (ereal (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ n) / (36::\<real>))))) = 
+    (\<lambda>n::\<nat>. (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ n) / (36::\<real>)))"
+    apply (subst fun_eq_iff)
+    apply (auto)
+    apply (simp add: ureal_defs)
+    apply (subst real2uereal_inverse)
+    apply (meson max.cobounded1 min.boundedI zero_less_one_ereal)
+    apply simp
+  proof -
+    fix x
+    have "((5::\<real>) / (6::\<real>)) ^ x \<le> 1"
+      by (simp add: power_le_one_iff)
+    then have f1: "(max (0::ereal) (ereal (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ x) / (36::\<real>)))) = 
+      (ereal (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ x) / (36::\<real>)))"
+      by (simp add: max_def)
+    have f2: "(min (max (0::ereal) (ereal (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ x) / (36::\<real>)))) (1::ereal)) = 
+      (ereal (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ x) / (36::\<real>)))"
+      apply (simp add: f1 min_def)
+      by (smt (verit, best) divide_nonneg_nonneg one_le_power power_divide)
+    show "real_of_ereal (min (max (0::ereal) (ereal (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ x) / (36::\<real>)))) (1::ereal)) * (36::\<real>) =
+         (6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ x"
+      by (simp add: f2)
+  qed
 
-lemma fh:
+  have f1: "(\<lambda>n::\<nat>. (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ n) / (36::\<real>))) \<longlonglongrightarrow> (1::\<real>) / 6"
+  proof -
+    have f0: "(\<lambda>n::\<nat>. (((6::\<real>) - (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ n) / (36::\<real>))) = (\<lambda>n::\<nat>. (1::\<real>) / 6 - ((5::\<real>) / ((6::\<real>)^2) * (5/6) ^ n))"
+      apply (subst fun_eq_iff)
+      by (auto)
+    have f1: "(\<lambda>n::\<nat>. (1::\<real>) / 6 - ((5::\<real>) / ((6::\<real>)^2) * (5/6) ^ n)) \<longlonglongrightarrow> (1/6 - 0)"
+      apply (rule tendsto_diff)
+      apply (auto)
+      apply (rule LIMSEQ_power_zero)
+      by simp
+    show ?thesis
+      using f0 f1 by auto
+  qed
+
+  show ?thesis
+    apply (simp add: f0)
+    by (simp add: f1)
+qed
+
+lemma fdice_throw_iterate_limit_fH:
   assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p))"
-  shows "((\<lbrakk>fd1\<^sup>> = fd2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e s) = (ureal2real (\<Squnion>n::\<nat>. f n s))"
-  apply (subst LIMSEQ_unique[where X = "(\<lambda>n. ureal2real (f n s))" and a = "((\<lbrakk>fd1\<^sup>> = fd2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e s)" and 
-          b = "(ureal2real (\<Squnion>n::\<nat>. fdice_iterate_n n s))"])
-  using dice_throw_iterate_limit_cH apply (simp add: assms)
-  using dice_throw_iterate_limit_sup apply (simp add: assms)
+  shows "(\<lambda>n. ureal2real (f n s)) \<longlonglongrightarrow> (fH s)"
+  apply (simp only: assms fH_def)
+  apply (subst iterate_fdice_throw_bottom_simp(3))
+  apply (subst sum_geometric_series_5_6)
+  apply (rel_auto)
+  apply (simp add: real2eureal_inverse)
+  apply (metis comp_def real_of_ereal_0 tendsto_const ureal2real_def zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
+  apply (simp add: sum_5_6_by_36_tendsto_1_6)
+  by (simp add: real2eureal_inverse)+
+
+lemma fdice_throw_iterate_limit_sup:
+  assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p))"
+  shows "(\<lambda>n. ureal2real (f n s)) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n s))"
+  apply (simp only: assms)
+  apply (subst LIMSEQ_ignore_initial_segment[where k = "2"])
+  apply (subst increasing_chain_sup_subset_eq[where m = "2"])
+  apply (rule increasing_chain_fun)
+  apply (rule iterate_increasing_chain)
+  apply (simp add: fdice_throw_is_dist)
+  apply (subst increasing_chain_limit_is_lub')
+  apply (simp add: increasing_chain_def)
+  apply (auto)
+  apply (rule le_funI)
+  by (smt (verit, ccfv_threshold) fdice_throw_is_dist iterate_increasing2 le_fun_def)
+
+lemma fH_eq_sup_by_limit:
+  assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p))"
+  shows "(fH s) = (ureal2real (\<Squnion>n::\<nat>. f n s))"
+  apply (subst LIMSEQ_unique[where X = "(\<lambda>n. ureal2real (f n s))" and a = "(fH s)" and 
+          b = "(ureal2real (\<Squnion>n::\<nat>. f n s))"])
+  using fdice_throw_iterate_limit_fH apply (simp add: assms)
+  using fdice_throw_iterate_limit_sup apply (simp add: assms)
   by auto
 
-lemma fi: "(\<Squnion>n::\<nat>. iterate\<^sub>p (n+2) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p) = 
-  (\<lambda>x::fdstate \<times> fdstate. ereal2ureal (ereal ((\<lbrakk>fd1\<^sup>> = fd2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e x)))"
-  apply (simp only: fh)
+lemma fH_eq_sup_by_limit': "(\<Squnion>n::\<nat>. iterate\<^sub>p (n+2) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p) = 
+  (\<lambda>x::fdstate \<times> fdstate. ereal2ureal (ereal (fH x)))"
+  apply (simp only: fH_eq_sup_by_limit)
   apply (simp add: ureal2rereal_inverse)
   using SUP_apply by fastforce
 
-lemma coin_flip_loop: "fdice_throw_loop = fH"
-  apply (simp add: fdice_throw_loop_def fH_def)
+lemma fdice_throw_loop: "fdice_throw_loop = prfun_of_rvfun fH"
+  apply (simp add: fdice_throw_loop_def fH_def prfun_of_rvfun_def real2ureal_def)
   apply (subst sup_continuous_lfp_iteration)
   apply (simp add: fdice_throw_is_dist)
   apply (rule finite_subset[where B = "{s::fdstate \<times> fdstate. True}"])
   apply force
   using fdstate_finite finite_Prod_UNIV apply auto[1]
   apply (simp only: fdice_throw_drop_initial_segments_eq[symmetric])
-  apply (simp only: fi)
+  apply (simp only: fH_eq_sup_by_limit' fH_def)
   by auto
+
+lemma fdice_throw_termination_prob: "fH ; \<lbrakk>fd1\<^sup>< = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
+  apply (simp add: fH_def)
+  apply (expr_auto)
+proof -
+  fix fd1 fd2
+  have f0: "{s::fdstate. fd1\<^sub>v s = fd2 \<and> fd2\<^sub>v s = fd2 \<and> fd1\<^sub>v s = fd2\<^sub>v s} = {\<lparr>fd1\<^sub>v = fd2, fd2\<^sub>v = fd2\<rparr>}"
+    apply (subst set_eq_iff)
+    by (expr_auto)
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1\<^sub>v v\<^sub>0 = fd2 \<and> fd2\<^sub>v v\<^sub>0 = fd2 then 1::\<real> else (0::\<real>)) *
+          (if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)))
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1\<^sub>v v\<^sub>0 = fd2 \<and> fd2\<^sub>v v\<^sub>0 = fd2 \<and> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)))"
+    apply (rule infsum_cong)
+    by auto
+  also have "... = 1"
+    apply (subst infsum_constant_finite_states)
+    using fdstate_finite infinite_super subset_UNIV apply blast
+    by (simp add: f0)
+  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate.
+          (if fd1\<^sub>v v\<^sub>0 = fd2 \<and> fd2\<^sub>v v\<^sub>0 = fd2 then 1::\<real> else (0::\<real>)) *
+          (if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>))) = (1::\<real>)"
+    using calculation by presburger
+
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+        (if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (6::\<real>)) 
+      = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (6::\<real>))"
+    apply (rule infsum_cong)
+    by (auto)
+  have f2: "... = 1"
+    apply (subst infsum_cdiv_left)
+    apply (simp add: fdstate_finite)
+    apply (subst infsum_constant_finite_states)
+    apply (meson fdstate_finite rev_finite_subset top_greatest)
+    by (simp add: fdstate_set_d1d2_eq_card)
+    
+  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+        (if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (6::\<real>)) = (1::\<real>)"
+    using f1 by presburger
+qed
+
+lemma fdice_throw_nontermination_prob: "fH ; \<lbrakk>\<not>fd1\<^sup>< = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (0)\<^sub>e"
+  apply (simp add: fH_def)
+  apply (expr_auto)
+  apply (smt (verit) infsum_0 mult_not_zero)
+  by (simp add: infsum_0)
 
 end
