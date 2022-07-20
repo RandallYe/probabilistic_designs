@@ -4459,6 +4459,43 @@ theorem inf_iterate_continuous:
   using inf_iterate_suc inf_iterate_subset_eq by metis
 
 subsubsection \<open> Kleene fixed-point theorem \<close>
+lemma fp_between_lfp_gfp:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes "Fwhile b P fp = fp"
+  shows "(\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) \<le> fp"
+        "fp \<le> (\<Sqinter>n::nat. (iterate n b P 1\<^sub>p))"
+proof -
+  show "(\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) \<le> fp"
+    apply (rule Sup_least)
+    apply (simp add: image_def)
+    proof -
+      fix x
+      assume a11: "\<exists>xa::\<nat>. x = iterate\<^sub>p xa b P 0\<^sub>p"
+      have "\<forall>n. iterate\<^sub>p n b P 0\<^sub>p \<le> fp"
+        apply (rule allI)
+        apply (induct_tac "n")
+        apply (simp add: ureal_bottom_least')
+        by (metis Fwhile_monoE assms(2) assms(1) utp_prob_rel_lattice.iterate.simps(2))
+      then show "x \<le> fp"
+        using a11 by blast
+    qed
+
+  show "fp \<le> (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p)"
+    apply (rule Inf_greatest)
+    apply (simp add: image_def)
+    proof -
+      fix x
+      assume a11: "\<exists>xa::\<nat>. x = iterate\<^sub>p xa b P 1\<^sub>p"
+      have "\<forall>n. iterate\<^sub>p n b P 1\<^sub>p \<ge> fp"
+        apply (rule allI)
+        apply (induct_tac "n")
+        apply (simp add: ureal_top_greatest')
+        by (metis Fwhile_monoE assms(2) assms(1) utp_prob_rel_lattice.iterate.simps(2))
+      then show "fp \<le> x"
+        using a11 by blast
+    qed
+qed
+
 theorem sup_continuous_lfp_iteration:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
@@ -4467,24 +4504,7 @@ theorem sup_continuous_lfp_iteration:
   apply (rule lfp_eqI)
   apply (simp add: Fwhile_mono assms)
   apply (simp add: assms sup_iterate_continuous)
-proof -
-  fix z
-  assume a1: "Fwhile b P z = z"
-  show "(\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) \<le> z"
-    apply (rule Sup_least)
-    apply (simp add: image_def)
-  proof -
-    fix x
-    assume a11: "\<exists>xa::\<nat>. x = iterate\<^sub>p xa b P 0\<^sub>p"
-    have "\<forall>n. iterate\<^sub>p n b P 0\<^sub>p \<le> z"
-      apply (rule allI)
-      apply (induct_tac "n")
-      apply (simp add: ureal_bottom_least')
-      by (metis Fwhile_monoE a1 assms(1) utp_prob_rel_lattice.iterate.simps(2))
-    then show "x \<le> z"
-      using a11 by blast
-  qed
-qed
+  by (simp add: assms(1) fp_between_lfp_gfp(1))
 
 theorem inf_continuous_gfp_iteration:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
@@ -4494,24 +4514,42 @@ theorem inf_continuous_gfp_iteration:
   apply (rule gfp_eqI)
   apply (simp add: Fwhile_mono assms)
   apply (simp add: assms inf_iterate_continuous)
-proof -
-  fix z
-  assume a1: "Fwhile b P z = z"
-  show "z \<le> (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p)"
-    apply (rule Inf_greatest)
-    apply (simp add: image_def)
-  proof -
-    fix x
-    assume a11: "\<exists>xa::\<nat>. x = iterate\<^sub>p xa b P 1\<^sub>p"
-    have "\<forall>n. iterate\<^sub>p n b P 1\<^sub>p \<ge> z"
-      apply (rule allI)
-      apply (induct_tac "n")
-      apply (simp add: ureal_top_greatest')
-      by (metis Fwhile_monoE a1 assms(1) utp_prob_rel_lattice.iterate.simps(2))
-    then show "z \<le> x"
-      using a11 by blast
-  qed
+  by (simp add: assms(1) fp_between_lfp_gfp(2))
+
+subsubsection \<open> Unique fixed point \<close>
+
+lemma unique_fixed_point:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "(\<Sqinter>n::nat. (iterate n b P 1\<^sub>p)) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
+  (* assumes "while\<^sub>p b do P od = while\<^sub>p\<^sup>\<top> b do P od" *)
+  shows "\<exists>! fp. Fwhile b P fp = fp"
+  apply (simp add: Ex1_def)
+  apply (rule_tac x = "(\<Squnion>n::nat. (iterate n b P 0\<^sub>p))" in exI)
+  apply (rule conjI)
+  apply (simp add: assms sup_iterate_continuous)
+proof (auto)
+  fix y :: "'s \<times> 's \<Rightarrow> ureal"
+  assume a1: "Fwhile b P y = y"
+  from a1 have f1: "(\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) \<le> y"
+    by (metis assms(1) fp_between_lfp_gfp(1))
+  from a1 have f2: "y \<le> (\<Sqinter>n::nat. (iterate n b P 1\<^sub>p))"
+    by (metis assms(1) fp_between_lfp_gfp(2))
+  then show "y = (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p)"
+    by (simp add: assms(3) f1 order_antisym)
 qed
+
+theorem unique_fixed_point_lfp_gfp:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "(\<Sqinter>n::nat. (iterate n b P 1\<^sub>p)) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
+  assumes "Fwhile b P fp = fp"
+  shows "while\<^sub>p b do P od = fp"
+        "while\<^sub>p\<^sup>\<top> b do P od = fp"
+  apply (smt (verit) Collect_cong Sup.SUP_cong assms(1) assms(2) assms(3) assms(4) 
+      sup_continuous_lfp_iteration sup_iterate_continuous unique_fixed_point)
+  by (smt (z3) Collect_cong Fwhile_mono Sup.SUP_cong assms(1) assms(2) assms(3) assms(4) gfp_unfold 
+      pwhile_top_def unique_fixed_point)
 
 (*
 theorem increasing_chain_limit_is_lub:
