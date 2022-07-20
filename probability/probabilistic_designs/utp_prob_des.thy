@@ -38,28 +38,37 @@ translations
   (type) "('a, 'b) rel_pdes" <= (type) "('a, 'b prss) rel_des"
 
 text \<open>
-  @{term "forget_prob"} is a non-homogeneous design as a forgetful function that maps a discrete
+  The @{term "forget_prob"} is a non-homogeneous design as a forgetful function that maps a discrete
 probability distribution @{term "$prob"} at initial observation to a final state.
 \<close>
 definition forget_prob :: "('s prss, 's) rel_des" ("\<^bold>f\<^bold>p") where
 [upred_defs]: "forget_prob = U(true \<turnstile>\<^sub>n ($prob($\<^bold>v\<acute>) > 0))"
 
+text \<open> 
+  Here, we reverse the order of parameters in order to match with its definition in 
+original publications such the UTP-book.
+\<close>
+abbreviation wprespec' :: " ('a, 'c) urel \<Rightarrow> ('b, 'c) urel \<Rightarrow> ('a, 'b) urel"  (infixr "'/\<^sub>w" 70) where
+"(Y /\<^sub>w K) \<equiv> (K \\ Y)"
+
 text \<open>
   The weakest prespecification of a standard design @{text "D"} wrt @{text "\<^bold>f\<^bold>p"} is the weakest 
 probabilistic design, as an embedding of @{text "D"} in the probabilistic world through @{text "\<K>"}.
 \<close>
+
 definition pemb :: "('a, 'b) rel_des \<Rightarrow> ('a, 'b) rel_pdes" ("\<K>")
-  where [upred_defs]: "pemb D = \<^bold>f\<^bold>p \\ D"
+  where [upred_defs]: "pemb D = D /\<^sub>w \<^bold>f\<^bold>p"
 
 lemma pemb_mono: "P \<sqsubseteq> Q \<Longrightarrow> \<K>(P) \<sqsubseteq> \<K>(Q)"
   by (metis (mono_tags, lifting) dual_order.trans order_refl pemb_def wprespec)
 
-lemma wdprespec: "(true \<turnstile>\<^sub>n R) \\ (p \<turnstile>\<^sub>n Q) = (p \<turnstile>\<^sub>n (R \\ Q))"
+lemma wdprespec: "(p \<turnstile>\<^sub>n Q) /\<^sub>w (true \<turnstile>\<^sub>n R)  = (p \<turnstile>\<^sub>n (Q /\<^sub>w R))"
   by (rel_auto)
 
+(*
 lemma pemb_form:
   fixes R :: "('a, 'b) urel"
-  shows "\<^U>(($prob($\<^bold>v\<acute>) > 0) \\ R) = \<^U>((\<Sum>\<^sub>a i\<in>{s'.(R wp (&\<^bold>v = s'))\<^sup><}. $prob\<acute> i) = 1)" (is "?lhs = ?rhs")
+  shows "(R /\<^sub>w U($prob($\<^bold>v\<acute>) > 0)) = \<^U>((\<Sum>\<^sub>a i\<in>{s'.(R wp (&\<^bold>v = s'))\<^sup><}. $prob\<acute> i) = 1)" (is "?lhs = ?rhs")
 proof -
   have "?lhs = \<^U>((\<not> (\<not> R) ;; (0 < $prob\<acute>$\<^bold>v)))"
     by (rel_auto)
@@ -70,6 +79,22 @@ proof -
     done
   finally show ?thesis .
 qed
+*)
+
+lemma pemb_form:
+  fixes R :: "('a, 'b) urel"
+  shows "(R /\<^sub>w U($prob($\<^bold>v\<acute>) > 0)) = \<^U>((\<Sum>\<^sub>a i | (R wp (&\<^bold>v = i))\<^sup><. $prob\<acute> i) = 1)" (is "?lhs = ?rhs")
+proof -
+  have "?lhs = \<^U>((\<not> (\<not> R) ;; (0 < $prob\<acute>$\<^bold>v)))"
+    by (rel_auto)
+  also have "... = \<^U>((\<Sum>\<^sub>a i\<in>{s'.(R wp (&\<^bold>v = s'))\<^sup><}. $prob\<acute> i) = 1)"
+    apply (rel_auto)
+    apply (metis (no_types, lifting) infsetsum_pmf_eq_1 mem_Collect_eq pmf_positive subset_eq)
+    apply (metis AE_measure_pmf_iff UNIV_I measure_pmf.prob_eq_1 measure_pmf_conv_infsetsum 
+           mem_Collect_eq set_pmf_eq' sets_measure_pmf)
+    done
+  finally show ?thesis .
+qed
 
 text \<open>
   Embedded standard designs are probabilistic designs~\cite[Theorem 1]{Woodcock2019} and
@@ -77,11 +102,11 @@ text \<open>
 \<close>
 lemma prob_lift [ndes_simp]:
   fixes R :: "('a, 'b) urel" and p :: "'a upred"
-  shows "\<K>(p \<turnstile>\<^sub>n R) = \<^U>(p \<turnstile>\<^sub>n ((\<Sum>\<^sub>a i\<in>{s'.(R wp (&\<^bold>v = s'))\<^sup><}. $prob\<acute> i) = 1))"
+  shows "\<K>(p \<turnstile>\<^sub>n R) = \<^U>(p \<turnstile>\<^sub>n ((\<Sum>\<^sub>a i | (R wp (&\<^bold>v = i))\<^sup><. $prob\<acute> i) = 1))"
 proof -
-  have 1:"\<K>(p \<turnstile>\<^sub>n R) = \<^U>(p \<turnstile>\<^sub>n (($prob($\<^bold>v\<acute>) > 0) \\ R))"
+  have 1:"\<K>(p \<turnstile>\<^sub>n R) = (p \<turnstile>\<^sub>n (R  /\<^sub>w \<^U>($prob($\<^bold>v\<acute>) > 0)))"
     by (rel_auto)
-  have 2:"\<^U>(($prob($\<^bold>v\<acute>) > 0) \\ R) = \<^U>((\<Sum>\<^sub>a i\<in>{s'.(R wp (&\<^bold>v = s'))\<^sup><}. $prob\<acute> i) = 1)"
+  have 2:"R /\<^sub>w \<^U>(($prob($\<^bold>v\<acute>) > 0)) = \<^U>((\<Sum>\<^sub>a i | (R wp (&\<^bold>v = i))\<^sup><. $prob\<acute> i) = 1)"
     by (simp add: pemb_form)
   show ?thesis
     by (simp add: "1" "2")
