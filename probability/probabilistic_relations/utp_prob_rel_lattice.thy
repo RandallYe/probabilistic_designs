@@ -650,6 +650,12 @@ primrec iterate :: "\<nat> \<Rightarrow> ('a \<times> 'a) pred \<Rightarrow> 'a 
     "iterate 0 b P X = X"
   | "iterate (Suc n) b P X = (Fwhile b P (iterate n b P X))"
 
+text \<open> @{text "iter_seq"} constructs a form @{text "P ; (P ; ... ; (P ; X))"}. This particularly is 
+used for @{text "X"} being @{text "1\<^sub>p"}\<close>
+primrec iter_seq :: "\<nat> \<Rightarrow> ('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" where
+    "iter_seq 0 b P X = X"
+  | "iter_seq (Suc n) b P X = (if\<^sub>c b then (P ; (iter_seq n b P X)) else 0\<^sub>p) "
+
 definition "Pt (P::'a time_scheme prhfun) \<equiv> (P ; t := $t + 1)"
 
 definition ptwhile :: "('a time_scheme \<times> 'a time_scheme) pred \<Rightarrow> 'a time_scheme prhfun \<Rightarrow> 'a time_scheme prhfun" 
