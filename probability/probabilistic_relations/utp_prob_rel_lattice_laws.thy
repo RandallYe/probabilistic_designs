@@ -300,6 +300,12 @@ lemma real2eureal_inverse:
   apply (simp add: ureal_defs)
   by (simp add: assms(1) assms(2) real2uereal_inverse')
 
+lemma real2ureal_inverse:
+  assumes "r \<ge> 0" "r \<le> 1"
+  shows "ureal2real (real2ureal r) = r"
+  apply (simp add: ureal_defs)
+  by (simp add: assms ereal2ureal'_inverse real_le_ereal_iff)
+
 lemma rvfun_of_prfun_simp: "rvfun_of_prfun [\<lambda>\<s>::'a \<times> 'a. u]\<^sub>e = (\<lambda>s. ureal2real u)"
   by (simp add: SEXP_def rvfun_of_prfun_def)
 
