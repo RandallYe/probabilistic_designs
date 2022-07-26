@@ -586,6 +586,14 @@ alphabet fdstate =
 
 find_theorems name: "fdstate"
 
+abbreviation fd1_pred :: "fdstate \<Rightarrow> \<bool>" where
+"fd1_pred s \<equiv> (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd1\<^sub>v s = nat2td (2::\<nat>) \<or> fd1\<^sub>v s = nat2td (3::\<nat>) \<or>
+         fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>))"
+
+abbreviation fd2_pred :: "fdstate \<Rightarrow> \<bool>" where
+"fd2_pred s \<equiv> (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd2\<^sub>v s = nat2td (2::\<nat>) \<or> fd2\<^sub>v s = nat2td (3::\<nat>) \<or>
+         fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>))"
+
 abbreviation "fdstate_set_1 \<equiv> {\<lparr>fd1\<^sub>v = nat2td 1, fd2\<^sub>v = nat2td 1\<rparr>, \<lparr>fd1\<^sub>v = nat2td 1, fd2\<^sub>v = nat2td 2\<rparr>,
   \<lparr>fd1\<^sub>v = nat2td 1, fd2\<^sub>v = nat2td 3\<rparr>, \<lparr>fd1\<^sub>v = nat2td 1, fd2\<^sub>v = nat2td 4\<rparr>, 
   \<lparr>fd1\<^sub>v = nat2td 1, fd2\<^sub>v = nat2td 5\<rparr>, \<lparr>fd1\<^sub>v = nat2td 1, fd2\<^sub>v = nat2td 6\<rparr>}"
@@ -826,6 +834,19 @@ qed
 lemma fdstate_finite: "finite (UNIV::fdstate set)"
   apply (simp only: UNIV_def)
   using fdstate_set_eq fdstate_set_finite by presburger
+
+lemma fdstate_pred_univ: "{s::fdstate. fd1_pred s \<and> fd1_pred s} = fdstate_set"
+  apply (subst set_eq_iff)
+  apply (rule allI, rule iffI)
+  using fdstate_set_eq apply auto[1]
+  by force
+
+lemma fdstate_pred_d1d2_neq: "{s::fdstate. fd1_pred s \<and> fd1_pred s \<and> \<not>fd1\<^sub>v s = fd2\<^sub>v s} = 
+    {s::fdstate. \<not>fd1\<^sub>v s = fd2\<^sub>v s}"
+  apply (subst set_eq_iff)
+  apply (rule allI, rule iffI)
+  using fdstate_set_eq apply auto[1]
+  using fd1_mem by auto
 
 subsubsection \<open> Definitions \<close>
 definition fdice_throw:: "fdstate prhfun" where
@@ -1587,6 +1608,241 @@ lemma fdice_throw_loop: "fdice_throw_loop = prfun_of_rvfun fH"
   apply (simp only: fH_eq_sup_by_limit' fH_def)
   by auto
 
+subsubsection \<open> Using unique fixed point theorem \<close>
+
+lemma fdice_throw_iter_seq_simp:
+  shows "(iter_seq 0 (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = 1\<^sub>p"
+        "(iter_seq (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>fd1\<^sup>< \<noteq> fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+proof -
+  show "(iter_seq 0 (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = 1\<^sub>p"
+    by (auto)
+  
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1_pred v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+           (if fd2_pred v\<^sub>0 then 1::\<real> else (0::\<real>)) / (36::\<real>)) = 
+      (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1_pred v\<^sub>0 \<and> fd2_pred v\<^sub>0 then 1/36 else (0::\<real>)))"
+    apply (rule infsum_cong)
+    by (simp)
+  have f2: "... = 1"
+    apply (subst infsum_constant_finite_states)
+    apply (meson fdstate_finite rev_finite_subset subset_UNIV)
+    apply (simp add: fdstate_pred_univ)
+    using card_fdstate_set by simp
+
+  show "(iter_seq (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>fd1\<^sup>< \<noteq> fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+    apply (induction n)
+    apply (simp add: pfun_defs)
+    apply (subst fdice_throw_altdef)
+    apply (subst ureal_zero)
+    apply (subst ureal_one)
+    apply (subst rvfun_seqcomp_inverse)
+    using fdice_throw_altdef fdice_throw_is_dist apply presburger
+    apply (metis ureal_is_prob ureal_one)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (expr_auto add: rel)
+    using f1 f2 apply presburger
+    apply (simp only: add_Suc)
+    apply (simp only: iter_seq.simps(2))
+    apply (simp only: pcond_def)
+    apply (simp only: pseqcomp_def)
+    apply (subst rvfun_seqcomp_inverse)
+    using fdice_throw_altdef fdice_throw_is_dist apply presburger
+    apply (simp add: ureal_is_prob)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (subst rvfun_inverse)
+    apply (expr_auto add: dist_defs)
+    apply (simp add: power_le_one)
+    apply (subst fdice_throw_altdef)
+    apply (expr_auto add: rel)  
+    defer
+    apply (simp add: pfun_defs)
+    apply (subst ureal_zero)
+    apply simp
+  proof -
+    fix n fd1 fd2
+    let ?lhs_3 = "\<lambda>v\<^sub>0. ((if \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * ((5::\<real>) / (6::\<real>)) ^ n)"
+    let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1_pred v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+           (if fd2_pred v\<^sub>0 then 1::\<real> else (0::\<real>)) * ?lhs_3 v\<^sub>0 / (36::\<real>))"
+    have f0: "{s::fdstate.
+        (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or>
+         fd1\<^sub>v s = nat2td (2::\<nat>) \<or>
+         fd1\<^sub>v s = nat2td (3::\<nat>) \<or>
+         fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or>
+         fd2\<^sub>v s = nat2td (2::\<nat>) \<or>
+         fd2\<^sub>v s = nat2td (3::\<nat>) \<or>
+         fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        \<not> fd1\<^sub>v s = fd2\<^sub>v s} = 
+        {s::fdstate. \<not>fd1\<^sub>v s = fd2\<^sub>v s}"
+      apply (subst set_eq_iff)
+      apply (rule allI, rule iffI)
+      using fdstate_set_eq apply auto[1]
+      using Tdice_UNIV_eq by auto
+    have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. 
+      (if fd1_pred v\<^sub>0 \<and> fd2_pred v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then ((5::\<real>) / (6::\<real>))  ^ n / (36::\<real>) else (0::\<real>)) )" 
+      apply (rule infsum_cong)
+      by auto
+    also have f2: "... = 30 * ((5::\<real>) / (6::\<real>))  ^ n / (36::\<real>)"
+      apply (subst infsum_constant_finite_states)
+      using fdstate_finite infinite_super top_greatest apply blast
+      by (simp add: f0 fdstate_set_d1d2_neq_card)
+    then show "real2ureal ?lhs = real2ureal ((5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ n / (6::\<real>))"
+      by (simp add: f1 f2)
+  qed
+qed
+
+lemma fdice_throw_iter_seq_tendsto_0:
+  "\<forall>s::fdstate \<times> fdstate. (\<lambda>n::\<nat>. ureal2real (iter_seq n (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+proof 
+  fix s
+  have "(\<lambda>n::\<nat>. ureal2real (iter_seq (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    apply (subst fdice_throw_iter_seq_simp)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (expr_auto)
+    apply (subst real2ureal_inverse)
+    apply (simp)
+    apply (simp add: power_le_one)
+    apply (simp add: LIMSEQ_realpow_zero)
+    apply (subst real2ureal_inverse)
+    by (simp)+
+  then show "(\<lambda>n::\<nat>. ureal2real (iter_seq n (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    by (rule LIMSEQ_offset[where k = 1])
+qed
+
+lemma fH_is_fp: "Fwhile (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw (prfun_of_rvfun fH) = prfun_of_rvfun fH"
+  apply (simp add: fH_def Fwhile_def)
+  apply (simp add: pfun_defs)
+  apply (subst fdice_throw_altdef)
+  apply (subst rvfun_skip_inverse)
+  apply (subst rvfun_seqcomp_inverse)
+  using fdice_throw_altdef fdice_throw_is_dist apply presburger
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (expr_auto add: prfun_of_rvfun_def)
+  defer
+  apply (subst infsum_0)
+  prefer 2
+  apply simp
+proof -
+  fix fd1 fd2 fd1\<^sub>v' fd2\<^sub>v'::"Tdice" and x::"fdstate"
+  assume a1: " \<not> fd1\<^sub>v' = fd2\<^sub>v'"
+  have "((if fd1\<^sub>v x = fd2\<^sub>v x then 1::\<real> else (0::\<real>)) * (if fd1\<^sub>v' = fd1\<^sub>v x \<and> fd2\<^sub>v' = fd2\<^sub>v x then 1::\<real> else (0::\<real>))) = 0"
+    using a1 by auto
+  then show "(if fd1\<^sub>v x = nat2td (Suc (0::\<nat>)) \<or>
+           fd1\<^sub>v x = nat2td (2::\<nat>) \<or> fd1\<^sub>v x = nat2td (3::\<nat>) \<or> fd1\<^sub>v x = nat2td (4::\<nat>) \<or> fd1\<^sub>v x = nat2td (5::\<nat>) \<or> fd1\<^sub>v x = nat2td (6::\<nat>)
+        then 1::\<real> else (0::\<real>)) *
+       (if fd2\<^sub>v x = nat2td (Suc (0::\<nat>)) \<or>
+           fd2\<^sub>v x = nat2td (2::\<nat>) \<or> fd2\<^sub>v x = nat2td (3::\<nat>) \<or> fd2\<^sub>v x = nat2td (4::\<nat>) \<or> fd2\<^sub>v x = nat2td (5::\<nat>) \<or> fd2\<^sub>v x = nat2td (6::\<nat>)
+        then 1::\<real> else (0::\<real>)) *
+       ((if fd1\<^sub>v x = fd2\<^sub>v x then 1::\<real> else (0::\<real>)) * (if fd1\<^sub>v' = fd1\<^sub>v x \<and> fd2\<^sub>v' = fd2\<^sub>v x then 1::\<real> else (0::\<real>))) /
+       (36::\<real>) = (0::\<real>)"
+    by fastforce
+next
+  fix fd1 fd2 fd2\<^sub>v'::"Tdice"
+  let ?lhs1_b = "\<lambda>v\<^sub>0::fdstate. fd1\<^sub>v v\<^sub>0 = nat2td (Suc (0::\<nat>)) \<or>
+              fd1\<^sub>v v\<^sub>0 = nat2td (2::\<nat>) \<or>
+              fd1\<^sub>v v\<^sub>0 = nat2td (3::\<nat>) \<or>
+              fd1\<^sub>v v\<^sub>0 = nat2td (4::\<nat>) \<or> 
+              fd1\<^sub>v v\<^sub>0 = nat2td (5::\<nat>) \<or> 
+              fd1\<^sub>v v\<^sub>0 = nat2td (6::\<nat>)"
+  let ?lhs2_b = "\<lambda>v\<^sub>0::fdstate. fd2\<^sub>v v\<^sub>0 = nat2td (Suc (0::\<nat>)) \<or>
+              fd2\<^sub>v v\<^sub>0 = nat2td (2::\<nat>) \<or>
+              fd2\<^sub>v v\<^sub>0 = nat2td (3::\<nat>) \<or>
+              fd2\<^sub>v v\<^sub>0 = nat2td (4::\<nat>) \<or> 
+              fd2\<^sub>v v\<^sub>0 = nat2td (5::\<nat>) \<or> 
+              fd2\<^sub>v v\<^sub>0 = nat2td (6::\<nat>)"
+  let ?lhs3 = "\<lambda>v\<^sub>0. ((if fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) +
+            (if \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (6::\<real>))"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 then 1::\<real> else (0::\<real>)) * 
+                (if ?lhs2_b v\<^sub>0 then 1::\<real> else (0::\<real>)) * ?lhs3 v\<^sub>0 / (36::\<real>))"
+  have lhs3_simp: "\<forall>v\<^sub>0. ?lhs3 v\<^sub>0 = ((if fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) +
+            (if \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then ((1::\<real>) / (6::\<real>)) else (0::\<real>)))"
+    by force
+
+  have lhs1_set_eq: "{s::fdstate.
+        (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd1\<^sub>v s = nat2td (2::\<nat>) \<or> fd1\<^sub>v s = nat2td (3::\<nat>) \<or> fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd2\<^sub>v s = nat2td (2::\<nat>) \<or> fd2\<^sub>v s = nat2td (3::\<nat>) \<or> fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        fd2\<^sub>v' = fd1\<^sub>v s \<and> fd2\<^sub>v' = fd2\<^sub>v s} = {s::fdstate. fd2\<^sub>v' = fd1\<^sub>v s \<and> fd2\<^sub>v' = fd2\<^sub>v s}"
+        apply (subst set_eq_iff)
+        apply (auto)
+        using fd2_mem apply auto[1]
+        using fd2_mem by auto[1]
+  
+  have lhs1_set_card: "card {s::fdstate.
+    (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd1\<^sub>v s = nat2td (2::\<nat>) \<or> fd1\<^sub>v s = nat2td (3::\<nat>) \<or> fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>)) \<and>
+    (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or> fd2\<^sub>v s = nat2td (2::\<nat>) \<or> fd2\<^sub>v s = nat2td (3::\<nat>) \<or> fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>)) \<and>
+    fd2\<^sub>v' = fd1\<^sub>v s \<and> fd2\<^sub>v' = fd2\<^sub>v s} = Suc 0"
+    apply (subst lhs1_set_eq)
+    apply (subst card_1_singleton_iff)
+    apply (rule_tac x = "\<lparr>fd1\<^sub>v = fd2\<^sub>v', fd2\<^sub>v = fd2\<^sub>v'\<rparr>" in exI)
+    by (auto)
+  
+  have lhs2_card: "card {s::fdstate. ?lhs1_b s \<and> ?lhs2_b s \<and> \<not> fd1\<^sub>v s = fd2\<^sub>v s} = 30"
+    proof -
+      have "{x::fdstate. \<not>fd1\<^sub>v x = fd2\<^sub>v x} = {s::fdstate. ?lhs1_b s \<and> ?lhs2_b s \<and> \<not> fd1\<^sub>v s = fd2\<^sub>v s}"
+        apply (subst set_eq_iff)
+        apply (auto)
+        apply (metis One_nat_def fd1_mem insert_iff singletonD)
+        by (metis One_nat_def fd2_mem insert_iff singletonD)
+      then show ?thesis
+        using fdstate_set_d1d2_neq_card by presburger
+    qed
+  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+           ((if fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) +
+            (if \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then ((1::\<real>) / (6::\<real>)) else (0::\<real>))) / (36::\<real>))"
+    apply (rule infsum_cong)
+    by force
+  have f2: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+           ((if fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1 / (36::\<real>) else (0::\<real>)) +
+            (if \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then ((1::\<real>) / (6::\<real>)) / (36::\<real>) else (0::\<real>))))"
+    apply (rule infsum_cong)
+    by (smt (verit, best) add_cancel_left_right div_0 mult_cancel_left2 mult_cancel_right2)
+  have f3: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. 
+    (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1 / (36::\<real>) else (0::\<real>)) +
+    (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then ((1::\<real>) / (6::\<real>)) / 36 else (0::\<real>)))"
+    apply (rule infsum_cong)
+    by force
+  have f4: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. 
+    (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> fd2\<^sub>v' = fd1\<^sub>v v\<^sub>0 \<and> fd2\<^sub>v' = fd2\<^sub>v v\<^sub>0 then 1 / (36::\<real>) else (0::\<real>))) +
+    (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if ?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then ((1::\<real>) / (6::\<real>)) / 36 else (0::\<real>)))"
+    apply (rule infsum_add)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (rule finite_subset[where B = "UNIV"])
+    apply (simp)
+    apply (simp add: fdstate_finite)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (rule finite_subset[where B = "UNIV"])
+    apply (simp)
+    by (simp add: fdstate_finite)
+  have f5: "... = 1/6"
+    apply (subst infsum_constant_finite_states)
+    apply (rule finite_subset[where B = "UNIV"])
+    apply (simp)
+    apply (simp add: fdstate_finite)
+    apply (subst infsum_constant_finite_states)
+    apply (rule finite_subset[where B = "UNIV"])
+    apply (simp)
+    apply (simp add: fdstate_finite)
+    by (simp add: lhs2_card  lhs1_set_card)
+
+  then show "real2ureal ?lhs = real2ureal ((1::\<real>) / (6::\<real>))"
+    using f1 f2 f3 f4 by presburger
+qed
+
+lemma fdice_throw_loop': "fdice_throw_loop = prfun_of_rvfun fH"
+  apply (simp add: fdice_throw_loop_def)
+  apply (subst unique_fixed_point_lfp_gfp'[where fp = "prfun_of_rvfun fH"])
+  using fdice_throw_is_dist apply auto[1]
+  apply (subst finite_subset[where B = "UNIV"])
+  apply simp
+  using fdstate_finite finite_prod apply blast
+  apply (simp)
+  using fdice_throw_iter_seq_tendsto_0 apply (simp)
+  using fH_is_fp apply blast
+  by simp
+
+subsubsection \<open> Termination \<close>
 lemma fdice_throw_termination_prob: "fH ; \<lbrakk>fd1\<^sup>< = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
   apply (simp add: fH_def)
   apply (expr_auto)

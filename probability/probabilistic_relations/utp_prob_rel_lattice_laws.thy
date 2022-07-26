@@ -153,6 +153,38 @@ lemma ureal_plus_eq_1_minus_less:
   by (smt (verit, ccfv_SIG) add.commute assms atLeastAtMost_iff ereal_diff_positive ereal_minus_le_iff 
       ereal_times(1) less_eq_ureal.rep_eq max_absorb2 min_def minus_ureal.rep_eq one_ureal.rep_eq plus_ureal.rep_eq ureal2ereal)
 
+lemma ureal2ereal_add_dist:
+  assumes "ureal2ereal a + ureal2ereal b \<le> 1"
+  shows "ureal2ereal (a + b) = ureal2ereal a + ureal2ereal b"
+  by (simp add: assms plus_ureal.rep_eq)
+
+lemma ureal2real_add_dist:
+  assumes "ureal2real a + ureal2real b \<le> 1"
+  shows "ureal2real (a + b) = ureal2real a + ureal2real b"
+  by (smt (verit, del_insts) abs_ereal_ge0 add_nonneg_nonneg assms atLeastAtMost_iff 
+      ereal_diff_add_inverse ereal_minus_eq_PInfty_iff ereal_minus_le_iff ereal_times(1) o_def 
+      one_ereal_def real_le_ereal_iff real_of_ereal_minus ureal2ereal ureal2ereal_add_dist ureal2real_def)
+
+lemma ureal2real_add_dist_ureal2ereal:
+  assumes "ureal2real (a + b) = ureal2real a + ureal2real b"
+  shows "ureal2ereal (a + b) = ureal2ereal a + ureal2ereal b"
+  apply (rule ureal2ereal_add_dist)
+  by (smt (verit, del_insts) abs_ereal_ge0 add_nonneg_nonneg assms atLeastAtMost_iff 
+      ereal_diff_add_inverse ereal_minus_eq_PInfty_iff o_def one_ereal_def real_le_ereal_iff 
+      real_of_ereal_add ureal2ereal ureal2real_def)
+
+lemma ureal2real_add_leq_1_ureal2ereal:
+  assumes "ureal2real a + ureal2real b \<le> 1"
+  shows "ureal2ereal a + ureal2ereal b \<le> 1"
+  by (metis assms atLeastAtMost_iff ureal2ereal ureal2real_add_dist ureal2real_add_dist_ureal2ereal)
+
+lemma real2ureal_add_dist:
+  assumes "a \<ge> 0" "b \<ge> 0" "a + b \<le> 1"
+  shows "real2ureal (a + b) = real2ureal a + real2ureal b"
+  apply (simp add: ureal_defs)
+  by (smt (verit) assms(1) assms(2) assms(3) atLeastAtMost_iff ereal2ureal'_inverse ereal_less_eq(5) 
+      ereal_less_eq(6) max_absorb2 min.commute min_absorb1 plus_ereal.simps(1) plus_ureal.rep_eq ureal2ereal_inject)
+
 lemma ureal_real2ureal_smaller:
   assumes "r \<ge> 0"
   shows "ureal2real (real2ureal r) \<le> r"
@@ -268,6 +300,12 @@ lemma real2eureal_inverse:
   apply (simp add: ureal_defs)
   by (simp add: assms(1) assms(2) real2uereal_inverse')
 
+lemma real2ureal_inverse:
+  assumes "r \<ge> 0" "r \<le> 1"
+  shows "ureal2real (real2ureal r) = r"
+  apply (simp add: ureal_defs)
+  by (simp add: assms ereal2ureal'_inverse real_le_ereal_iff)
+
 lemma rvfun_of_prfun_simp: "rvfun_of_prfun [\<lambda>\<s>::'a \<times> 'a. u]\<^sub>e = (\<lambda>s. ureal2real u)"
   by (simp add: SEXP_def rvfun_of_prfun_def)
 
@@ -379,10 +417,27 @@ lemma pdrfun_product_summable:
       summable_on_iff_abs_summable_on_real zero_neq_one)
   by (simp add: mult_right_le_one_le ureal_lower_bound ureal_upper_bound)
 
+lemma pdrfun_product_summable_1:
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  assumes "is_prob (\<lambda>s. g(s\<^sub>1, s))"
+  shows "(\<lambda>s. (ureal2real (f (s\<^sub>1, s))) * (g (s\<^sub>1, s))) summable_on UNIV"
+  apply (subst summable_on_iff_abs_summable_on_real)
+  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. (ureal2real (f (s\<^sub>1, s)))"])
+  apply (metis assms infsum_not_exists pdrfun_prob_sum1_summable(3) 
+      summable_on_iff_abs_summable_on_real zero_neq_one)
+  by (smt (verit, del_insts) assms(2) is_prob mult_commute_abs mult_left_le_one_le mult_nonneg_nonneg real_norm_def ureal_lower_bound)
+
 lemma pdrfun_product_summable_swap:
   assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
   shows "(\<lambda>s. (ureal2real (g (s\<^sub>1, s))) * (ureal2real (f (s\<^sub>1, s)))) summable_on UNIV"
   using pdrfun_product_summable by (smt (verit, ccfv_threshold) assms mult_commute_abs summable_on_cong)
+
+lemma pdrfun_product_summable_1_swap:
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  assumes "is_prob (\<lambda>s. g(s\<^sub>1, s))"
+  shows "(\<lambda>s. (g (s\<^sub>1, s)) * (ureal2real (f (s\<^sub>1, s)))) summable_on UNIV"
+  apply (subst mult.commute)
+  using pdrfun_product_summable_1 assms(1) assms(2) by fastforce
 
 lemma pdrfun_product_summable':
   assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
@@ -392,6 +447,15 @@ lemma pdrfun_product_summable':
   apply (metis assms infsum_not_exists pdrfun_prob_sum1_summable(3) 
       summable_on_iff_abs_summable_on_real zero_neq_one)
   by (simp add: mult_right_le_one_le ureal_lower_bound ureal_upper_bound)
+
+lemma pdrfun_product_summable'_1:
+  assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
+  assumes "is_prob (\<lambda>s. g(s, s'))"
+  shows "(\<lambda>s. (ureal2real (f (s\<^sub>1, s))) * (g (s, s'))) summable_on UNIV"
+  apply (subst summable_on_iff_abs_summable_on_real)
+  apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s. (ureal2real (f (s\<^sub>1, s)))"])
+  apply (metis assms(1) pdrfun_prob_sum1_summable(4) summable_on_iff_abs_summable_on_real)
+  by (smt (verit, del_insts) assms(2) is_prob mult_commute_abs mult_left_le_one_le mult_nonneg_nonneg real_norm_def ureal_lower_bound)
 
 lemma pdrfun_product_summable'_swap:
   assumes "is_final_distribution (rvfun_of_prfun (f::('s\<^sub>1, 's\<^sub>2) prfun))"
@@ -485,7 +549,7 @@ proof -
     by (simp add: eventually_finite_subsets_at_top)
 qed
 
-lemma rvfun_product_summable:
+lemma rvfun_product_summable_subdist:
   assumes "is_final_sub_dist p" "is_prob q"
   shows "(\<lambda>s::'a. p (x, s) * q (s, y)) summable_on UNIV"
   apply (subst summable_on_iff_abs_summable_on_real)
@@ -526,7 +590,7 @@ lemma rvfun_product_prob_sub_dist_leq_1:
 proof -
   have "(\<Sum>\<^sub>\<infinity> s::'a. p (x, s) * q (s, y)) \<le> (\<Sum>\<^sub>\<infinity> s::'a. p (x, s))"
     apply (subst infsum_mono)
-    apply (simp add: assms(1) assms(2) is_prob rvfun_product_summable)
+    apply (simp add: assms(1) assms(2) is_prob rvfun_product_summable_subdist)
     apply (simp add: assms(1) rvfun_prob_sum_leq_1_summable(4))
     apply (simp add: assms(1) assms(2) is_prob mult_right_le_one_le rvfun_prob_sum_leq_1_summable(1))
     by simp
@@ -536,7 +600,6 @@ proof -
     using calculation by linarith
 qed
     
-
 lemma rvfun_product_summable_summable:
   assumes "\<forall>x. ((curry p) x) summable_on UNIV"
   assumes "is_prob p" "is_prob q"
@@ -1223,7 +1286,7 @@ proof -
   fix a b
   have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (a, v\<^sub>0) * q (v\<^sub>0, b)) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (a, v\<^sub>0))"
     apply (subst infsum_mono)
-    apply (simp add: assms(1) assms(2) is_prob rvfun_product_summable)
+    apply (simp add: assms(1) assms(2) is_prob rvfun_product_summable_subdist)
     apply (simp add: assms(1) rvfun_prob_sum_leq_1_summable(4))
     apply (simp add: assms(1) assms(2) is_prob mult_right_le_one_le rvfun_prob_sum_leq_1_summable(1))
     by simp
@@ -1405,7 +1468,25 @@ proof (rule allI, rule ccontr)
     by (smt (verit, del_insts) assms(1) assms(2) f0 infsum_nonneg mult_nonneg_nonneg rvfun_prob_sum1_summable(1))
   then show "False"
     using rvfun_infsum_pcomp_sum_1 assms(1) assms(2) calculation by fastforce
-  qed
+qed
+
+lemma rvfun_infsum_pcomp_lessthan_1_subdist:
+  assumes "is_final_sub_dist p"
+  assumes "is_final_sub_dist q"
+  shows "\<forall>s::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<le> 1"
+proof
+  fix s
+  have f0: "\<forall>v\<^sub>0. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s) \<le> p (s\<^sub>1, v\<^sub>0)"
+    by (simp add: assms mult_left_le rvfun_prob_sum_leq_1_summable(1))
+  then have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0))"
+    apply (subst infsum_mono)
+    apply (metis (no_types, lifting) assms(1) assms(2) is_final_prob_prob is_final_sub_dist_prob rvfun_product_summable_subdist summable_on_cong)
+    apply (simp add: assms(1) rvfun_prob_sum_leq_1_summable(4))
+    apply blast
+    by simp
+  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<le> (1::\<real>)"
+    by (simp add: assms(1) assms(2) is_final_prob_prob is_final_sub_dist_prob rvfun_product_prob_sub_dist_leq_1)
+qed
 
 lemma rvfun_seqcomp_is_dist: 
   assumes "is_final_distribution p"
@@ -1521,6 +1602,16 @@ proof -
         ereal_less_eq(7) ereal_max_0 less_eq_ureal.rep_eq linorder_le_cases max.absorb_iff2 
         min.absorb1 min.absorb2) 
 qed
+
+lemma prfun_pseqcomp_mono': 
+  fixes P\<^sub>1 :: "'s prhfun"
+  assumes "\<forall>a b. (\<lambda>v\<^sub>0::'s. ureal2real (P\<^sub>1 (a, v\<^sub>0)) * ureal2real (Q\<^sub>1 (v\<^sub>0, b))) summable_on UNIV"
+  assumes "\<forall>a b. (\<lambda>v\<^sub>0::'s. ureal2real (P\<^sub>2 (a, v\<^sub>0)) * ureal2real (Q\<^sub>2 (v\<^sub>0, b))) summable_on UNIV"
+  shows "\<lbrakk> P\<^sub>1 \<le> P\<^sub>2; Q\<^sub>1 \<le> Q\<^sub>2 \<rbrakk> \<Longrightarrow> (P\<^sub>1 ; Q\<^sub>1) \<le> (P\<^sub>2 ; Q\<^sub>2)"
+  apply (subst prfun_pseqcomp_mono)
+  using assms(1) ureal2real_def apply auto[1]
+  using assms(2) ureal2real_def apply auto[1]
+  by simp+
 
 theorem prfun_seqcomp_left_unit: "II ; (P::'a prhfun) = P"
   apply (simp add: pseqcomp_def pskip_def)
@@ -1729,6 +1820,89 @@ proof -
     using lhs_eq rhs_eq by presburger
 qed
 
+theorem prfun_seqcomp_assoc_subdist: 
+  assumes "is_final_sub_dist (rvfun_of_prfun P)"
+          "is_final_sub_dist (rvfun_of_prfun Q)"
+          "is_final_sub_dist (rvfun_of_prfun R)"
+  shows "(P::'a prhfun) ; (Q ; R) = (P ; Q) ; R"
+  apply (simp add: pfun_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (simp add: infsum_nonneg is_prob ureal_is_prob)
+   apply (subst rvfun_infsum_pcomp_lessthan_1_subdist)
+  apply (simp add: assms)+
+  apply (subst rvfun_inverse)
+  using assms(1) rvfun_seqcomp_subdist_is_prob ureal_is_prob apply blast
+  apply (expr_auto)
+proof -
+  fix a and b :: "'a"
+  let ?q = "\<lambda>(v\<^sub>0, b). (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b))"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rvfun_of_prfun P (a, v\<^sub>0) *
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b)))"
+  let ?lhs' = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.(\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a.  
+      rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b)))"
+  let ?rhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun P (a, v\<^sub>0') * rvfun_of_prfun Q (v\<^sub>0', v\<^sub>0)) 
+          * rvfun_of_prfun R (v\<^sub>0, b))"
+  let ?rhs' = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. 
+          rvfun_of_prfun P (a, v\<^sub>0') * rvfun_of_prfun Q (v\<^sub>0', v\<^sub>0) * rvfun_of_prfun R (v\<^sub>0, b)))"
+
+  have lhs_1: "(\<forall>v\<^sub>0::'a. rvfun_of_prfun P (a, v\<^sub>0) *
+          (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b))
+      = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. 
+          rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun Q (v\<^sub>0, v\<^sub>0') * rvfun_of_prfun R (v\<^sub>0', b)))"
+    apply (rule allI)
+    by (metis (no_types, lifting) ab_semigroup_mult_class.mult_ac(1) infsum_cmult_right' infsum_cong)
+  then have lhs_eq: "?lhs = ?lhs'"
+    by presburger
+
+  have rhs_1: "(\<forall>v\<^sub>0::'a. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. rvfun_of_prfun P (a, v\<^sub>0') * rvfun_of_prfun Q (v\<^sub>0', v\<^sub>0)) 
+          * rvfun_of_prfun R (v\<^sub>0, b)
+      = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a. 
+          rvfun_of_prfun P (a, v\<^sub>0') * rvfun_of_prfun Q (v\<^sub>0', v\<^sub>0) * rvfun_of_prfun R (v\<^sub>0, b)))"
+    apply (rule allI)
+    by (metis (mono_tags, lifting) infsum_cmult_left' infsum_cong)
+  then have rhs_eq: "?rhs = ?rhs'"
+    by presburger
+
+  have lhs_rhs_eq: "?lhs' = ?rhs'"
+    apply (rule infsum_swap_banach)
+    apply (subst summable_on_iff_abs_summable_on_real)
+    apply (subst abs_summable_on_Sigma_iff)
+    apply (rule conjI)
+    apply (auto)
+    apply (subst abs_of_nonneg)
+    apply (simp add: is_prob ureal_is_prob)
+    apply (subst mult.assoc)
+    apply (rule summable_on_cmult_right)
+    apply (rule rvfun_product_summable_subdist)
+    apply (simp add: assms)+
+    apply (simp add: ureal_is_prob)
+    apply (subst abs_of_nonneg)
+    apply (subst abs_of_nonneg)
+    apply (simp add: is_prob ureal_is_prob)
+    apply (simp add: assms(1) assms(2) assms(3) infsum_nonneg rvfun_prob_sum_leq_1_summable(1))
+    apply (subst abs_of_nonneg)
+    apply (simp add: is_prob ureal_is_prob)
+    apply (subst mult.assoc)
+    apply (subst infsum_cmult_right)
+    apply (rule rvfun_product_summable_subdist)
+    apply (simp add: assms)+
+    apply (simp add: ureal_is_prob)
+    apply (subst summable_on_iff_abs_summable_on_real)
+    apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s::'a. rvfun_of_prfun P (a, s)"])
+    apply (metis assms(1) rvfun_prob_sum_leq_1_summable(5) summable_on_iff_abs_summable_on_real)
+    apply (subgoal_tac "(\<Sum>\<^sub>\<infinity>y::'a. rvfun_of_prfun Q (x, y) * rvfun_of_prfun R (y, b)) \<le> 1")
+    using infsum_nonneg mult_right_le_one_le prfun_in_0_1'
+    apply (smt (verit, ccfv_SIG) mult_nonneg_nonneg real_norm_def)
+    apply (subst rvfun_infsum_pcomp_lessthan_1_subdist)
+    by (simp add: assms)+
+
+  then show "?lhs = ?rhs"
+    using lhs_eq rhs_eq by presburger
+qed
+
 term "((P::'a \<times> 'a \<Rightarrow> ureal) ; \<lbrakk>b\<^sup>\<Up>\<rbrakk>\<^sub>\<I>)"
 (*
 P ; if b then Q else R
@@ -1774,11 +1948,11 @@ theorem prfun_seqcomp_pcond_subdist:
     show "?lhs = ?rhs_1 + ?rhs_2"
       apply (simp add: f3)
       apply (subst infsum_add)
-      apply (subst rvfun_product_summable)
+      apply (subst rvfun_product_summable_subdist)
       using assms apply force
       using ureal_is_prob apply blast
       apply simp
-      apply (subst rvfun_product_summable)
+      apply (subst rvfun_product_summable_subdist)
       using assms apply force
       using ureal_is_prob apply blast
        apply simp
@@ -3680,9 +3854,9 @@ proof -
   also have f5: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (s, v\<^sub>0) * rvfun_of_prfun X (v\<^sub>0, s') + 
     (- (rvfun_of_prfun P (s, v\<^sub>0) * rvfun_of_prfun Y (v\<^sub>0, s'))))"
     apply (subst infsum_add)
-    apply (simp add: assms(1) is_final_dist_subdist rvfun_product_summable ureal_is_prob)
+    apply (simp add: assms(1) is_final_dist_subdist rvfun_product_summable_subdist ureal_is_prob)
     apply (subst summable_on_uminus)
-     apply (simp add: assms(1) is_final_dist_subdist rvfun_product_summable ureal_is_prob)
+     apply (simp add: assms(1) is_final_dist_subdist rvfun_product_summable_subdist ureal_is_prob)
     by auto
   also have f6: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (s, v\<^sub>0) * (rvfun_of_prfun X (v\<^sub>0, s') - rvfun_of_prfun Y (v\<^sub>0, s')))"
     by (metis (mono_tags, opaque_lifting) ab_group_add_class.ab_diff_conv_add_uminus right_diff_distrib')
@@ -4550,6 +4724,370 @@ theorem unique_fixed_point_lfp_gfp:
       sup_continuous_lfp_iteration sup_iterate_continuous unique_fixed_point)
   by (smt (z3) Collect_cong Fwhile_mono Sup.SUP_cong assms(1) assms(2) assms(3) assms(4) gfp_unfold 
       pwhile_top_def unique_fixed_point)
+
+lemma iterate_bot_leq_top: 
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  shows "iterate n b P 0\<^sub>p \<le> iterate n b P 1\<^sub>p"
+  apply (induction n)
+  apply (simp)
+  apply (simp add: ureal_top_greatest')
+  apply (simp)
+  by (simp add: Fwhile_monoE assms)
+
+lemma iterate_top_is_prob:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  shows "is_prob ((@(rvfun_of_prfun (iterate n b P 0\<^sub>p)) + @(rvfun_of_prfun (iter_seq n b P 1\<^sub>p)))\<^sub>e)"
+  apply (induction n)
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (simp add: prfun_in_0_1')
+  apply (simp add: one_ureal.rep_eq pone_def pzero_def rvfun_of_prfun_def ureal2real_def zero_ureal.rep_eq)
+  apply (simp)
+  apply (simp add: Fwhile_def)
+  apply (simp add: pcond_def)
+  apply (simp only: prfun_skip')
+  apply (simp only: pfun_defs)
+  apply (subst rvfun_seqcomp_inverse)
+  using assms apply presburger
+  apply (simp add: ureal_is_prob)
+  apply (subst rvfun_seqcomp_inverse)
+  using assms apply presburger
+  apply (simp add: ureal_is_prob)
+  apply (subst rvfun_pcond_inverse)
+  using assms rvfun_seqcomp_dist_is_prob ureal_is_prob apply blast
+  using rvfun_skip_f_is_prob apply blast
+  apply (subst rvfun_pcond_inverse)
+  using assms rvfun_seqcomp_dist_is_prob ureal_is_prob apply blast
+  using ureal_is_prob apply blast
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (simp add: infsum_nonneg prfun_in_0_1')
+  defer
+  apply (simp add: prfun_in_0_1')
+  apply (simp add: rvfun_of_prfun_def ureal2real_def zero_ureal.rep_eq)
+  apply (simp add: infsum_nonneg prfun_in_0_1')
+  defer
+  apply (simp add: prfun_in_0_1')
+  apply (simp add: rvfun_of_prfun_def ureal2real_def zero_ureal.rep_eq)
+proof -
+  fix n ba
+  assume a1: "\<forall>(a::'s) ba::'s.
+          (0::\<real>) \<le> rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iter_seq n b P \<^bold>1) (a, ba) \<and>
+          rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iter_seq n b P \<^bold>1) (a, ba) \<le> (1::\<real>)"
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
+      (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba)) = 
+      (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
+       rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba))"
+    apply (rule infsum_add[symmetric])
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule pdrfun_product_summable')
+    apply (simp add: assms)
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule pdrfun_product_summable')
+    by (simp add: assms)
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * (rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
+       rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba)))"
+    by (simp add: distrib_left)
+  also have "... \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0))"
+    apply (rule infsum_mono)
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule pdrfun_product_summable'_1)
+    using assms(1) apply blast
+    apply (smt (verit, ccfv_SIG) SEXP_def a1 is_prob_def rvfun_of_prfun_def taut_def)
+     apply (simp add: assms pdrfun_prob_sum1_summable'(4))
+    by (simp add: a1 mult_left_le prfun_in_0_1')
+  also have "... = 1"
+    by (simp add: assms pdrfun_prob_sum1_summable'(3))
+  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
+       (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba))  \<le> (1::\<real>)"
+    using calculation by presburger
+next
+  fix n a ba
+  assume a1: "\<forall>(a::'s) ba::'s.
+          (0::\<real>) \<le> rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iter_seq n b P \<^bold>1) (a, ba) \<and>
+          rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iter_seq n b P \<^bold>1) (a, ba) \<le> (1::\<real>)"
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
+       (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba)) = 
+    (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
+       rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba))"
+    apply (rule infsum_add[symmetric])
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule pdrfun_product_summable')
+    apply (simp add: assms)
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule pdrfun_product_summable')
+    by (simp add: assms)
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * (rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
+       rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba)))"
+    by (simp add: distrib_left)
+  also have "... \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0))"
+    apply (rule infsum_mono)
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule pdrfun_product_summable'_1)
+    using assms(1) apply blast
+    apply (smt (verit, ccfv_SIG) SEXP_def a1 is_prob_def rvfun_of_prfun_def taut_def)
+     apply (simp add: assms pdrfun_prob_sum1_summable'(4))
+    by (simp add: a1 mult_left_le prfun_in_0_1')
+  also have "... = 1"
+    by (simp add: assms pdrfun_prob_sum1_summable'(3))
+  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
+       (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba))
+       \<le> (1::\<real>)"
+    using calculation by presburger
+qed
+
+lemma iterate_top_is_prob':
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  shows "\<forall>s. ureal2real (iterate\<^sub>p n b P \<^bold>0 s) + ureal2real (iter_seq n b P \<^bold>1 s) \<le> (1::\<real>)"
+proof -
+  have "is_prob ((@(rvfun_of_prfun (iterate n b P 0\<^sub>p)) + @(rvfun_of_prfun (iter_seq n b P 1\<^sub>p)))\<^sub>e)"
+    using iterate_top_is_prob assms by blast
+  then have "\<forall>s. rvfun_of_prfun (iterate\<^sub>p n b P 0\<^sub>p) s + rvfun_of_prfun (iter_seq n b P 1\<^sub>p) s \<le> 1"
+    apply (subst (asm) dist_defs taut_def)
+    by (simp add: taut_def)
+  then show ?thesis
+    apply (subst (asm) rvfun_of_prfun_def)
+    apply (subst (asm) rvfun_of_prfun_def)
+    by (metis SEXP_def order_antisym ureal_bottom_least ureal_bottom_least' ureal_top_greatest ureal_top_greatest')
+qed
+
+lemma iterate_top_eq_bot_plus:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  shows "iterate n b P 1\<^sub>p = (@(iterate n b P 0\<^sub>p) + @(iter_seq n b P 1\<^sub>p))\<^sub>e"
+  apply (induction n)
+  apply (simp add: pzero_def)
+  apply (simp add: Fwhile_def)
+  apply (simp add: pcond_def)
+  apply (simp only: prfun_skip')
+  apply (simp only: pfun_defs)
+  apply (subst rvfun_seqcomp_inverse)
+  using assms apply presburger
+  apply (simp add: ureal_is_prob)
+  apply (subst rvfun_seqcomp_inverse)
+  using assms apply presburger
+  apply (simp add: ureal_is_prob)
+  apply (subst rvfun_seqcomp_inverse)
+  using assms apply presburger
+  apply (simp add: ureal_is_prob)
+  apply (simp add: prfun_of_rvfun_def)
+  apply (subst fun_eq_iff)
+  apply (expr_auto)
+  defer
+  apply (simp add: ureal_defs)
+  apply (metis add.right_neutral ereal2ureal_def ureal_zero_0 zero_ereal_def zero_ureal_def)
+  defer
+  apply (metis SEXP_def add_0 nle_le real2ureal_def rvfun_of_prfun_def ureal_lower_bound ureal_real2ureal_smaller zero_ereal_def zero_ureal_def)
+proof -
+  fix n ba
+  assume a1: "\<forall>(a::'s) ba::'s. iterate\<^sub>p n b P \<^bold>1 (a, ba) = iterate\<^sub>p n b P \<^bold>0 (a, ba) + iter_seq n b P \<^bold>1 (a, ba)"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
+           rvfun_of_prfun P (ba, v\<^sub>0) *
+           rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a + iter_seq n b P \<^bold>1 a) (v\<^sub>0, ba))"
+  let ?rhs_1 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba))"
+  let ?rhs_2 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba))"
+
+  have f0: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a + iter_seq n b P \<^bold>1 a) (v\<^sub>0, ba)
+    = (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
+            rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter_seq n b P \<^bold>1 a) (v\<^sub>0, ba))"
+    apply (simp add: ureal_defs)
+    apply (subst ureal2ereal_add_dist)
+    apply (rule ureal2real_add_leq_1_ureal2ereal)
+    using iterate_top_is_prob' assms apply blast
+    by (metis abs_ereal_ge0 atLeastAtMost_iff ereal_less_eq(1) ereal_times(1) nle_le real_of_ereal_add ureal2ereal)
+  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
+           rvfun_of_prfun P (ba, v\<^sub>0) *
+           (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
+            rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter_seq n b P \<^bold>1 a) (v\<^sub>0, ba)))"
+    apply (rule infsum_cong)
+    using f0 by presburger
+  have f2: "... = ?rhs_1 + ?rhs_2"
+    apply (simp add: distrib_left)
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule infsum_add)
+    by (simp add: assms pdrfun_product_summable')+
+  have f3: "?lhs \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0))"
+    apply (rule infsum_mono)
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule pdrfun_product_summable'_1)+
+    using assms apply force
+    apply (simp add: is_prob_def ureal_lower_bound ureal_upper_bound)
+    apply (simp add: assms pdrfun_prob_sum1_summable'(4))
+    by (meson mult_right_le_one_le prfun_in_0_1')
+  have f4: "... = 1"
+    by (simp add: assms pdrfun_prob_sum1_summable'(3))
+  show "real2ureal ?lhs = real2ureal ?rhs_1 + real2ureal ?rhs_2"
+    apply (simp add: f1)
+    apply (simp add: f2)
+    apply (subst real2ureal_add_dist)
+    apply (simp add: infsum_nonneg prfun_in_0_1')+
+    apply (simp add: f2[symmetric])
+    apply (simp add: f1[symmetric])
+    using f3 f4 apply auto[1]
+    by simp
+next
+  fix n a ba
+  assume a1: "\<forall>(a::'s) ba::'s. iterate\<^sub>p n b P \<^bold>1 (a, ba) = iterate\<^sub>p n b P \<^bold>0 (a, ba) + iter_seq n b P \<^bold>1 (a, ba)"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
+           rvfun_of_prfun P (a, v\<^sub>0) *
+           rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a + iter_seq n b P \<^bold>1 a) (v\<^sub>0, ba))"
+  let ?rhs_1 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba))"
+  let ?rhs_2 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iter_seq n b P \<^bold>1) (v\<^sub>0, ba))"
+
+  have f0: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a + iter_seq n b P \<^bold>1 a) (v\<^sub>0, ba)
+    = (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
+            rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter_seq n b P \<^bold>1 a) (v\<^sub>0, ba))"
+    apply (simp add: ureal_defs)
+    apply (subst ureal2ereal_add_dist)
+    apply (rule ureal2real_add_leq_1_ureal2ereal)
+    using iterate_top_is_prob' assms apply blast
+    by (metis abs_ereal_ge0 atLeastAtMost_iff ereal_less_eq(1) ereal_times(1) nle_le real_of_ereal_add ureal2ereal)
+  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
+           rvfun_of_prfun P (a, v\<^sub>0) *
+           (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
+            rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter_seq n b P \<^bold>1 a) (v\<^sub>0, ba)))"
+    apply (rule infsum_cong)
+    using f0 by presburger
+  have f2: "... = ?rhs_1 + ?rhs_2"
+    apply (simp add: distrib_left)
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule infsum_add)
+    by (simp add: assms pdrfun_product_summable')+
+  have f3: "?lhs \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0))"
+    apply (rule infsum_mono)
+    apply (simp add: rvfun_of_prfun_def)
+    apply (rule pdrfun_product_summable'_1)+
+    using assms apply force
+    apply (simp add: is_prob_def ureal_lower_bound ureal_upper_bound)
+    apply (simp add: assms pdrfun_prob_sum1_summable'(4))
+    by (meson mult_right_le_one_le prfun_in_0_1')
+  have f4: "... = 1"
+    by (simp add: assms pdrfun_prob_sum1_summable'(3))
+  show "real2ureal ?lhs = real2ureal ?rhs_1 + real2ureal ?rhs_2"
+    apply (simp add: f1)
+    apply (simp add: f2)
+    apply (subst real2ureal_add_dist)
+    apply (simp add: infsum_nonneg prfun_in_0_1')+
+    apply (simp add: f2[symmetric])
+    apply (simp add: f1[symmetric])
+    using f3 f4 apply auto[1]
+    by simp
+qed
+
+lemma iter_seq_decreasing:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  shows "decseq (\<lambda>n. ((iter_seq n b P 1\<^sub>p) s))"
+  apply (simp add: decseq_def)
+proof (auto) 
+  fix m n :: "\<nat>"
+  assume a1: "m \<le> n"
+  obtain nn where P_nn: "m + nn = n" 
+    using nat_le_iff_add a1 by auto
+  have f1: "\<forall>nn. (iter_seq nn b P 1\<^sub>p) \<ge> (iter_seq (nn + 1) b P 1\<^sub>p)"
+    proof 
+      fix nn
+      show "iter_seq (nn + (1::\<nat>)) b P 1\<^sub>p \<le> iter_seq nn b P 1\<^sub>p"
+      apply (induction nn)
+      apply (simp add: ureal_top_greatest')
+      apply (simp)
+      apply (subst prfun_pcond_mono, auto)
+      apply (subst prfun_pseqcomp_mono', auto)
+      apply (subst pdrfun_product_summable'_1, auto)
+      apply (simp add: assms)
+      apply (simp add: is_prob_def ureal_lower_bound ureal_upper_bound)
+      apply (subst pdrfun_product_summable'_1, auto)
+      apply (simp add: assms)
+        by (simp add: is_prob_def ureal_lower_bound ureal_upper_bound)
+    qed
+  have f2: "(iter_seq m b P 1\<^sub>p) \<ge> (iter_seq (m + nn) b P 1\<^sub>p)"
+    apply (induction nn)
+    apply force
+    using f1 order.trans by auto
+  show "iter_seq n b P 1\<^sub>p s \<le> iter_seq m b P 1\<^sub>p s"
+    using P_nn f2 le_fun_def by fastforce
+qed
+
+lemma iterate_sup_inf_eq:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<forall>s. (\<lambda>n. ureal2real ((iter_seq n b P 1\<^sub>p) s)) \<longlonglongrightarrow> 0"
+  shows "(\<Sqinter>n::nat. (iterate n b P 1\<^sub>p)) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
+proof -
+  let ?f1 = "\<lambda>n. (iterate n b P 0\<^sub>p)"
+  let ?f2 = "\<lambda>n. (iterate n b P 1\<^sub>p)"
+  have f1: "\<forall>s. (\<lambda>n. ureal2real (?f1 n s)) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. ?f1 n s))"
+    apply (auto, rule increasing_chain_limit_is_lub)
+    using assms(1) iterate_increasing_chain by blast
+
+  have f2: "\<forall>s. (\<lambda>n. ureal2real (?f2 n s)) \<longlonglongrightarrow> (ureal2real (\<Sqinter>n::\<nat>. ?f2 n s))"
+    apply (auto, rule decreasing_chain_limit_is_glb)
+    using assms(1) iterate_decreasing_chain by blast
+
+  have f3: "\<forall>n. ?f2 n = (@(?f1 n) + @(iter_seq n b P 1\<^sub>p))\<^sub>e"
+    using assms(1) iterate_top_eq_bot_plus by blast
+
+  have f4: "\<forall>s. (\<lambda>n. ureal2real (?f2 n s)) = (\<lambda>n. ureal2real (?f1 n s + (iter_seq n b P 1\<^sub>p) s))"
+    using f3 by simp
+
+  have f5: "\<forall>s. (\<lambda>n. ureal2real (?f1 n s + (iter_seq n b P 1\<^sub>p) s)) = (\<lambda>n. ureal2real (?f1 n s) + ureal2real ((iter_seq n b P 1\<^sub>p) s))"
+    apply (subst fun_eq_iff)
+    apply (auto)
+    apply (rule ureal2real_add_dist)
+    using iterate_top_is_prob' by (metis assms(1) order_antisym ureal_bottom_least 
+        ureal_bottom_least' ureal_top_greatest ureal_top_greatest')
+
+  have f6: "\<forall>s. (\<lambda>n. ureal2real (?f2 n s)) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. ?f1 n s)) + 0"
+    apply (rule allI)
+    apply (simp only: f4 f5)
+    apply (rule tendsto_add)
+    using f1 apply blast
+    by (simp add: assms(3))
+
+  have "\<forall>s. (ureal2real (\<Squnion>n::\<nat>. ?f1 n s)) = (ureal2real (\<Sqinter>n::\<nat>. ?f2 n s))"
+  proof 
+    fix s
+    show "ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s) = ureal2real (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p s)"
+    apply (rule LIMSEQ_unique[where X = "(\<lambda>n. ureal2real (?f2 n s))"])
+    using f6 apply fastforce
+    using f2 by blast
+  qed
+  then have "\<forall>s. (\<Squnion>n::\<nat>. ?f1 n s) = (\<Sqinter>n::\<nat>. ?f2 n s)"
+    using ureal2real_eq by blast
+  then show "(\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p) = (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p)"
+    apply (subst fun_eq_iff)
+    apply (rule allI)
+    by (metis INF_apply SUP_apply)
+qed
+
+theorem unique_fixed_point_lfp_gfp':
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<forall>s. (\<lambda>n. ureal2real ((iter_seq n b P 1\<^sub>p) s)) \<longlonglongrightarrow> 0"
+  assumes "Fwhile b P fp = fp"
+  shows "while\<^sub>p b do P od = fp"
+        "while\<^sub>p\<^sup>\<top> b do P od = fp"
+  apply (simp add: iterate_sup_inf_eq assms unique_fixed_point_lfp_gfp(1))
+  by (simp add: iterate_sup_inf_eq assms unique_fixed_point_lfp_gfp(2))
+
+(*
+lemma 
+  shows "(\<lambda>n. ureal2real ((iter_seq n b P 1\<^sub>p) s)) \<longlonglongrightarrow> 0"
+  apply (subst LIMSEQ_iff)
+  apply (auto)
+proof -
+  fix r::\<real>
+  assume "0 < r"
+  have "\<forall>n. \<bar>ureal2real (iter_seq n b P 1\<^sub>p s)\<bar> = ureal2real (iter_seq n b P 1\<^sub>p s)"
+    by (simp add: ureal_lower_bound)
+  have "\<exists>n. (iter_seq n b P 1\<^sub>p s) < r"
+    apply (rule ccontr)
+    apply (auto)
+  proof -
+    assume "\<forall>n::\<nat>. \<not> iter_seq n b P 1\<^sub>p s < ereal2ureal (ereal r)"
+    show "false"
+    qed
+
+  show "\<exists>no::\<nat>. \<forall>n\<ge>no. \<bar>ureal2real (iter_seq n b P 1\<^sub>p s)\<bar> < r"
+*)
 
 (*
 theorem increasing_chain_limit_is_lub:

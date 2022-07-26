@@ -314,6 +314,125 @@ lemma coin_flip_loop: "cflip_loop = prfun_of_rvfun cH"
   apply (simp only: fi)
   by auto
 
+subsubsection \<open> Using unique fixed point theorem \<close>
+lemma cstate_set_simp: "{s::cstate. \<lparr>c\<^sub>v = ctail\<rparr> = s \<or> \<lparr>c\<^sub>v = chead\<rparr> = s} = {\<lparr>c\<^sub>v = chead\<rparr>, \<lparr>c\<^sub>v = ctail\<rparr>}"
+  by fastforce
+
+lemma cflip_iter_seq_simp:
+  shows "(iter_seq 0 (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) = 1\<^sub>p"
+        "(iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+proof -
+  show "(iter_seq 0 (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) = 1\<^sub>p"
+    by (auto)
+
+  show "(iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+    apply (induction n)
+    apply (simp add: pfun_defs)
+    apply (subst cflip_altdef)
+    apply (subst ureal_zero)
+    apply (subst ureal_one)
+    apply (subst rvfun_seqcomp_inverse)
+    using cflip_altdef cflip_is_dist apply presburger
+    apply (simp add: ureal_is_prob)
+    apply (metis ureal_is_prob ureal_one)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (expr_auto add: rel)
+    apply (subst infsum_cdiv_left)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (simp)
+    apply (subst infsum_constant_finite_states)
+    apply (simp)
+    apply (simp only: cstate_set_simp)
+    apply (simp add: real2ureal_def)
+    apply (simp only: add_Suc)
+    apply (simp only: iter_seq.simps(2))
+    apply (simp only: pcond_def)
+    apply (simp only: pseqcomp_def)
+    apply (subst rvfun_seqcomp_inverse)
+    using cflip_altdef cflip_is_dist apply presburger
+    apply (simp add: ureal_is_prob)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (subst rvfun_inverse)
+    apply (expr_auto add: dist_defs)
+    apply (simp add: power_le_one)
+    apply (subst cflip_altdef)
+    apply (expr_auto add: rel)  
+    defer
+    apply (simp add: pfun_defs)
+    apply (subst ureal_zero)
+    apply simp
+  proof -
+    fix n
+    let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate.
+           (if \<lparr>c\<^sub>v = ctail\<rparr> = v\<^sub>0 \<or> \<lparr>c\<^sub>v = chead\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+           ((if c\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * ((1::\<real>) / (2::\<real>)) ^ n) /
+           (2::\<real>))"
+    have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate.
+           (if \<lparr>c\<^sub>v = ctail\<rparr> = v\<^sub>0 then ((1::\<real>) / (2::\<real>)) ^ n / 2 else (0::\<real>)))"
+      apply (rule infsum_cong)
+      by auto
+    also have "... = (((1::\<real>) / (2::\<real>)) ^ n / (2::\<real>))"
+      apply (subst infsum_constant_finite_states)
+      apply (simp)
+      by simp
+    then show "real2ureal ?lhs = real2ureal (((1::\<real>) / (2::\<real>)) ^ n / (2::\<real>))"
+      using calculation by presburger
+  qed
+qed
+
+lemma cflip_iter_seq_tendsto_0:
+  "\<forall>s::cstate \<times> cstate. (\<lambda>n::\<nat>. ureal2real (iter_seq n (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+proof 
+  fix s
+  have "(\<lambda>n::\<nat>. ureal2real (iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    apply (subst cflip_iter_seq_simp)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (expr_auto)
+    apply (subst real2ureal_inverse)
+    apply (simp)
+    apply (simp add: power_le_one)
+    apply (simp add: LIMSEQ_realpow_zero)
+    apply (subst real2ureal_inverse)
+    by (simp)+
+  then show "(\<lambda>n::\<nat>. ureal2real (iter_seq n (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    by (rule LIMSEQ_offset[where k = 1])
+qed
+
+lemma cH_is_fp: "Fwhile (c\<^sup>< = ctail)\<^sub>e cflip (prfun_of_rvfun cH) = prfun_of_rvfun cH"
+  apply (simp add: cH_def Fwhile_def)
+  apply (simp add: pfun_defs)
+  apply (subst cflip_altdef)
+  apply (subst rvfun_skip_inverse)
+  apply (subst rvfun_seqcomp_inverse)
+  using cflip_altdef cflip_is_dist apply presburger
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (expr_auto add: prfun_of_rvfun_def)
+  using Tcoin.exhaust apply blast
+  apply (rel_auto)
+  apply (subst infsum_cdiv_left)
+  apply (rule infsum_constant_finite_states_summable)
+  apply (simp)
+  apply (subst infsum_constant_finite_states)
+  apply (simp)
+  apply (smt (verit, del_insts) Collect_cong One_nat_def Suc_1 Tcoin.distinct(1) UNIV_def card.empty 
+      card.insert cstate.ext_inject cstate_UNIV_set dbl_simps(3) dbl_simps(5) empty_iff 
+      finite.emptyI finite.insertI insert_iff mem_Collect_eq mult_numeral_1_right 
+      nonzero_mult_div_cancel_left numeral_One of_nat_1 of_nat_mult of_nat_numeral)
+  using Tcoin.exhaust by blast
+
+lemma coin_flip_loop': "cflip_loop = prfun_of_rvfun cH"
+  apply (simp add: cflip_loop_def)
+  apply (subst unique_fixed_point_lfp_gfp'[where fp = "prfun_of_rvfun cH"])
+  using cflip_is_dist apply auto[1]
+  apply (metis (no_types, lifting) Collect_mono_iff cstate_rel_UNIV_set finite.emptyI finite_insert rev_finite_subset)
+  using cflip_iter_seq_tendsto_0 apply (simp)
+  using cH_is_fp apply blast
+  by simp
+
+subsubsection \<open> Termination \<close>
 text \<open> The probability of @{text "c'"} being @{text "head"} is 1, and so almost-sure termination.\<close>
 lemma coin_flip_termination_prob: "cH ; \<lbrakk>c\<^sup>< = chead\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
   apply (simp add: cH_def)
