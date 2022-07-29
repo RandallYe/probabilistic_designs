@@ -835,18 +835,29 @@ lemma fdstate_finite: "finite (UNIV::fdstate set)"
   apply (simp only: UNIV_def)
   using fdstate_set_eq fdstate_set_finite by presburger
 
-lemma fdstate_pred_univ: "{s::fdstate. fd1_pred s \<and> fd1_pred s} = fdstate_set"
+lemma fdstate_pred_univ: "{s::fdstate. (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or>
+         fd1\<^sub>v s = nat2td (2::\<nat>) \<or>
+         fd1\<^sub>v s = nat2td (3::\<nat>) \<or> fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or>
+         fd2\<^sub>v s = nat2td (2::\<nat>) \<or>
+         fd2\<^sub>v s = nat2td (3::\<nat>) \<or> fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>))} = fdstate_set"
   apply (subst set_eq_iff)
   apply (rule allI, rule iffI)
   using fdstate_set_eq apply auto[1]
   by force
 
-lemma fdstate_pred_d1d2_neq: "{s::fdstate. fd1_pred s \<and> fd1_pred s \<and> \<not>fd1\<^sub>v s = fd2\<^sub>v s} = 
+lemma fdstate_pred_d1d2_neq: "{s::fdstate. (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or>
+         fd1\<^sub>v s = nat2td (2::\<nat>) \<or>
+         fd1\<^sub>v s = nat2td (3::\<nat>) \<or> fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>)) \<and>
+        (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or>
+         fd2\<^sub>v s = nat2td (2::\<nat>) \<or>
+         fd2\<^sub>v s = nat2td (3::\<nat>) \<or> fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>)) 
+      \<and> \<not>fd1\<^sub>v s = fd2\<^sub>v s} = 
     {s::fdstate. \<not>fd1\<^sub>v s = fd2\<^sub>v s}"
   apply (subst set_eq_iff)
   apply (rule allI, rule iffI)
   using fdstate_set_eq apply auto[1]
-  using fd1_mem by auto
+  using fdstate_pred_univ fdstate_set_eq by auto
 
 subsubsection \<open> Definitions \<close>
 definition fdice_throw:: "fdstate prhfun" where
@@ -1626,7 +1637,7 @@ proof -
     apply (subst infsum_constant_finite_states)
     apply (meson fdstate_finite rev_finite_subset subset_UNIV)
     apply (simp add: fdstate_pred_univ)
-    using card_fdstate_set by simp
+    using card_fdstate_set by auto
 
   show "(iter_seq (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>fd1\<^sup>< \<noteq> fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
     apply (induction n)
@@ -1662,21 +1673,6 @@ proof -
     let ?lhs_3 = "\<lambda>v\<^sub>0. ((if \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * ((5::\<real>) / (6::\<real>)) ^ n)"
     let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1_pred v\<^sub>0 then 1::\<real> else (0::\<real>)) *
            (if fd2_pred v\<^sub>0 then 1::\<real> else (0::\<real>)) * ?lhs_3 v\<^sub>0 / (36::\<real>))"
-    have f0: "{s::fdstate.
-        (fd1\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or>
-         fd1\<^sub>v s = nat2td (2::\<nat>) \<or>
-         fd1\<^sub>v s = nat2td (3::\<nat>) \<or>
-         fd1\<^sub>v s = nat2td (4::\<nat>) \<or> fd1\<^sub>v s = nat2td (5::\<nat>) \<or> fd1\<^sub>v s = nat2td (6::\<nat>)) \<and>
-        (fd2\<^sub>v s = nat2td (Suc (0::\<nat>)) \<or>
-         fd2\<^sub>v s = nat2td (2::\<nat>) \<or>
-         fd2\<^sub>v s = nat2td (3::\<nat>) \<or>
-         fd2\<^sub>v s = nat2td (4::\<nat>) \<or> fd2\<^sub>v s = nat2td (5::\<nat>) \<or> fd2\<^sub>v s = nat2td (6::\<nat>)) \<and>
-        \<not> fd1\<^sub>v s = fd2\<^sub>v s} = 
-        {s::fdstate. \<not>fd1\<^sub>v s = fd2\<^sub>v s}"
-      apply (subst set_eq_iff)
-      apply (rule allI, rule iffI)
-      using fdstate_set_eq apply auto[1]
-      using Tdice_UNIV_eq by auto
     have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. 
       (if fd1_pred v\<^sub>0 \<and> fd2_pred v\<^sub>0 \<and> \<not> fd1\<^sub>v v\<^sub>0 = fd2\<^sub>v v\<^sub>0 then ((5::\<real>) / (6::\<real>))  ^ n / (36::\<real>) else (0::\<real>)) )" 
       apply (rule infsum_cong)
@@ -1684,7 +1680,7 @@ proof -
     also have f2: "... = 30 * ((5::\<real>) / (6::\<real>))  ^ n / (36::\<real>)"
       apply (subst infsum_constant_finite_states)
       using fdstate_finite infinite_super top_greatest apply blast
-      by (simp add: f0 fdstate_set_d1d2_neq_card)
+      by (simp add: fdstate_pred_d1d2_neq fdstate_set_d1d2_neq_card)
     then show "real2ureal ?lhs = real2ureal ((5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ n / (6::\<real>))"
       by (simp add: f1 f2)
   qed

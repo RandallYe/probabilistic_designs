@@ -309,6 +309,16 @@ lemma real2ureal_inverse:
 lemma rvfun_of_prfun_simp: "rvfun_of_prfun [\<lambda>\<s>::'a \<times> 'a. u]\<^sub>e = (\<lambda>s. ureal2real u)"
   by (simp add: SEXP_def rvfun_of_prfun_def)
 
+lemma ureal2real_mult_dist: "ureal2real (a * b) = ureal2real a * ureal2real b"
+  apply (simp add: ureal_defs)
+  by (simp add: times_ureal.rep_eq)
+
+lemma ureal2real_power_dist: "ureal2real (u ^ n) = (ureal2real u) ^ n"
+  apply (induction n)
+  apply (simp add: one_ureal.rep_eq ureal2real_def)
+  apply (simp)
+  using ureal2real_mult_dist by presburger
+
 (*
 lemma real2uereal_inverse:
   assumes "n \<ge> 0" "d \<ge> 0" "n \<le> d"
@@ -3296,7 +3306,7 @@ proof -
       ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s'))"
     by auto
   have limit_is_lub: "\<forall>s s'. (\<lambda>n. ureal2real (f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n (s, s')))"
-    by (simp add: assms increasing_chain_limit_is_lub)
+    by (simp add: assms(1) increasing_chain_limit_is_lub)
   then have limit_is_lub_def: "\<forall>s s'. (\<exists>no::\<nat>. \<forall>n\<ge>no. norm (ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s'))) < r)"
     using LIMSEQ_iff by (metis a1)
   then have limit_is_lub_def': "\<forall>s s'. \<exists>no::nat. \<forall>n \<ge> no. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
@@ -3389,7 +3399,7 @@ any number @{text "n \<ge> no"}, the distance between @{text "f n"} and the supr
   have mu_no_set_rewrite: "?mu_no_set = (\<Union>(s, s') \<in> {(s, s'). ?P_larger_sup s s'}. 
       {uu. uu = (THE no::\<nat>. ?P_mu_no s s' no)})"
     by auto
-
+(*
   have f_larger_sup_finite: "finite {(s, s'). ?P_larger_sup s s'}"
   proof -
     have "{(s, s'). ?P_larger_sup s s'} \<subseteq> {s. ureal2real (\<Squnion>n::\<nat>. f n s) > ureal2real (f 0 s)}"
@@ -3397,7 +3407,7 @@ any number @{text "n \<ge> no"}, the distance between @{text "f n"} and the supr
     then show ?thesis
       using assms(2) rev_finite_subset by blast
   qed
-
+*)
   have "(\<forall>s s'. ?P_larger_sup s s' \<longrightarrow> finite {uu. uu = (THE no::\<nat>. ?P_mu_no s s' no)})"
     by simp
 
@@ -4159,7 +4169,7 @@ proof -
 
   have Sn_limit_sup: "(\<lambda>n. ureal2real (?f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')))"
     apply (subst increasing_chain_limit_is_lub)
-    apply (simp add: assms increasing_chain_def iterate_increasing2)
+    apply (simp add: assms(1) increasing_chain_def iterate_increasing2)
     by simp
   then have Sn_limit: "\<forall>r>0. \<exists>no::\<nat>. \<forall>n\<ge>no.
              \<bar>ureal2real (?f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. ?f n (s, s'))\<bar> < r"
@@ -4179,7 +4189,7 @@ obtain N where P_N: "\<forall>n\<ge>N. \<bar>ureal2real (?f n (s, s')) - ureal2r
   have exist_NN: "\<exists>no::nat. \<forall>n \<ge> no.
             \<forall>s s'. ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')) - ureal2real (?f n (s, s')) < r"
     apply (subst increasing_chain_limit_is_lub_all)
-       apply (simp add: assms iterate_increasing_chain)
+       apply (simp add: assms(1) iterate_increasing_chain)
     using assms(2) sup_iterate_not_zero_strict_increasing apply (smt (verit) Collect_cong Sup.SUP_cong)
     by (simp add: a1)+
 

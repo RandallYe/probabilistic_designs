@@ -62,6 +62,10 @@ lemma cstate_head: "{s::cstate. c\<^sub>v s = chead} = {\<lparr>c\<^sub>v = chea
   apply (subst set_eq_iff)
   by (auto)
 
+lemma cstate_tail: "{s::cstate. c\<^sub>v s = ctail} = {\<lparr>c\<^sub>v = ctail\<rparr>}"
+  apply (subst set_eq_iff)
+  by (auto)
+
 lemma cstate_rel_UNIV_set:
   "{s::cstate \<times> cstate. True} = {(\<lparr>c\<^sub>v = chead\<rparr>, \<lparr>c\<^sub>v = chead\<rparr>), 
   (\<lparr>c\<^sub>v = chead\<rparr>, \<lparr>c\<^sub>v = ctail\<rparr>),  (\<lparr>c\<^sub>v = ctail\<rparr>, \<lparr>c\<^sub>v = ctail\<rparr>), (\<lparr>c\<^sub>v = ctail\<rparr>, \<lparr>c\<^sub>v = chead\<rparr>)}"
@@ -466,6 +470,191 @@ proof -
     by force
 qed
 
+subsection \<open> Single coin flip (variable probability)\<close>
+definition cpflip :: "ureal \<Rightarrow> cstate prhfun" where
+"cpflip p = if\<^sub>p \<guillemotleft>p\<guillemotright> then (c := chead) else (c := ctail)"
+
+definition cpflip_loop :: "ureal \<Rightarrow> cstate prhfun" where
+"cpflip_loop p = while\<^sub>p (c\<^sup>< = ctail)\<^sub>e do cpflip p od"
+
+definition cpH :: "ureal \<Rightarrow> cstate rvhfun" where 
+"cpH p = (\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+
+definition cpH':: "ureal \<Rightarrow> cstate rvhfun" where  
+"cpH' p = (\<lbrakk>c\<^sup>< = chead\<rbrakk>\<^sub>\<I>\<^sub>e * (\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e) + \<lbrakk>\<not>c\<^sup>< = chead\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+
+lemma "cpH p = cpH' p"
+  apply (simp add: cpH_def cpH'_def)
+  by (expr_auto)
+
+lemma cpflip_is_dist: "is_final_distribution (rvfun_of_prfun (cpflip p))"
+  apply (simp add: cpflip_def pfun_defs)
+  apply (subst rvfun_assignment_inverse)+
+  apply (simp add: r_simp)
+  apply (subst rvfun_pchoice_inverse_c)
+  apply (simp add: rvfun_assignment_is_prob)+
+  apply (subst rvfun_pchoice_is_dist')
+  by (simp add: rvfun_assignment_is_dist)+
+
+lemma cpflip_altdef: "rvfun_of_prfun (cpflip p) = 
+  (\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real \<guillemotleft>p\<guillemotright>) + \<lbrakk>c\<^sup>> = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>)))\<^sub>e"
+  apply (simp add: cpflip_def pfun_defs)
+  apply (subst rvfun_assignment_inverse)+
+  apply (simp add: r_simp)
+  apply (subst rvfun_pchoice_inverse_c)
+  apply (simp add: rvfun_assignment_is_prob)+
+  apply (rel_auto)
+  by (simp add: ureal_1_minus_real)
+
+lemma cpflip_altdef': "rvfun_of_prfun (cpflip p) = 
+  (\<lbrakk>\<lbrakk>c := chead\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real \<guillemotleft>p\<guillemotright>) + \<lbrakk>\<lbrakk>c := ctail\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>)))\<^sub>e"
+  apply (simp add: cpflip_def pfun_defs)
+  apply (subst rvfun_assignment_inverse)+
+  apply (simp add: r_simp)
+  apply (subst rvfun_pchoice_inverse_c)
+  apply (simp add: rvfun_assignment_is_prob)+
+  apply (rel_auto)
+  by (simp add: ureal_1_minus_real)
+
+subsubsection \<open> Using unique fixed point theorem \<close>
+lemma cpflip_sum_1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate. (if c\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>)) * ureal2real p + 
+      (if c\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * ureal2real ((1::ureal) - p)) = (1::\<real>)"
+  apply (subst infsum_add)
+  apply (subst summable_on_cmult_left)
+  apply (rule infsum_constant_finite_states_summable)
+  apply (simp add: cstate_head)+
+  apply (subst summable_on_cmult_left)
+  apply (rule infsum_constant_finite_states_summable)
+  apply (metis cstate_UNIV_set finite.emptyI finite_insert rev_finite_subset top_greatest)
+  apply (simp)
+  apply (subst infsum_cmult_left)
+  apply (rule infsum_constant_finite_states_summable)
+  apply (simp add: cstate_head)+
+  apply (subst infsum_cmult_left)
+  apply (rule infsum_constant_finite_states_summable)
+  apply (metis cstate_UNIV_set finite.emptyI finite_insert rev_finite_subset top_greatest)
+  apply (subst infsum_constant_finite_states)
+  apply (simp add: cstate_head)+
+  apply (subst infsum_constant_finite_states)
+  apply (simp add: cstate_tail)+
+  using ureal_1_minus_real by fastforce
+
+lemma cpflip_iter_seq_simp:
+  shows "(iter_seq 0 (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) = 1\<^sub>p"
+        "(iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>))^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+proof -
+  show "(iter_seq 0 (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) = 1\<^sub>p"
+    by (auto)
+
+  show "(iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>))^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+    apply (induction n)
+    apply (simp add: pfun_defs)
+    apply (subst cpflip_altdef)
+    apply (subst ureal_zero)
+    apply (subst ureal_one)
+    apply (subst rvfun_seqcomp_inverse)
+    using cpflip_altdef cpflip_is_dist apply presburger
+    apply (simp add: ureal_is_prob)
+    apply (metis ureal_is_prob ureal_one)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (expr_auto add: rel)
+    using cpflip_sum_1 apply presburger
+
+    apply (simp only: add_Suc)
+    apply (simp only: iter_seq.simps(2))
+    apply (simp only: pcond_def)
+    apply (simp only: pseqcomp_def)
+    apply (subst rvfun_seqcomp_inverse)
+    using cpflip_altdef cpflip_is_dist apply presburger
+    apply (simp add: ureal_is_prob)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (subst rvfun_inverse)
+    apply (expr_auto add: dist_defs)
+    using ureal_lower_bound apply presburger
+    apply (subst power_le_one)
+    using ureal_lower_bound apply presburger
+    using ureal_upper_bound apply blast
+    apply (simp)
+    apply (subst cpflip_altdef)
+    apply (expr_auto add: rel)
+    defer
+    apply (simp add: pfun_defs)
+    apply (subst ureal_zero)
+    apply simp
+  proof -
+    fix n
+    let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate.
+           ((if c\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>)) * ureal2real p +
+            (if c\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * ureal2real ((1::ureal) - p)) *
+           ((if c\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * ureal2real ((1::ureal) - p) ^ n))"
+    have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate.
+           (if \<lparr>c\<^sub>v = ctail\<rparr> = v\<^sub>0 then ureal2real ((1::ureal) - p) ^ (n+1) else (0::\<real>)))"
+      apply (rule infsum_cong)
+      by auto
+    also have "... =  ureal2real ((1::ureal) - p) ^ (n+1)"
+      apply (subst infsum_constant_finite_states)
+      apply (simp)
+      by simp
+    then show "real2ureal ?lhs = real2ureal (ureal2real ((1::ureal) - p) * ureal2real ((1::ureal) - p) ^ n)"
+      using calculation by auto
+  qed
+qed
+
+lemma cpflip_iter_seq_tendsto_0:
+  assumes "p \<noteq> 0"
+  shows "\<forall>s::cstate \<times> cstate. (\<lambda>n::\<nat>. ureal2real (iter_seq n (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+proof 
+  fix s
+  have "(\<lambda>n::\<nat>. ureal2real (iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    apply (subst cpflip_iter_seq_simp)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (expr_auto)
+    apply (subst real2ureal_inverse)
+    apply (simp add: ureal_lower_bound)
+    apply (subst power_le_one)
+    using ureal_lower_bound apply blast
+    using ureal_upper_bound apply blast
+    apply (simp)
+    apply (subst LIMSEQ_realpow_zero)
+    using ureal_lower_bound apply blast
+    apply (smt (verit, best) assms real2eureal_inverse ureal2real_eq ureal_1_minus_real ureal_lower_bound zero_ereal_def zero_ureal_def)
+    apply (simp)
+    apply (subst real2ureal_inverse)
+    by (simp)+
+    
+  then show "(\<lambda>n::\<nat>. ureal2real (iter_seq n (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    by (rule LIMSEQ_offset[where k = 1])
+qed
+
+lemma cpH_is_fp: "Fwhile (c\<^sup>< = ctail)\<^sub>e (cpflip p) (prfun_of_rvfun (cpH p)) = prfun_of_rvfun (cpH p)"
+  apply (simp add: cpH_def Fwhile_def)
+  apply (simp add: pfun_defs)
+  apply (subst cpflip_altdef)
+  apply (subst rvfun_skip_inverse)
+  apply (subst rvfun_seqcomp_inverse)
+  using cpflip_altdef cpflip_is_dist apply presburger
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (expr_auto add: prfun_of_rvfun_def)
+  using Tcoin.exhaust apply blast
+  using cpflip_sum_1 apply presburger
+  using Tcoin.exhaust by blast
+
+text \<open>Not surprisingly, as long as @{text "p"} is larger than 0, @{text "cpflip_loop"} almost surely
+ terminates. \<close>
+lemma cpflip_loop:
+  assumes "p \<noteq> 0"
+  shows "cpflip_loop p = prfun_of_rvfun (cpH p)"
+  apply (simp add: cpflip_loop_def)
+  apply (subst unique_fixed_point_lfp_gfp'[where fp = "prfun_of_rvfun (cpH p)"])
+  using cpflip_is_dist apply auto[1]
+  apply (metis (no_types, lifting) Collect_mono_iff cstate_rel_UNIV_set finite.emptyI finite_insert rev_finite_subset)
+  using cpflip_iter_seq_tendsto_0 apply (simp add: assms)
+  using cpH_is_fp apply blast
+  by simp
+
 subsection \<open> Coin flip with time \<close>
 alphabet coin_state = time +
   coin :: Tcoin
@@ -530,6 +719,113 @@ lemma flip_t_is_dist: "is_final_distribution flip_t_alt"
   by (smt (verit, best) Collect_cong One_nat_def Suc_1 Tcoin.distinct(1) card.empty card.insert 
       coin_state.ext_inject field_sum_of_halves finite.emptyI finite.insertI insert_absorb 
       insert_not_empty of_nat_1 of_nat_add one_add_one singletonD time.ext_inject)
+
+lemma iterate_tflip_bottom_simp:
+  shows "iterate\<^sub>p 0 (coin\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = 0\<^sub>p"
+        "iterate\<^sub>p (Suc 0) (coinc\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = (\<lbrakk>$coin\<^sup>< = chead \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e)"
+        "iterate\<^sub>p (n+2) (coin\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = 
+              (\<lbrakk>$coin\<^sup>< = chead \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e + 
+               \<lbrakk>$coin\<^sup>< = ctail \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> \<ge> $t\<^sup>< + 1 \<and> $t\<^sup>> \<le> $t\<^sup>< + \<guillemotleft>n\<guillemotright> + 1\<rbrakk>\<^sub>\<I>\<^sub>e 
+                * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
+  sorry
+  (*apply (auto)
+  apply (simp add: Fwhile_def)
+  apply (simp add: prfun_zero_right')
+  apply (simp add: pfun_defs)
+  apply (subst rvfun_skip_inverse)
+  apply (subst ureal_zero)
+  apply (simp add: ureal_defs)
+  apply (subst fun_eq_iff)
+  apply (expr_auto)
+  apply (meson Tcoin.exhaust)
+  apply (induct_tac n)
+  apply (simp)
+  apply (simp add: Fwhile_def)
+  apply (simp add: prfun_zero_right')
+  apply (simp add: pfun_defs)
+  apply (subst rvfun_skip_inverse)+
+  apply (subst ureal_zero)
+  apply (subst rvfun_pcond_inverse)
+  apply (metis ureal_is_prob ureal_zero)
+  apply (simp add: rvfun_skip_f_is_prob)
+  apply (subst cflip_altdef)
+  apply (subst rvfun_inverse)
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (simp add: infsum_nonneg iverson_bracket_def)
+  apply (rel_auto)
+  apply (simp add: cstate_UNIV_set)
+  apply (smt (verit, ccfv_SIG) prfun_in_0_1' rvfun_skip_inverse)
+  apply (simp add: prfun_of_rvfun_def)
+  apply (expr_auto)
+  apply (simp add: real2ureal_def)
+  apply (simp add: infsum_0 iverson_bracket_def real2ureal_def rel_skip)
+  apply (meson Tcoin.exhaust)
+  apply (simp add: cstate_UNIV_set)
+  apply (rel_auto)
+  apply (simp add: real2ureal_def)
+  using real2ureal_def apply blast+
+  apply (simp add: cstate_UNIV_set)
+  apply (rel_auto)
+  using real2ureal_def apply blast+
+  apply (simp add: cstate_UNIV_set)
+  apply (rel_auto)
+  using real2ureal_def apply blast+
+  (* *)
+  apply (simp)
+  apply (subst Fwhile_def)
+  apply (subst pseqcomp_def)
+  apply (subst pcond_def)
+  apply (subst cflip_altdef)
+  apply (subst rvfun_inverse)
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (simp add: infsum_nonneg  prfun_in_0_1')
+  apply (rel_auto)
+  apply (simp add: cstate_UNIV_set)
+  apply (simp add: rvfun_of_prfun_def)
+  apply (auto)
+  apply (smt (verit, best) field_sum_of_halves ureal_upper_bound)
+  using ureal_upper_bound apply blast
+  apply (subst prfun_of_rvfun_def)
+  apply (subst rvfun_of_prfun_def)+
+  apply (expr_auto)
+  apply (simp add: cstate_UNIV_set)
+  apply (rel_auto)
+  defer
+  apply (subst prfun_skip_id)
+  apply (simp add: one_ureal.rep_eq real2ureal_def ureal2real_def)
+  using Tcoin.exhaust apply blast
+  apply (metis (full_types) Tcoin.exhaust cstate.select_convs(1) ereal_real o_def prfun_skip_not_id real2ureal_def ureal2real_def zero_ereal_def zero_ureal.rep_eq)
+  apply (subst infsum_0)
+  apply (subst ureal_defs)
+  apply (smt (verit, best) divide_eq_0_iff ereal_max min.absorb2 min.commute mult_eq_0_iff o_apply real_of_ereal_0 ureal2ereal_inverse ureal2real_def zero_ereal_def zero_less_one_ereal zero_ureal.rep_eq)
+  using real2ureal_def apply presburger
+  using Tcoin.exhaust apply blast
+  apply (subst infsum_0)
+  apply (subst ureal_defs)
+  apply (smt (verit, best) divide_eq_0_iff ereal_max min.absorb2 min.commute mult_eq_0_iff o_apply real_of_ereal_0 ureal2ereal_inverse ureal2real_def zero_ereal_def zero_less_one_ereal zero_ureal.rep_eq)
+  using real2ureal_def apply blast
+  apply (metis (full_types) Tcoin.exhaust cstate.ext_inject o_def prfun_skip_not_id real2ureal_def real_of_ereal_0 ureal2real_def zero_ureal.rep_eq)
+  apply (subst ureal2real_1_2)
+  apply (subst sum_1_2)
+  apply (subst sum_geometric_series_ureal)
+  apply (subst sum_geometric_series')
+  apply (subst ureal_defs)+
+proof -
+  fix n
+  have f1: "((1::\<real>) / (2::\<real>) + ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ (n + (1::\<nat>))) / (2::\<real>)) = 
+        ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ (n + 2))"
+    by (simp add: add.assoc diff_divide_distrib)
+  have f2: "((3::\<real>) * ((1::\<real>) / (2::\<real>)) ^ n / (4::\<real>) + ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ n)) =  
+          ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ (n+2))"
+    apply (auto)
+    by (simp add: power_one_over)
+  show "ereal2ureal' (min (max (0::ereal) (ereal ((1::\<real>) / (2::\<real>) + ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ (n + (1::\<nat>))) / (2::\<real>)))) (1::ereal)) =
+       ereal2ureal' (min (max (0::ereal) (ereal ((3::\<real>) * ((1::\<real>) / (2::\<real>)) ^ n / (4::\<real>) + ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ n)))) (1::ereal))"
+    using f1 f2 by presburger
+qed
+*)
 
 lemma H_is_dist: "is_final_distribution H"
   apply (simp add: dist_defs H_def)
@@ -597,6 +893,60 @@ proof -
   ultimately show "?lhs = (1::\<real>)"
     by presburger
 qed
+
+lemma "finite {s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t n (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}"
+proof -
+  have f0: "iterate\<^sub>t (n + 2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p = 
+          (\<lbrakk>$coin\<^sup>< = chead \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e + 
+           \<lbrakk>$coin\<^sup>< = ctail \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> \<ge> $t\<^sup>< + 1 \<and> $t\<^sup>> \<le> $t\<^sup>< + \<guillemotleft>n\<guillemotright> + 1\<rbrakk>\<^sub>\<I>\<^sub>e 
+           * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
+    by (simp only: iterate_tflip_bottom_simp)
+
+  have "\<not> (iterate\<^sub>t (n + 2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p (\<lparr>t\<^sub>v = tt, coin\<^sub>v = chead\<rparr>, \<lparr>t\<^sub>v = tt, coin\<^sub>v = chead\<rparr>) 
+        = (0::ureal))"
+    apply (subst f0)
+    apply (expr_auto)
+    using one_ereal_def one_ureal_def by auto
+
+  have "(iterate\<^sub>t (n + 2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p (\<lparr>t\<^sub>v = x, coin\<^sub>v = ctail\<rparr>, \<lparr>t\<^sub>v = y, coin\<^sub>v = ctail\<rparr>) 
+        = (0::ureal))"
+    apply (subst f0)
+    apply (expr_auto)
+    by (simp add: zero_ereal_def zero_ureal_def)
+
+  have "{s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t (n) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}
+    = {s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t (n+2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}"
+    apply (subst set_eq_iff)
+    apply (rule allI)+
+    apply (rule iffI)
+    apply (simp add: expr_defs lens_defs)
+    using iterate_increasing2
+    apply (smt (z3) Suc_eq_plus1 flip_t flip_t_is_dist is_final_distribution_prob is_final_prob_prob 
+        iterate_increasing1 le_funD nle_le pzero_def rvfun_inverse ureal_bottom_least' iterate.simps(2))
+    apply (simp add: expr_defs lens_defs)
+    by (metis utp_prob_rel_lattice.iterate.simps(2))
+
+  text \<open> From the formula above and below, we can see this set is not finite because there are infinite 
+    number of states to satisfy @{text "t\<^sub>v (fst s) = t\<^sub>v (snd s)"} where @{text "t"} could be any natural number. \<close>
+  have "{s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t (n+2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}
+    = {s::coin_state \<times> coin_state. (coin\<^sub>v (fst s) = chead \<and> coin\<^sub>v (snd s) = chead \<and> t\<^sub>v (fst s) = t\<^sub>v (snd s))
+      \<or> (coin\<^sub>v (fst s) = ctail \<and> coin\<^sub>v (snd s) = chead \<and> t\<^sub>v (snd s) \<ge> t\<^sub>v (fst s) + 1)}"
+    apply (simp only: iterate_tflip_bottom_simp)
+    apply (subst set_eq_iff)
+    apply (simp add: expr_defs lens_defs)
+    apply (rule allI)+
+    apply (rule conjI)
+    apply (metis one_ereal_def one_ureal_def zero_neq_one)
+    apply (rule impI)
+    apply (rule iffI)
+    apply (metis zero_ereal_def zero_ureal_def)
+    apply (auto)
+    apply (smt (verit, best) Suc_eq_plus1 add_Suc_shift field_sum_of_halves nat_le_iff_add power_one_over real2eureal_inverse sum_1_2 sum_geometric_series sum_geometric_series_ureal ureal_lower_bound zero_ereal_def zero_ureal_def)
+    by (smt (verit, best) Suc_eq_plus1 add_Suc_shift field_sum_of_halves nat_le_iff_add power_one_over real2eureal_inverse sum_1_2 sum_geometric_series sum_geometric_series_ureal ureal_lower_bound zero_ereal_def zero_ureal_def)
+
+  have "finite {s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t (n+2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}"
+    apply (simp only: iterate_tflip_bottom_simp)
+  qed 
 
 lemma "flip_loop = H"
   apply (simp add: flip_loop_def H_def)
