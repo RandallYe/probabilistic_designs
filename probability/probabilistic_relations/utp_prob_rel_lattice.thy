@@ -273,6 +273,7 @@ end
 
 print_locale "comm_semiring_1"
 print_locale "semiring_1_no_zero_divisors"
+print_locale "complete_lattice"
 (*, semiring_1_no_zero_divisors, comm_semiring_1*)
 (* distrib_right and distrib_left of semiring are not true for ureal 
   
@@ -382,14 +383,12 @@ definition rvfun_of_prfun where
 [ureal_defs]: "rvfun_of_prfun f = (ureal2real f)\<^sub>e "
 
 subsection \<open> Syntax \<close>
-(* deadlock: zero and not a distribution *)
 abbreviation one_r ("1\<^sub>R") where
   "one_r \<equiv> (\<lambda>s. 1::real)"
 
 abbreviation zero_r ("0\<^sub>R") where
   "zero_r \<equiv> (\<lambda>s. 0::real)"
 
-(* deadlock: zero and not a distribution *)
 abbreviation one_f ("\<^bold>1") where
   "one_f \<equiv> (\<lambda>s. 1::ureal)"
 

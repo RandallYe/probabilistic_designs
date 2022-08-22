@@ -956,7 +956,7 @@ lemma "flip_loop = H"
   apply (simp)
   apply (subst rvfun_inverse)
   apply (simp add: is_prob_def iverson_bracket_def)
-  using H_is_dist H_def sledgehammer
+  using H_is_dist H_def 
   apply (simp add: dist_defs expr_defs, auto)
   apply (simp add: )
   apply (simp add: pseqcomp_def)

@@ -2,7 +2,10 @@ section \<open> Iverson Bracket \<close>
 
 theory utp_iverson_bracket
   imports "/Users/rye/Isabelle/New_UTP/UTP/utp"
+          "HOL-Analysis.Infinite_Sum"
 begin 
+
+unbundle UTP_Syntax
 
 declare [[show_types]]
 
@@ -112,7 +115,7 @@ term "suminf"
 (* term "\<Sum>\<^sub>\<infinity>" *)
 term "infsum"
 term "has_sum"
-term "summable_on"
+term "f summable_on A"
 (*
   4. Inf_Set_Sum
 *)
@@ -153,6 +156,14 @@ lemma iverson_bracket_exist_sum:
   shows "\<lbrakk>(\<exists>m. P m)\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lambda>s. (min (1::real) ((\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e s)))"
   apply (expr_auto)
   by (smt (verit) UNIV_I assms sum_nonneg_leq_bound)
+
+(* TODO
+lemma iverson_bracket_exist_sum:
+  fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
+  shows "\<lbrakk>(\<exists>m. P m)\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lambda>s. (min (1::real) ((\<Sum>\<^sub>\<infinity> m. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e s)))"
+  apply (expr_auto)
+  by (smt (verit) UNIV_I assms sum_nonneg_leq_bound)
+*)
 
 lemma iverson_bracket_exist_sum_1:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"

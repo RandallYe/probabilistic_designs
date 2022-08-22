@@ -65,9 +65,12 @@ definition dist_norm::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>
 definition dist_norm::"(real, 's\<^sub>1 \<times> 's\<^sub>2) expr \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr" ("\<^bold>N _") where
 [dist_defs]: "dist_norm P = (P / (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P)))\<^sub>e"
 
+thm "dist_norm_def"
+
 definition dist_norm_alpha::"('v \<Longrightarrow> 's\<^sub>2) \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr" ("\<^bold>N\<^sub>\<alpha> _ _") where
 [dist_defs]: "dist_norm_alpha x P = (P / (\<Sum>\<^sub>\<infinity> v. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
 
+thm "dist_norm_alpha_def"
 expr_ctr dist_norm_alpha dist_norm
 
 definition uniform_dist:: "('b \<Longrightarrow> 's) \<Rightarrow> \<bbbP> 'b \<Rightarrow> (real, 's \<times> 's) expr" (infix "\<^bold>\<U>" 60) where

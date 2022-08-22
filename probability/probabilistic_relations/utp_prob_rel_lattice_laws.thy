@@ -41,6 +41,12 @@ lemma ureal2real_mono_strict:
   by (metis abs_ereal_ge0 assms atLeastAtMost_iff ereal_infty_less(1) ereal_less_real_iff ereal_real 
       ereal_times(1) linorder_not_less ureal2ereal ureal2ereal_mono)
 
+lemma real2ureal_mono:
+  assumes "a \<le> b"
+  shows "real2ureal a \<le> real2ureal b"
+  apply (simp add: ureal_defs)
+  by (smt (verit) assms atLeastAtMost_iff ereal2ureal'_inverse ereal_min less_eq_ureal.rep_eq 
+      max.orderI max_def min.absorb1 min.absorb2 min.boundedE)
 
 lemma ureal_lower_bound: "ureal2real x \<ge> 0"
   using real_of_ereal_pos ureal2ereal ureal2real_def by auto
@@ -305,6 +311,12 @@ lemma real2ureal_inverse:
   shows "ureal2real (real2ureal r) = r"
   apply (simp add: ureal_defs)
   by (simp add: assms ereal2ureal'_inverse real_le_ereal_iff)
+
+lemma ureal2real_inverse:
+  "real2ureal (ureal2real u) = u"
+  apply (simp add: ureal_defs)
+  by (metis abs_ereal_ge0 atLeastAtMost_iff ereal_less_eq(1) ereal_real ereal_times(1) max.absorb2 
+      min.commute min.orderE ureal2ereal ureal2ereal_inverse)
 
 lemma rvfun_of_prfun_simp: "rvfun_of_prfun [\<lambda>\<s>::'a \<times> 'a. u]\<^sub>e = (\<lambda>s. ureal2real u)"
   by (simp add: SEXP_def rvfun_of_prfun_def)
