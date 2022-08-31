@@ -1940,46 +1940,51 @@ theorem prfun_seqcomp_pcond_subdist:
   shows "P ; (if\<^sub>c b\<^sup>\<Up> then Q else R) = prfun_of_rvfun (
         @(pseqcomp_f (rvfun_of_prfun P) (rvfun_of_prfun (\<lbrakk>b\<^sup>\<Up>\<rbrakk>\<^sub>\<I> * Q)\<^sub>e)) + 
         @(pseqcomp_f (rvfun_of_prfun P) (rvfun_of_prfun (\<lbrakk>\<not>((b)\<^sup>\<Up>)\<rbrakk>\<^sub>\<I>\<^sub>e * R)\<^sub>e)))\<^sub>e"
-    apply (simp add: pchoice_def pseqcomp_def pcond_def)
-    apply (subst rvfun_pcond_inverse)
-    using ureal_is_prob apply blast+
-    apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-    apply (subst fun_eq_iff)
-    apply (rel_auto)
-  proof -
-    fix a ba
-    let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rvfun_of_prfun P (a, v\<^sub>0) * (if b v\<^sub>0 then rvfun_of_prfun Q (v\<^sub>0, snd (a, ba)) else rvfun_of_prfun R (v\<^sub>0, snd (a, ba))))"
-    let ?rhs_1 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
-          rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (fst \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba))"
-    let ?rhs_2 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
-          rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba))"
-    have f1: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (fst \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)
-      = (if b v\<^sub>0 then rvfun_of_prfun Q (v\<^sub>0, ba) else 0)"
-      by (smt (verit) SEXP_def fst_conv lambda_one lambda_zero o_def one_ereal_def one_ureal_def 
-          real_of_ereal_0 rvfun_of_prfun_def ureal2real_def zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
-    have f2: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba)
-      = (if b v\<^sub>0 then 0 else rvfun_of_prfun R (v\<^sub>0, ba))"
-      by (smt (verit, best) SEXP_def fst_conv lambda_one lambda_zero o_def one_ereal_def one_ureal_def real_of_ereal_0 rvfun_of_prfun_def ureal2real_def zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
-    have f3: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. 
-        (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (fst \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)) + 
-        (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba)))"
-      apply (subst infsum_cong[where g = "\<lambda>v\<^sub>0. (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (fst \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)) + 
-        (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba))"])
-       apply (simp add: f1 f2)
-      by simp
-    show "?lhs = ?rhs_1 + ?rhs_2"
-      apply (simp add: f3)
-      apply (subst infsum_add)
-      apply (subst rvfun_product_summable_subdist)
-      using assms apply force
-      using ureal_is_prob apply blast
-      apply simp
-      apply (subst rvfun_product_summable_subdist)
-      using assms apply force
-      using ureal_is_prob apply blast
-       apply simp
-      by simp
-  qed
+  apply (simp add: pchoice_def pseqcomp_def pcond_def)
+  apply (subst rvfun_pcond_inverse)
+  using ureal_is_prob apply blast+
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (subst fun_eq_iff)
+  apply (rel_auto)
+proof -
+  fix a ba
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rvfun_of_prfun P (a, v\<^sub>0) * (if b v\<^sub>0 then rvfun_of_prfun Q (v\<^sub>0, snd (a, ba)) else rvfun_of_prfun R (v\<^sub>0, snd (a, ba))))"
+  let ?rhs_1 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
+        rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (fst \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba))"
+  let ?rhs_2 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a.
+        rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba))"
+  have f1: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (fst \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)
+    = (if b v\<^sub>0 then rvfun_of_prfun Q (v\<^sub>0, ba) else 0)"
+    by (smt (verit) SEXP_def fst_conv lambda_one lambda_zero o_def one_ereal_def one_ureal_def 
+        real_of_ereal_0 rvfun_of_prfun_def ureal2real_def zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
+  have f2: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba)
+    = (if b v\<^sub>0 then 0 else rvfun_of_prfun R (v\<^sub>0, ba))"
+    by (smt (verit, best) SEXP_def fst_conv lambda_one lambda_zero o_def one_ereal_def one_ureal_def real_of_ereal_0 rvfun_of_prfun_def ureal2real_def zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
+  have f3: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. 
+      (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (fst \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)) + 
+      (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba)))"
+    apply (subst infsum_cong[where g = "\<lambda>v\<^sub>0. (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (fst \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)) + 
+      (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba))"])
+     apply (simp add: f1 f2)
+    by simp
+  show "?lhs = ?rhs_1 + ?rhs_2"
+    apply (simp add: f3)
+    apply (subst infsum_add)
+    apply (subst rvfun_product_summable_subdist)
+    using assms apply force
+    using ureal_is_prob apply blast
+    apply simp
+    apply (subst rvfun_product_summable_subdist)
+    using assms apply force
+    using ureal_is_prob apply blast
+     apply simp
+    by simp
+qed
+
+theorem prfun_:
+  shows "(if\<^sub>p r then P else Q) ; x := e = (if\<^sub>p r then (P ; x := e) else (Q; x := e))"
+  apply (simp add: pfun_defs)
+  oops
 
 subsubsection \<open> Normalisation \<close>
 theorem rvfun_uniform_dist_empty_zero:  "(x \<^bold>\<U> {}) = rvfun_of_prfun \<^bold>0"
@@ -2696,6 +2701,48 @@ proof -
     apply (simp add: a1 a2 a3)+
     using pq_summable apply presburger
     using qr_summable by presburger
+qed
+
+lemma rvfun_pparallel_is_dist: 
+  assumes "is_final_prob p"
+  assumes "is_final_prob q"
+  assumes "\<forall>s\<^sub>1. (\<lambda>s'::'a. p (s\<^sub>1, s')) summable_on UNIV \<or> (\<lambda>s'::'a. q (s\<^sub>1, s')) summable_on UNIV"
+  assumes "\<forall>s\<^sub>1. \<exists>s'::'a. p (s\<^sub>1, s') > 0 \<and> q (s\<^sub>1, s') > 0"
+  shows "is_final_distribution (pparallel_f p q)"
+  apply (expr_auto add: dist_defs)
+  using infsum_nonneg is_final_prob_altdef assms(1) assms(2) 
+  apply (metis (mono_tags, lifting) divide_nonneg_nonneg mult_nonneg_nonneg)
+  apply (subgoal_tac "p (s\<^sub>1, s) * q (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (s\<^sub>1, v\<^sub>0))")
+  apply (smt (verit, del_insts) assms(1) assms(2) divide_le_eq_1 is_final_prob_altdef mult_nonneg_nonneg)
+  apply (rule infsum_geq_element)
+  apply (simp add: assms(1) assms(2) is_final_prob_altdef)
+  apply (simp add: assms(1) assms(2) assms(3) rvfun_joint_prob_summable_on_product)
+  apply (simp add: assms(1))
+proof -
+  fix s\<^sub>1
+  let ?P = "\<lambda>s'. p (s\<^sub>1, s') > 0 \<and> q (s\<^sub>1, s') > 0"
+  (* obtain s where Ps: "s = (SOME s'. ?P s')" 
+    using assms(3) by blast*)
+  have f1: "?P (SOME s'. ?P s')"
+    apply (rule someI_ex[where P="?P"])
+    using assms(4) by blast
+  have f2: "(\<lambda>s. p (s\<^sub>1, s) * q (s\<^sub>1, s)) (SOME s'. ?P s') \<le> (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s'))"
+    apply (rule infsum_geq_element)
+    apply (simp add: assms(1) assms(2) is_final_prob_altdef)
+    apply (simp add: assms(1) assms(2) assms(3) rvfun_joint_prob_summable_on_product)
+    by (simp)+
+  also have f3: "... > 0"
+    by (smt (verit, best) f1 f2 mult_le_0_iff)
+  have f4: "(\<Sum>\<^sub>\<infinity>s::'a. (p (s\<^sub>1, s) * q (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')))) =
+    (\<Sum>\<^sub>\<infinity>s::'a. (p (s\<^sub>1, s) * q (s\<^sub>1, s) * (1 / (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')))))"
+    by force
+  also have f5: "... = (\<Sum>\<^sub>\<infinity>s::'a. (p (s\<^sub>1, s) * q (s\<^sub>1, s))) * (1 / (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')))"
+    apply (rule infsum_cmult_left)
+    by (simp add: infsum_not_zero_summable)
+  also have f6: "... = 1"
+    using f3 by auto
+  show "(\<Sum>\<^sub>\<infinity>s::'a. (p (s\<^sub>1, s) * q (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')))) = (1::\<real>)"
+    using f4 f5 f6 by presburger
 qed
 
 lemma rvfun_parallel_inverse: 

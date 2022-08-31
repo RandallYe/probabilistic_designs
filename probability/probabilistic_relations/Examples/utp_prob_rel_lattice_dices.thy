@@ -859,7 +859,7 @@ lemma fdstate_pred_d1d2_neq: "{s::fdstate. (fd1\<^sub>v s = nat2td (Suc (0::\<na
   using fdstate_set_eq apply auto[1]
   using fdstate_pred_univ fdstate_set_eq by auto
 
-subsubsection \<open> Definitions \<close>
+subsubsection \<open>Definitions \<close>
 definition fdice_throw:: "fdstate prhfun" where
 "fdice_throw = prfun_of_rvfun (fd1 \<^bold>\<U> outcomes1) ; prfun_of_rvfun (fd2 \<^bold>\<U> outcomes1)"
 

@@ -1,6 +1,6 @@
 section \<open> Probabilistic relation programming example 1: Doctor Who's Tardis Attacker  \<close>
 
-theory utp_prob_rel_dwta
+theory utp_prob_rel_lattice_dwta
   imports 
     "../utp_prob_rel_lattice_laws" 
 begin 
