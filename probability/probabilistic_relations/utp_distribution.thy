@@ -3,8 +3,6 @@ section \<open> Probabilistic Designs \<close>
 theory utp_distribution
   imports 
     "HOL.Series" 
-    "HOL-Analysis.Infinite_Sum"
-    "/Users/rye/Isabelle/New_UTP/UTP/utp"
     "utp_iverson_bracket"
 begin 
 
