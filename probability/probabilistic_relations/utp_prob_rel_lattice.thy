@@ -7,7 +7,6 @@ theory utp_prob_rel_lattice
     "HOL-Library.Complete_Partial_Order2" 
     "utp_iverson_bracket" 
     "utp_distribution"
-    "infsum_laws"
 begin 
 
 unbundle UTP_Syntax
@@ -110,7 +109,7 @@ term "if\<^sub>p 0.5 then P else Q"
 term "if\<^sub>p R then P else Q"
 term "if\<^sub>p R then P else Q = if\<^sub>p R then P else Q"
 
-abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 
@@ -411,7 +410,7 @@ lemma deadlock_always: "`@(deadlock_state pzero)`"
 subsubsection \<open> Skip \<close>
 (* The purpose of this abbreviation is to make later reference to this function inside pskip easier. *)
 abbreviation pskip\<^sub>_f ("II\<^sub>f") where
-  "pskip\<^sub>_f \<equiv> \<lbrakk> \<lbrakk>II\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
+  "pskip\<^sub>_f \<equiv> \<lbrakk> II \<rbrakk>\<^sub>\<I>"
 
 definition pskip :: "'s prhfun" ("II\<^sub>p") where
 [pfun_defs]: "pskip = prfun_of_rvfun (pskip\<^sub>_f)"
@@ -419,14 +418,14 @@ definition pskip :: "'s prhfun" ("II\<^sub>p") where
 adhoc_overloading
   uskip pskip
 
-term "II::'s rel"
+term "II::'s hrel"
 term "II::'s prhfun"
 term "x := ($x + 1)"
 term "x\<^sup>> := ($x\<^sup>< + 1)"
 
 subsubsection \<open> Assignment \<close>
 abbreviation passigns_f where 
-"passigns_f \<sigma> \<equiv> \<lbrakk> \<lbrakk>\<langle>\<sigma>\<rangle>\<^sub>a\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>"
+"passigns_f \<sigma> \<equiv> \<lbrakk> \<langle>\<sigma>\<rangle>\<^sub>a \<rbrakk>\<^sub>\<I>"
 
 definition passigns :: "('a, 'b) psubst \<Rightarrow> ('a, 'b) prfun" where 
 [pfun_defs]: "passigns \<sigma> = prfun_of_rvfun (passigns_f \<sigma>)"
@@ -435,7 +434,7 @@ adhoc_overloading
   uassigns passigns
 
 term "(s := e)::'s prhfun"
-term "(s := e)::'s rel"
+term "(s := e)::'s hrel"
 
 subsubsection \<open> Probabilistic choice \<close>
 abbreviation pchoice_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun" 
@@ -470,15 +469,15 @@ useful to lift a such function to a more general function used in @{term "pchoic
 \<close>
 abbreviation lift_pre where "lift_pre r \<equiv> (\<lambda>(s, s'). r s)"
 notation lift_pre ("_\<^sup>\<Up>")
-expr_ctr lift_pre
+expr_constructor lift_pre
 
 subsubsection \<open> Conditional choice \<close>
 (* conditional choice *)
-abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun" 
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun" 
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 
-definition pcond :: "('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where 
+definition pcond :: "('s\<^sub>1, 's\<^sub>2) urel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where 
 [pfun_defs]: "pcond b P Q \<equiv> prfun_of_rvfun (pcond_f (rvfun_of_prfun P) b (rvfun_of_prfun Q))"
 
 syntax 
@@ -496,7 +495,7 @@ term "\<^bold>v\<^sup>>"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. (P\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup>>\<rbrakk>) * (Q\<lbrakk>\<guillemotleft>v\<^sub>0\<guillemotright>/\<^bold>v\<^sup><\<rbrakk>))\<^sub>e"
 term "[ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> (rvfun_of_prfun (P::'s prhfun))"
 term "(\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q))\<^sub>e"
-term "(\<exists> v\<^sub>0. [ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>P\<rbrakk>\<^sub>P \<and> [ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> \<lbrakk>Q\<rbrakk>\<^sub>P)\<^sub>e"
+term "(\<exists> v\<^sub>0. [ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P \<and> [ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> Q)\<^sub>e"
 term "if True then a else b"
 term " 
   (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> v\<^sub>0 ] \<dagger> @(rvfun_of_prfun P)) * ([ \<^bold>v\<^sup>< \<leadsto> v\<^sub>0 ] \<dagger> @(rvfun_of_prfun Q)))\<^sub>e"
@@ -783,7 +782,7 @@ term "if\<^sub>p 0.5 then P else Q"
 term "if\<^sub>p R then P else Q"
 term "if\<^sub>p R then P else Q = if\<^sub>p R then P else Q"
 
-abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rpred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
+abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) urel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" 
 ("(3_ \<lhd>\<^sub>f _ \<rhd>/ _)" [61,0,60] 60) where 
 "pcond_f P b Q \<equiv> (if b then P else Q)\<^sub>e"
 

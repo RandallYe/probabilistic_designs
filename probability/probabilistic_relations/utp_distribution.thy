@@ -69,37 +69,15 @@ definition dist_norm_alpha::"('v \<Longrightarrow> 's\<^sub>2) \<Rightarrow> (re
 [dist_defs]: "dist_norm_alpha x P = (P / (\<Sum>\<^sub>\<infinity> v. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
 
 thm "dist_norm_alpha_def"
-expr_ctr dist_norm_alpha dist_norm
+expr_constructor dist_norm_alpha dist_norm
 
 definition uniform_dist:: "('b \<Longrightarrow> 's) \<Rightarrow> \<bbbP> 'b \<Rightarrow> (real, 's \<times> 's) expr" (infix "\<^bold>\<U>" 60) where
-[dist_defs]: "uniform_dist x A = \<^bold>N\<^sub>\<alpha> x (\<lbrakk>\<lbrakk>\<Union> v \<in> A. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e)"
+[dist_defs]: "uniform_dist x A = \<^bold>N\<^sub>\<alpha> x (\<lbrakk>\<Sqinter> v \<in> \<guillemotleft>A\<guillemotright>. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e)"
 
-term "(\<Union> v \<in> {}. x := \<guillemotleft>v\<guillemotright>)"
-term "false_pred"
-lemma "(\<Union> v \<in> {}. x := \<guillemotleft>v\<guillemotright>) = false"
-  by (simp add: false_pred_def)
+lemma "(\<Sqinter> v \<in> {}. x := \<guillemotleft>v\<guillemotright>) = false"
+  by (pred_auto)
 
 term "x \<^bold>\<U> A"
-(*
-alphabet state = 
-  n :: nat
-  m :: nat
-
-term "$n"
-term "n"
-term "n\<^sup><"
-term "$n\<^sup><"
-term "$n\<^sup>>"
-term "\<^bold>v::('a state_scheme \<Longrightarrow> 'a state_scheme)"
-term "$n"
-term "($n+1)\<^sub>e"
-term "(((1::\<real>)/2)^($n\<^sup><+$m\<^sup><))"
-full_exprs
-term "(0+f)\<^sub>e"
-term "($x + @g)\<^sub>e"
-term "($n\<^sup>> = $n\<^sup>< + 1)\<^sub>e"
-term "(\<lbrakk>($n\<^sup>> = $n\<^sup>< + 1)\<^sub>e\<rbrakk>\<^sub>\<I>)"
-*)
 
 subsection \<open> Laws \<close>
 lemma is_final_distribution_prob:
