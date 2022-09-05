@@ -6,6 +6,18 @@ theory utp_iverson_bracket
 begin 
 
 unbundle UTP_Syntax
+print_bundles
+
+(* Switch off lattice syntax from UTP *)
+unbundle no_UTP_lattice_syntax
+(* unbundle no_lattice_syntax *)
+print_bundles
+
+term "\<bottom>"
+
+(* Switch on lattice syntax from HOL *)
+unbundle lattice_syntax
+term "\<bottom>"
 
 declare [[show_types]]
 

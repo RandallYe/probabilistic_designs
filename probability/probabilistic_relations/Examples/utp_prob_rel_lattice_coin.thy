@@ -1,8 +1,8 @@
 section \<open> Probabilistic relation programming example 1 \<close>
 
-theory utp_prob_rel_loop_coin
+theory utp_prob_rel_lattice_coin
   imports 
-    "../utp_prob_rel_lattice_laws" 
+    "../utp_prob_rel" 
 begin 
 
 unbundle UTP_Syntax

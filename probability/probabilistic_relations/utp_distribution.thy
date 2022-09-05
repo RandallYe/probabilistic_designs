@@ -72,12 +72,13 @@ thm "dist_norm_alpha_def"
 expr_constructor dist_norm_alpha dist_norm
 
 definition uniform_dist:: "('b \<Longrightarrow> 's) \<Rightarrow> \<bbbP> 'b \<Rightarrow> (real, 's \<times> 's) expr" (infix "\<^bold>\<U>" 60) where
-[dist_defs]: "uniform_dist x A = \<^bold>N\<^sub>\<alpha> x (\<lbrakk>\<Sqinter> v \<in> \<guillemotleft>A\<guillemotright>. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e)"
+[dist_defs]: "uniform_dist x A = \<^bold>N\<^sub>\<alpha> x (\<lbrakk>\<Squnion> v \<in> \<guillemotleft>A\<guillemotright>. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e)"
 
-lemma "(\<Sqinter> v \<in> {}. x := \<guillemotleft>v\<guillemotright>) = false"
+lemma "(\<Squnion> v \<in> {}. x := \<guillemotleft>v\<guillemotright>) = false"
   by (pred_auto)
 
 term "x \<^bold>\<U> A"
+thm "uniform_dist_def"
 
 subsection \<open> Laws \<close>
 lemma is_final_distribution_prob:

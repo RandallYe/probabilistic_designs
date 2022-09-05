@@ -813,10 +813,10 @@ lemma prfun_minus_distribution:
 subsection \<open> Probabilistic programs \<close>
 subsubsection \<open> Bottom and Top \<close>
 text \<open> We are not able to use @{text "\<bottom>"} for bot because this notation has been used in UTP as top. \<close>
-lemma ureal_bot_zero: "bot = \<^bold>0"
+lemma ureal_bot_zero: "\<bottom> = \<^bold>0"
   by (metis bot_apply bot_ureal.rep_eq ureal2ereal_inject zero_ureal.rep_eq)
 
-lemma ureal_top_one: "top = \<^bold>1"
+lemma ureal_top_one: "\<top> = \<^bold>1"
   by (metis one_ureal.rep_eq top_apply top_ureal.rep_eq ureal2ereal_inject)
 
 lemma ureal_zero: "rvfun_of_prfun \<^bold>0 = (0)\<^sub>e"
@@ -2190,47 +2190,47 @@ lemma rvfun_uniform_dist_is_dist:
   apply (expr_auto)
   apply (simp add: infsum_nonneg)
   apply (smt (verit) divide_le_eq_1 infsum_0 infsum_geq_element infsum_not_exists)
-  apply (rel_auto)
+  apply (pred_auto)
 proof -
   fix s\<^sub>1::"'a"
-  let ?f = "\<lambda>s. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 1::\<real> else (0::\<real>)) /
-          (\<Sum>\<^sub>\<infinity>v::'b. if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v then 1::\<real> else (0::\<real>))"
-  have one_dvd_card_A: "\<forall>s. ((\<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s) \<longrightarrow> 
-      (((1::\<real>) / (card {v. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v})) = ((1::\<real>) / (card A))))"
+  let ?f = "\<lambda>s. (if \<exists>v::'b\<in>A. s = put\<^bsub>x\<^esub> s\<^sub>1 v then 1::\<real> else (0::\<real>)) /
+          (\<Sum>\<^sub>\<infinity>v::'b. if \<exists>va::'b\<in>A. put\<^bsub>x\<^esub> s v = put\<^bsub>x\<^esub> s\<^sub>1 va then 1::\<real> else (0::\<real>))"
+  have one_dvd_card_A: "\<forall>s. ((\<exists>xa::'b\<in>A. s = put\<^bsub>x\<^esub> s\<^sub>1 xa) \<longrightarrow> 
+      (((1::\<real>) / (card {v. \<exists>va::'b\<in>A. put\<^bsub>x\<^esub> s v = put\<^bsub>x\<^esub> s\<^sub>1 va})) = ((1::\<real>) / (card A))))"
     apply (auto)
     apply (simp add: assms(2))
-    apply (subgoal_tac "{v::'b. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s\<^sub>1 v} = A")
+    apply (subgoal_tac "{v::'b. \<exists>va::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 v = put\<^bsub>x\<^esub> s\<^sub>1 va} = A")
     apply (simp)
     apply (subst set_eq_iff)
     apply (auto)
-  proof (rule ccontr)
-    fix xa::"'b" and xb::"'b" and  xaa::"'b"
-    assume a1: "xa \<in> A"
-    assume a2: "xaa \<in> A"
-    assume a3: "put\<^bsub>x\<^esub> s\<^sub>1 xaa = put\<^bsub>x\<^esub> s\<^sub>1 xb"
-    assume a4: "\<not> xb \<in> A"
-    from a2 a4 have "xaa \<noteq> xb"
-      by auto
-    then have "put\<^bsub>x\<^esub> s\<^sub>1 xaa \<noteq> put\<^bsub>x\<^esub> s\<^sub>1 xb"
-      using assms(2) by (meson vwb_lens_wb wb_lens_weak weak_lens.view_determination)
-    thus "False"
-      using a3 by blast
-  qed
+    proof (rule ccontr)
+      fix xa::"'b" and xb::"'b" and  va::"'b"
+      assume a1: "xa \<in> A"
+      assume a2: "va \<in> A"
+      assume a3: "put\<^bsub>x\<^esub> s\<^sub>1 xb = put\<^bsub>x\<^esub> s\<^sub>1 va"
+      assume a4: "\<not> xb \<in> A"
+      from a2 a4 have "va \<noteq> xb"
+        by auto
+      then have "put\<^bsub>x\<^esub> s\<^sub>1 xb \<noteq> put\<^bsub>x\<^esub> s\<^sub>1 va"
+        using assms(2) by (metis mwb_lens_def vwb_lens_iff_mwb_UNIV_src weak_lens.view_determination)
+      thus "False"
+        using a3 by blast
+    qed
 
   have "finite {put\<^bsub>x\<^esub> s\<^sub>1 xa | xa. xa \<in> A}"
     apply (rule finite_image_set)
     using assms(1) by auto
-  then have finite_states: "finite {s. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s}"
+  then have finite_states: "finite {s. \<exists>xa::'b\<in>A. s = put\<^bsub>x\<^esub> s\<^sub>1 xa}"
     by (smt (verit, del_insts) Collect_cong)
   
   have "inj_on (\<lambda>xa. put\<^bsub>x\<^esub> s\<^sub>1 xa) A"
     by (meson assms(2) inj_onI vwb_lens_wb wb_lens_def weak_lens.view_determination)
   then have card_A: "card ((\<lambda>xa. put\<^bsub>x\<^esub> s\<^sub>1 xa) ` A ) = card A"
     using card_image by blast
-  have set_as_f_image: "{s. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s} = ((\<lambda>xa. put\<^bsub>x\<^esub> s\<^sub>1 xa) ` A )"
+  have set_as_f_image: "{s. \<exists>xa::'b\<in>A. s= put\<^bsub>x\<^esub> s\<^sub>1 xa} = ((\<lambda>xa. put\<^bsub>x\<^esub> s\<^sub>1 xa) ` A )"
     by blast
-  have "(\<Sum>\<^sub>\<infinity>s::'a. ?f s) = (\<Sum>\<^sub>\<infinity>s::'a. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 1::\<real> else (0::\<real>)) 
-      / (card {v. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v}))"
+  have "(\<Sum>\<^sub>\<infinity>s::'a. ?f s) = (\<Sum>\<^sub>\<infinity>s::'a. (if \<exists>xa::'b\<in>A. s= put\<^bsub>x\<^esub> s\<^sub>1 xa then 1::\<real> else (0::\<real>)) 
+      / (card {v. \<exists>va::'b\<in>A. put\<^bsub>x\<^esub> s v = put\<^bsub>x\<^esub> s\<^sub>1 va}))"
     apply (subst infsum_constant_finite_states)
     apply (subst finite_Collect_bex)
     apply (simp add: assms(1))
@@ -2238,26 +2238,23 @@ proof -
     apply (subgoal_tac "\<forall>xa. (put\<^bsub>x\<^esub> s\<^sub>1 y = put\<^bsub>x\<^esub> s xa) \<longrightarrow> y = xa")
     apply (smt (verit, ccfv_SIG) assms(1) mem_Collect_eq rev_finite_subset subset_iff)
     using weak_lens.view_determination vwb_lens_wb wb_lens_weak assms(2) by metis
-  also have "... = (\<Sum>\<^sub>\<infinity>s::'a. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 
-                ((1::\<real>) / (card {v. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v}))
+  also have "... = (\<Sum>\<^sub>\<infinity>s::'a. (if \<exists>xa::'b\<in>A. s = put\<^bsub>x\<^esub> s\<^sub>1 xa then 
+                ((1::\<real>) / (card {v. \<exists>va::'b\<in>A. put\<^bsub>x\<^esub> s v = put\<^bsub>x\<^esub> s\<^sub>1 va}))
               else (0::\<real>)))"
     apply (rule infsum_cong)
     by simp
-  also have "... = (\<Sum>\<^sub>\<infinity>s::'a. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 
+  also have "... = (\<Sum>\<^sub>\<infinity>s::'a. (if \<exists>xa::'b\<in>A. s = put\<^bsub>x\<^esub> s\<^sub>1 xa then 
                 ((1::\<real>) / (card A)) else (0::\<real>)))"
     apply (rule infsum_cong)
     using one_dvd_card_A by presburger
-  also have "... = ((1::\<real>) / (card A)) * (card {s. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s})"
+  also have "... = ((1::\<real>) / (card A)) * (card {s. \<exists>xa::'b\<in>A. s = put\<^bsub>x\<^esub> s\<^sub>1 xa})"
     apply (rule infsum_constant_finite_states)
     using finite_states by blast
   also have "... = ((1::\<real>) / (card A)) * (card A)"
     using card_A set_as_f_image by presburger
   also have "... = 1"
     by (simp add: assms(1) assms(3))
-  then show "(\<Sum>\<^sub>\<infinity>s::'a.
-          (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = s then 1::\<real> else (0::\<real>)) /
-          (\<Sum>\<^sub>\<infinity>v::'b. if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> s\<^sub>1 xa = put\<^bsub>x\<^esub> s v then 1::\<real> else (0::\<real>))) =
-       (1::\<real>)"
+  then show "(\<Sum>\<^sub>\<infinity>s::'a. ?f s) = (1::\<real>)"
     using calculation by presburger
 qed
 
@@ -2273,22 +2270,22 @@ theorem rvfun_uniform_dist_altdef:
   assumes "finite (A::'a set)"
   assumes "vwb_lens x"
   assumes "A \<noteq> {}"
-  shows "(x \<^bold>\<U> A) = (\<lbrakk>\<lbrakk>\<Union> v \<in> A. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e / card \<guillemotleft>A\<guillemotright>)\<^sub>e"
+  shows "(x \<^bold>\<U> A) = (\<lbrakk>\<Squnion> v \<in> \<guillemotleft>A\<guillemotright>. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e / card \<guillemotleft>A\<guillemotright>)\<^sub>e"
   apply (simp add: dist_defs)
   apply (expr_auto)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (subst infsum_constant_finite_states)
   apply (smt (verit, best) Collect_mem_eq Collect_mono_iff assms(1) assms(2) mem_Collect_eq 
       mwb_lens_weak rev_finite_subset vwb_lens.axioms(2) weak_lens.put_get)
 proof -
-  fix a::"'b" and xa::"'a"
-  assume a1: "xa \<in> A"
-  have "{s::'a. \<exists>xb::'a\<in>A. put\<^bsub>x\<^esub> a xb = put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a xa) s} = 
-        {s::'a. \<exists>xb::'a\<in>A. put\<^bsub>x\<^esub> a xb = put\<^bsub>x\<^esub> a s}"
+  fix a::"'b" and v::"'a"
+  assume a1: "v \<in> A"
+  have "{s::'a. \<exists>va::'a\<in>A. put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a v) s = put\<^bsub>x\<^esub> a va} = 
+        {s::'a. \<exists>va::'a\<in>A. put\<^bsub>x\<^esub> a s = put\<^bsub>x\<^esub> a va}"
     using assms(2) by auto
   also have "... = {s::'a. \<exists>xb::'a\<in>A. xb = s}"
     by (metis assms(2) vwb_lens_wb wb_lens_weak weak_lens.view_determination)
-  then show "(1::\<real>) * real (card {s::'a. \<exists>xb::'a\<in>A. put\<^bsub>x\<^esub> a xb = put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a xa) s}) = real (card A)"
+  then show "(1::\<real>) * real (card {s::'a. \<exists>va::'a\<in>A. put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a v) s = put\<^bsub>x\<^esub> a va}) = real (card A)"
     by (simp add: calculation)
 qed
 
@@ -2296,7 +2293,7 @@ theorem prfun_uniform_dist_altdef':
   assumes "finite (A::'a set)"
   assumes "vwb_lens x"
   assumes "A \<noteq> {}"
-  shows "rvfun_of_prfun (prfun_of_rvfun (x \<^bold>\<U> A)) = (\<lbrakk>\<lbrakk>\<Union> v \<in> A. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e / card \<guillemotleft>A\<guillemotright>)\<^sub>e"
+  shows "rvfun_of_prfun (prfun_of_rvfun (x \<^bold>\<U> A)) = (\<lbrakk>\<Squnion> v \<in> \<guillemotleft>A\<guillemotright>. x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e / card \<guillemotleft>A\<guillemotright>)\<^sub>e"
   by (metis assms(1) assms(2) assms(3) rvfun_uniform_dist_inverse rvfun_uniform_dist_altdef)
 
 theorem prfun_uniform_dist_left:
@@ -2310,34 +2307,31 @@ theorem prfun_uniform_dist_left:
   apply (simp_all add: assms)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto)
-  apply (rel_auto)
+  apply (pred_auto)
 proof -
   fix a and b :: "'b"
-  let ?fl_1 = "\<lambda>v\<^sub>0. (if \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0 then 1::\<real> else (0::\<real>))"
+  let ?fl_1 = "\<lambda>v\<^sub>0. (if \<exists>v::'a\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v then 1::\<real> else (0::\<real>))"
   let ?fl_2 = "\<lambda>v\<^sub>0. rvfun_of_prfun P (v\<^sub>0, b) / real (card A)"
 
   have "finite {put\<^bsub>x\<^esub> a xa | xa. xa \<in> A}"
     apply (rule finite_image_set)
     using assms(1) by auto
-  then have finite_states: "finite {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}"
+  then have finite_states: "finite {v\<^sub>0. \<exists>v::'a\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v}"
     by (smt (verit, del_insts) Collect_cong)
 
   have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?fl_1 v\<^sub>0 * rvfun_of_prfun P (v\<^sub>0, b) / real (card A))
     = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?fl_1 v\<^sub>0 * ?fl_2 v\<^sub>0)"
     by auto
-  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. ?fl_2 v\<^sub>0)"
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>v::'a\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v}. ?fl_2 v\<^sub>0)"
     apply (subst infsum_mult_subset_left)
     by simp
-  also have "... = (\<Sum> v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. ?fl_2 v\<^sub>0)"
-    apply (rule infsum_finite)
-    by (simp add: finite_states)
-  also have fl: "... = (\<Sum> v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. rvfun_of_prfun P (v\<^sub>0, b)) / real (card A)"
-    by (metis (mono_tags, lifting) sum.cong sum_divide_distrib)
+  also have fl: "... = (\<Sum> v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>v::'a\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v}. rvfun_of_prfun P (v\<^sub>0, b)) / real (card A)"
+    by (smt (verit, ccfv_SIG) finite_states infsum_finite sum.cong sum_divide_distrib)
 
   have inj_on_A: "inj_on (\<lambda>xa. put\<^bsub>x\<^esub> a xa) A"
     by (meson assms(2) inj_onI vwb_lens_wb wb_lens_def weak_lens.view_determination)
 
-  have frl: "(\<Sum> v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>xa::'a\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. rvfun_of_prfun P (v\<^sub>0, b)) 
+  have frl: "(\<Sum> v\<^sub>0::'b \<in> {v\<^sub>0. \<exists>v::'a\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v}. rvfun_of_prfun P (v\<^sub>0, b)) 
     = (\<Sum>v::'a\<in>A. rvfun_of_prfun P (put\<^bsub>x\<^esub> a v, b))"
     apply (rule sum.reindex_cong[where l = "(\<lambda>xa. put\<^bsub>x\<^esub> a xa)"])
     apply (simp add: inj_on_A)
@@ -2919,11 +2913,6 @@ theorem prfun_parallel_left_zero:
   apply (simp add: pfun_defs dist_defs ureal_defs)
   by (metis SEXP_apply ureal2ereal_inverse zero_ureal.rep_eq)
 
-term "(\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P))\<^sub>e"
-term "([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)\<^sub>e"
-term "(\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>$x\<^sup>> = \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
-term "(\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
-
 text \<open> The parallel composition of a @{text "P"} with a uniform distribution is just a normalised 
 summation of @{text "P"} with @{text "x"} in its final states substituted for each value in @{text "A"}.\<close>
 theorem prfun_parallel_uniform_dist:
@@ -2932,47 +2921,48 @@ theorem prfun_parallel_uniform_dist:
   assumes "vwb_lens x"
   assumes "A \<noteq> {}"
   shows "(x \<^bold>\<U> A) \<parallel> P = 
-    prfun_of_rvfun ((\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))
+    prfun_of_rvfun ((\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))
                       / (\<Sum> v\<in>\<guillemotleft>A\<guillemotright>. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
   apply (subst rvfun_uniform_dist_altdef)
   apply (simp add: assms(1-3))+
   apply (simp add: dist_defs pfun_defs)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto add: rel)
+  apply (pred_auto)
 proof -
   fix a and xa
   assume a1: "xa \<in> A"
 
   let ?lhs_1 = "(real (card A) * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. 
-    (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0 then 1::\<real> else (0::\<real>)) * P (a, v\<^sub>0) / real (card A)))"
+    (if \<exists>v::'b\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v then 1::\<real> else (0::\<real>)) * P (a, v\<^sub>0) / real (card A)))"
   let ?lhs = "P (a, put\<^bsub>x\<^esub> a xa) / ?lhs_1"
 
   let ?rhs_1 = "(\<Sum>v::'b\<in>A. 
-    (if put\<^bsub>x\<^esub> a v = put\<^bsub>x\<^esub> a xa then 1::\<real> else (0::\<real>)) * P (a, put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a xa) v))"
+    (if put\<^bsub>x\<^esub> a xa = put\<^bsub>x\<^esub> a v then 1::\<real> else (0::\<real>)) * P (a, put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a xa) v))"
   let ?rhs_2 = "(\<Sum>v::'b\<in>A. P (a, put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a xa) v))"
   let ?rhs = "?rhs_1 / ?rhs_2"
 
   have "finite {put\<^bsub>x\<^esub> a xa | xa. xa \<in> A}"
     apply (rule finite_image_set)
     using assms(1) by auto
-  then have finite_states: "finite {v\<^sub>0::'a. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}"
+  then have finite_states: "finite {v\<^sub>0::'a. \<exists>v::'b\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v}"
     by (smt (verit, del_insts) Collect_cong)
 
-  have set_eq: "{v\<^sub>0::'a. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0} = {put\<^bsub>x\<^esub> a xa | xa. xa \<in> A}"
+  have set_eq: "{v\<^sub>0::'a. \<exists>v::'b\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v} = {put\<^bsub>x\<^esub> a xa | xa. xa \<in> A}"
     by (smt (verit, del_insts) Collect_cong)
 
-  have f1: "(real (card A) * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0 then 1::\<real> else (0::\<real>)) 
+  have f1: "(real (card A) * (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if \<exists>v::'b\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v then 1::\<real> else (0::\<real>)) 
                                 * P (a, v\<^sub>0) / real (card A))
             )
-      = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0 then 1::\<real> else (0::\<real>)) * P (a, v\<^sub>0))"
+      = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. (if \<exists>v::'b\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v then 1::\<real> else (0::\<real>)) * P (a, v\<^sub>0))"
     apply (subst infsum_cdiv_left)
     apply (subst infsum_mult_subset_left_summable)
     apply (rule summable_on_finite)
     using finite_states apply blast
     by (simp add: assms(1))
 
-  have denominator_1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> {v\<^sub>0::'a. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. P (a, v\<^sub>0)) = 
-      (\<Sum>v\<^sub>0::'a \<in> {v\<^sub>0::'a. \<exists>xa::'b\<in>A. put\<^bsub>x\<^esub> a xa = v\<^sub>0}. P (a, v\<^sub>0))"
+  have denominator_1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> {v\<^sub>0::'a. \<exists>v::'b\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v}. P (a, v\<^sub>0)) = 
+      (\<Sum>v\<^sub>0::'a \<in> {v\<^sub>0::'a. \<exists>v::'b\<in>A. v\<^sub>0 = put\<^bsub>x\<^esub> a v}. P (a, v\<^sub>0))"
     using finite_states infsum_finite by blast
   also have denominator_2: "... = (\<Sum>v::'b\<in>A. P (a, put\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a xa) v))"
     apply (simp add: set_eq)
@@ -3015,7 +3005,7 @@ lemma prfun_parallel_uniform_dist':
   (* assumes "(\<exists>v \<in> A. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P) > 0)\<^sub>e" *)
   assumes "\<forall>s. \<exists>v \<in> A. P (s, put\<^bsub>x\<^esub> s v) > 0"
   shows "rvfun_of_prfun ((x \<^bold>\<U> A) \<parallel> P) = 
-      ((\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P))) / (\<Sum> v\<in>\<guillemotleft>A\<guillemotright>. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
+      ((\<Sum>v\<in>\<guillemotleft>A\<guillemotright>. (\<lbrakk>x := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e * ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P))) / (\<Sum> v\<in>\<guillemotleft>A\<guillemotright>. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
   apply (subst prfun_parallel_uniform_dist) 
   apply (simp add: assms)+
   apply (subst rvfun_inverse)
@@ -3048,7 +3038,7 @@ proof (rule ccontr)
     using increasing_chain_mono by (metis assms(1) le_funE less_eq_nat.simps(1) nless_le)
   then have "(\<Squnion>n::\<nat>. f n (s, s')) > f 0 (s, s')"
     by (metis SUP_lessD UNIV_I assms(2) nless_le)
-  then show "false"
+  then show "False"
     by (simp add: assms(2))
 qed
 
@@ -3060,7 +3050,7 @@ proof -
     apply (simp add: image_def)
     by (metis (no_types, lifting) add.commute add.right_neutral atLeast_0 atLeast_iff image_add_atLeast le_add_same_cancel2 rangeE zero_le)
   have f2: "{..m-1} \<union> {(m::nat)..} = UNIV"
-    by (metis Suc_pred' atLeast0LessThan atLeast_0 bot_nat_0.extremum bot_nat_0.not_eq_extremum ivl_disj_un_one(8) lessThan_Suc_atMost ref_lattice.inf_bot_right)
+    by (metis Suc_pred' Un_UNIV_right atLeast0LessThan atLeast_0 bot_nat_0.not_eq_extremum ivl_disj_un(14) lessThan_Suc_atMost zero_order(1))
   then have f3: "(\<Squnion>n::nat. f n) = (\<Squnion>n::nat \<in> {..m-1} \<union> {(m::nat)..}. f n)"
     by (simp add: image_def)
   have f4: "(\<Squnion>n::nat \<in> {..m-1} \<union> {(m::nat)..}. f n) = (\<Squnion>n\<in>{..m-1}. f n) \<squnion> (\<Squnion>n\<in>{m..}. f n)"
@@ -3097,7 +3087,7 @@ proof -
     using less_eq_ureal.rep_eq ureal2ereal zero_ureal.rep_eq by fastforce
   then have "(\<Squnion>n::\<nat>. f n (s, s')) > 0"
     using assms(2) by (metis Sup_upper linorder_not_le nle_le range_eqI)
-  then show "false"
+  then show "False"
     using pos sup_least by (meson linorder_not_le ureal_minus_less)
 qed
 
@@ -3119,7 +3109,7 @@ proof -
     using SUP_least by metis
   have sup_ge_0: "(\<Squnion>n::\<nat>. f n (s, s')) \<ge> 0"
     using less_eq_ureal.rep_eq ureal2ereal zero_ureal.rep_eq by fastforce
-  show "false"
+  show "False"
   proof (cases "\<exists>n. f n (s, s') > 0")
     case True
     then have "(\<Squnion>n::\<nat>. f n (s, s')) > 0"
@@ -3167,7 +3157,7 @@ proof -
     sorry
   have sup_ge_0: "(\<Squnion>n::\<nat>. f n (s, s')) \<ge> 0"
     using less_eq_ureal.rep_eq ureal2ereal zero_ureal.rep_eq by fastforce
-  show "false"
+  show "False"
   proof (cases "\<exists>n. f n (s, s') > 0")
     case True
     then have "(\<Squnion>n::\<nat>. f n (s, s')) > 0"
@@ -3209,7 +3199,7 @@ proof -
     using less_eq_ureal.rep_eq ureal2ereal zero_ureal.rep_eq by fastforce
   then have "(\<Squnion>n::\<nat>. f n (s, s')) > 0"
     using a2 by (metis Sup_upper linorder_not_le nle_le range_eqI)
-  then show "false"
+  then show "False"
     using pos sup_least by (meson linorder_not_le ureal_minus_less)
 qed
 
@@ -3237,7 +3227,7 @@ proof -
     using less_eq_ureal.rep_eq ureal2ereal zero_ureal.rep_eq by fastforce
   then have "(\<Squnion>n::\<nat>. f n (s, s')) > 0"
     using assms(2) by (metis Sup_upper linorder_not_le nle_le range_eqI)
-  then*) show "false"
+  then*) show "False"
     using pos sup_least by (meson linorder_not_le ureal_minus_less)
 qed
 *)
@@ -3323,7 +3313,7 @@ proof (rule ccontr, auto)
   assume "\<forall>n::\<nat>. \<exists>m::\<nat>\<in>A. \<not> m \<le> n"
   then have "\<forall>n::\<nat>. \<exists>m::\<nat>\<in>A.  m > n"
     by (simp add: linorder_not_le)
-  then show "false"
+  then show "False"
     sorry
 qed
 
@@ -3432,7 +3422,7 @@ proof -
               zero_less_diff)
       then have "ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no - no) (s, s')) < r"
         by blast
-      then show "false"
+      then show "False"
         using a12 by force
     qed
   qed
@@ -3575,7 +3565,7 @@ proof (rule ccontr)
     by (metis assms(1) le_funE less_eq_nat.simps(1) order_neq_le_trans)
   then have "(\<Sqinter>n::\<nat>. f n (s, s')) < f 0 (s, s')"
     by (metis INF_lower assms(2) iso_tuple_UNIV_I less_le_not_le)
-  then show "false"
+  then show "False"
     by (simp add: assms(2))
 qed
 
@@ -3587,7 +3577,7 @@ proof -
     apply (simp add: image_def)
     by (metis (no_types, lifting) add.commute add.right_neutral atLeast_0 atLeast_iff image_add_atLeast le_add_same_cancel2 rangeE zero_le)
   have f2: "{..m-1} \<union> {(m::nat)..} = UNIV"
-    by (metis Suc_pred' atLeast0LessThan atLeast_0 bot_nat_0.extremum bot_nat_0.not_eq_extremum ivl_disj_un_one(8) lessThan_Suc_atMost ref_lattice.inf_bot_right)
+    by (metis Suc_pred' atLeast0LessThan atLeast_0 bot_nat_0.extremum bot_nat_0.not_eq_extremum ivl_disj_un(14) lessThan_Suc_atMost sup_commute sup_top_left)
   then have f3: "(\<Sqinter>n::nat. f n) = (\<Sqinter>n::nat \<in> {..m-1} \<union> {(m::nat)..}. f n)"
     by (simp add: image_def)
   have f4: "(\<Sqinter>n::nat \<in> {..m-1} \<union> {(m::nat)..}. f n) = (\<Sqinter>n\<in>{..m-1}. f n) \<sqinter> (\<Sqinter>n\<in>{m..}. f n)"
@@ -3623,7 +3613,7 @@ proof -
     by (metis one_ureal.rep_eq top_greatest top_ureal.rep_eq ureal2ereal_inject)
   then have "(\<Sqinter>n::\<nat>. f n (s, s')) < 1"
     using assms(2) by (metis INF_lower UNIV_I linorder_not_less order_le_less)
-  then show "false"
+  then show "False"
     using pos inf_greatest by (meson linorder_not_le ureal_plus_greater)
 qed
 
@@ -3751,7 +3741,7 @@ proof -
         by (metis Suc_diff_Suc a12 diff_is_0_eq f110 linorder_not_less)
       then have "ureal2real (f (no - no) (s, s')) - ureal2real (\<Sqinter>n::\<nat>. f n (s, s')) < r"
         by blast
-      then show "false"
+      then show "False"
         using a12 by simp
     qed
   qed
@@ -4027,21 +4017,21 @@ qed
 
 theorem pwhile_false: 
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  shows "while\<^sub>p (false)\<^sub>e do P od = II"
+  shows "while\<^sub>p false do P od = II"
   apply (subst pwhile_unfold)
   using assms apply presburger
-  apply (simp add: pfun_defs)
+  apply (simp add: pfun_defs false_pred_def)
   apply (expr_auto)
   apply (simp add: ureal_defs)
   apply (auto)
   apply (simp add: ereal2ureal'_inverse)
   by (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
 
-theorem pwhile_true: "while\<^sub>p (true)\<^sub>e do P od = 0\<^sub>p"
+theorem pwhile_true: "while\<^sub>p true do P od = 0\<^sub>p"
   apply (simp add: pwhile_def pcond_def pzero_def)
   apply (rule antisym)
   apply (rule lfp_lowerbound)
-  apply (simp add: Fwhile_def)
+  apply (simp add: Fwhile_def true_pred_def)
   apply (simp add: prfun_zero_right)
   apply (simp add: pfun_defs)
   apply (simp add: ureal_zero ureal_zero')
@@ -4070,18 +4060,18 @@ qed
 
 theorem pwhile_top_false: 
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  shows "while\<^sub>p\<^sup>\<top> (false)\<^sub>e do P od = II"
+  shows "while\<^sub>p\<^sup>\<top> false do P od = II"
   apply (subst pwhile_top_unfold)
   using assms apply presburger
-  apply (simp add: pfun_defs)
+  apply (simp add: pfun_defs false_pred_def)
   apply (expr_auto)
   apply (simp add: ureal_defs)
   apply (auto)
   apply (simp add: ereal2ureal'_inverse)
   by (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
 
-theorem pwhile_top_true: "while\<^sub>p\<^sup>\<top> (true)\<^sub>e do P od = (\<nu>\<^sub>p X \<bullet> P ; X)"
-  apply (simp add: pwhile_top_def)
+theorem pwhile_top_true: "while\<^sub>p\<^sup>\<top> true do P od = (\<nu>\<^sub>p X \<bullet> P ; X)"
+  apply (simp add: pwhile_top_def true_pred_def)
   apply (simp add: Fwhile_def)
   apply (simp add: pcond_def)
   by (simp add: SEXP_def prfun_inverse)
@@ -4137,7 +4127,7 @@ lemma iterate_increasing_chain_bot:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "Complete_Partial_Order.chain (\<le>) {(iterate n b P 0\<^sub>p) | n::nat. True}" 
     (is "Complete_Partial_Order.chain _ ?C")
-proof (rule chainI)
+proof (rule Complete_Partial_Order.chainI)
   fix x y
   assume "x \<in> ?C" "y \<in> ?C"
   then show "x \<le> y \<or> y \<le> x"
@@ -4177,7 +4167,7 @@ lemma iterate_decreasing_chain_top:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "Complete_Partial_Order.chain (\<ge>) {(iterate n b P 1\<^sub>p) | n::nat. True}" 
     (is "Complete_Partial_Order.chain _ ?C")
-proof (rule chainI)
+proof (rule Complete_Partial_Order.chainI)
   fix x y
   assume "x \<in> ?C" "y \<in> ?C"
   then show "x \<le> y \<or> y \<le> x"
@@ -4205,7 +4195,7 @@ proof (rule ccontr)
   then have "\<forall>n. iterate n b P 0\<^sub>p s = (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s)"
     by (metis SUP_upper bot.extremum bot_ureal.rep_eq iso_tuple_UNIV_I nle_le pzero_def 
         ureal2ereal_inverse utp_prob_rel_lattice.iterate.simps(1) zero_ureal.rep_eq)
-  then show "false"
+  then show "False"
     by (metis a1 pzero_def utp_prob_rel_lattice.iterate.simps(1))
 next
   assume "ureal2real (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s)"
@@ -4480,7 +4470,7 @@ proof (rule ccontr)
     by (smt (verit, best) INF_top_conv(2) UNIV_I linorder_not_less not_less_iff_gr_or_eq o_apply 
         one_ureal.rep_eq pone_def real_ereal_1 top_greatest ureal2real_def ureal2real_mono_strict 
         ureal_upper_bound utp_prob_rel_lattice.iterate.simps(1))
-  then show "false"
+  then show "False"
     by (metis a1 pone_def utp_prob_rel_lattice.iterate.simps(1))
 next
   assume "ureal2real (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p s) < ureal2real (iterate\<^sub>p (0::\<nat>) b P 1\<^sub>p s)"
@@ -4857,6 +4847,7 @@ lemma iterate_top_is_prob:
   defer
   apply (simp add: prfun_in_0_1')
   apply (simp add: rvfun_of_prfun_def ureal2real_def zero_ureal.rep_eq)
+  apply (pred_auto)
 proof -
   fix n ba
   assume a1: "\<forall>(a::'s) ba::'s.
@@ -4965,6 +4956,7 @@ lemma iterate_top_eq_bot_plus:
   apply (metis add.right_neutral ereal2ureal_def ureal_zero_0 zero_ereal_def zero_ureal_def)
   defer
   apply (metis SEXP_def add_0 nle_le real2ureal_def rvfun_of_prfun_def ureal_lower_bound ureal_real2ureal_smaller zero_ereal_def zero_ureal_def)
+  apply (pred_auto)
 proof -
   fix n ba
   assume a1: "\<forall>(a::'s) ba::'s. iterate\<^sub>p n b P \<^bold>1 (a, ba) = iterate\<^sub>p n b P \<^bold>0 (a, ba) + iter_seq n b P \<^bold>1 (a, ba)"
@@ -5171,7 +5163,7 @@ proof -
     apply (auto)
   proof -
     assume "\<forall>n::\<nat>. \<not> iter_seq n b P 1\<^sub>p s < ereal2ureal (ereal r)"
-    show "false"
+    show "False"
     qed
 
   show "\<exists>no::\<nat>. \<forall>n\<ge>no. \<bar>ureal2real (iter_seq n b P 1\<^sub>p s)\<bar> < r"
