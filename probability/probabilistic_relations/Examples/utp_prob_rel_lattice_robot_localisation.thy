@@ -2,7 +2,7 @@ section \<open> Example of probabilistic relation programming: Robot localisatio
 
 theory utp_prob_rel_lattice_robot_localisation
   imports 
-    "../utp_prob_rel_lattice_laws" 
+    "../utp_prob_rel" 
 begin 
 
 unbundle UTP_Syntax
@@ -48,22 +48,22 @@ definition believe_3::"robot_local_state rvhfun" where
 "believe_3 \<equiv> (1/18 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 8/9 * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 1/18 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
 
 lemma init_knowledge_sum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
-       (if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 \<or> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<or> \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+       (if v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> \<or> v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> \<or> v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) *
        ((3::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>)) + (1::\<real>)) /
        (3::\<real>)) = 3"
 proof -
   let ?bel_set = "{\<lparr>bel\<^sub>v = 0::\<nat>\<rparr>, \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr>, \<lparr>bel\<^sub>v = 2::\<nat>\<rparr>}"
   let ?sum = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
-       (if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 \<or> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<or> \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+       (if v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> \<or> v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> \<or> v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) *
        ((3::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>)) + (1::\<real>)) /
        (3::\<real>))"
-  let ?fun = "\<lambda>v\<^sub>0. (if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 \<or> \<lparr>bel\<^sub>v = 2\<rparr> = v\<^sub>0 then 4::\<real> else 
+  let ?fun = "\<lambda>v\<^sub>0. (if v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> \<or> v\<^sub>0 = \<lparr>bel\<^sub>v = 2\<rparr> then 4::\<real> else 
         (if \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))) / 3"
-  have "?sum = 
-    (\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?fun v\<^sub>0)"
-    apply (subst infsum_cong[where g="\<lambda>v\<^sub>0. (if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 \<or> \<lparr>bel\<^sub>v = 2\<rparr> = v\<^sub>0 then 4::\<real> else 
-        (if \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))) / 3"])
-    by (auto)
+  have "?sum = (\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?fun v\<^sub>0)"
+    apply (subst infsum_cong[where g="\<lambda>v\<^sub>0. (if v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> \<or> v\<^sub>0 = \<lparr>bel\<^sub>v = 2\<rparr> then 4::\<real> else 
+        (if v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> then 1::\<real> else (0::\<real>))) / 3"])
+    apply simp
+    by (simp add: infsum_cong)
   also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state \<in> ?bel_set \<union> (UNIV - ?bel_set). ?fun v\<^sub>0)"
     by auto
   also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state \<in> ?bel_set. ?fun v\<^sub>0)"
@@ -92,8 +92,8 @@ lemma believe_1_simp: "(init \<parallel> scale_door) = prfun_of_rvfun believe_1"
   apply (simp add: rvfun_uniform_dist_altdef)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp add: door_def)
-  apply (simp add: expr_defs)
-  apply (rel_auto)
+  apply (simp add: expr_defs assigns_r_def)
+  apply (pred_auto)
   using init_knowledge_sum apply auto[1]
   using init_knowledge_sum apply linarith
   apply (simp add: init_knowledge_sum)
@@ -108,7 +108,7 @@ lemma believe_1_simp': "(init \<parallel> scale_door) = prfun_of_rvfun believe_1
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp add: door_def)
   apply (simp add: expr_defs)
-  by (rel_auto)
+  by (pred_auto)
 
 lemma move_right_1_simp: "(init \<parallel> scale_door) ; move_right = prfun_of_rvfun move_right_1"
   apply (simp add: pseqcomp_def move_right_1_def)
@@ -123,20 +123,20 @@ lemma move_right_1_simp: "(init \<parallel> scale_door) ; move_right = prfun_of_
   apply (simp add: pfun_defs dist_norm_def move_right_def scale_door_def door_def )
   apply (subst rvfun_assignment_inverse)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  apply (expr_auto add: rel)
+  apply (expr_auto add: rel assigns_r_def)
 proof -
-  let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. ((if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * (4::\<real>) +
-        ((if \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) +
-         (if \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * (4::\<real>))) *
-       (if v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) / 9"
+  let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. ((if v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) * (4::\<real>) +
+        ((if v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) +
+         (if v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) * (4::\<real>))) *
+       (if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / 9"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?lhs_f v\<^sub>0)"
 
-  have f1: "\<forall>v\<^sub>0. \<not>(\<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr>)"
+  have f1: "\<forall>v\<^sub>0. \<not>(v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> \<and> \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     by (auto)
-  have f2: "\<forall>v\<^sub>0. \<not>(\<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr>)"
+  have f2: "\<forall>v\<^sub>0. \<not>(v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> \<and> \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     by (auto)
-  have f3: "\<forall>v\<^sub>0. (\<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr>) = 
-          (\<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0)"
+  have f3: "\<forall>v\<^sub>0. (v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> \<and> \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>) = 
+          (v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr>)"
     by (auto)
   have "?lhs = (4 / 9)"
     apply (subst ring_distribs(2))+
@@ -146,27 +146,27 @@ proof -
     apply (simp add: f1 f2 f3)
     apply (subst infsum_cdiv_left)
     apply (rule summable_on_cmult_right)
-    apply (simp add: infsum_singleton_summable)
+    apply (smt (verit, best) infsum_singleton_summable summable_on_cong zero_neq_one)
     apply (subst infsum_cmult_right)
-    apply (simp add: infsum_singleton_summable)
+    apply (smt (verit, best) infsum_singleton_summable summable_on_cong zero_neq_one)
     apply (subst infsum_constant_finite_states)
     by (simp)+
     
   then show "?lhs * (9::\<real>) =  (4::\<real>)"
     by linarith
 next
-  let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. ((if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * (4::\<real>) +
-        ((if \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) +
-         (if \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * (4::\<real>))) *
-       (if v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / 9"
+  let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. ((if v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) * (4::\<real>) +
+        ((if v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) +
+         (if v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) * (4::\<real>))) *
+       (if \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / 9"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?lhs_f v\<^sub>0)"
 
-  have f1: "\<forall>v\<^sub>0. (\<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr>) = 
-      (\<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0)"
+  have f1: "\<forall>v\<^sub>0. (v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> \<and> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>) = 
+      (v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr>)"
     by (auto)
-  have f2: "\<forall>v\<^sub>0. \<not>(\<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr>)"
+  have f2: "\<forall>v\<^sub>0. \<not>(v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> \<and> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     by (auto)
-  have f3: "\<forall>v\<^sub>0. \<not>(\<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr>)"
+  have f3: "\<forall>v\<^sub>0. \<not>(v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> \<and> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     by (auto)
   have "?lhs = (4 / 9)"
     apply (subst ring_distribs(2))+
@@ -176,27 +176,27 @@ next
     apply (simp add: f1 f2 f3)
     apply (subst infsum_cdiv_left)
     apply (rule summable_on_cmult_right)
-    apply (simp add: infsum_singleton_summable)
+    apply (smt (verit, best) infsum_singleton_summable summable_on_cong zero_neq_one)
     apply (subst infsum_cmult_right)
-    apply (simp add: infsum_singleton_summable)
+    apply (smt (verit, best) infsum_singleton_summable summable_on_cong zero_neq_one)
     apply (subst infsum_constant_finite_states)
     by (simp)+
     
   then show "?lhs * (9::\<real>) =  (4::\<real>)"
     by linarith
 next
-  let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. ((if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * (4::\<real>) +
-        ((if \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) +
-         (if \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * (4::\<real>))) *
-       (if v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / 9"
+  let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. ((if v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) * (4::\<real>) +
+        ((if v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) +
+         (if v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) * (4::\<real>))) *
+       (if \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>  then 1::\<real> else (0::\<real>)) / 9"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?lhs_f v\<^sub>0)"
 
-  have f1: "\<forall>v\<^sub>0. \<not>(\<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr>)"
+  have f1: "\<forall>v\<^sub>0. \<not>(v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> \<and> \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     by (auto)
-  have f2: "\<forall>v\<^sub>0. (\<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr>) 
-     = (\<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0)"
+  have f2: "\<forall>v\<^sub>0. (v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> \<and> \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>) 
+     = (v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr>)"
     by (auto)
-  have f3: "\<forall>v\<^sub>0. \<not>(\<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr>)"
+  have f3: "\<forall>v\<^sub>0. \<not>(v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> \<and> \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     by (auto)
   have "?lhs = (1 / 9)"
     apply (subst ring_distribs(2))+
@@ -205,8 +205,7 @@ next
     apply (subst conditional_conds_conj)+
     apply (simp add: f1 f2 f3)
     apply (subst infsum_cdiv_left)
-    apply (simp add: infsum_singleton_summable)
-    apply (simp add: infsum_singleton_summable)
+    apply (smt (verit, best) infsum_singleton_summable summable_on_cong zero_neq_one)
     apply (subst infsum_constant_finite_states)
     by (simp)+
     
@@ -217,17 +216,17 @@ next
   assume a1: "(0::\<nat>) < bel"
   assume a2: "\<not> bel = Suc (0::\<nat>)"
   assume a3: "\<not> bel = (2::\<nat>)"
-  let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. ((if \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * (4::\<real>) +
-        ((if \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) +
-         (if \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) * (4::\<real>))) *
-       (if v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr> then 1::\<real> else (0::\<real>)) / 9"
+  let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. ((if v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) * (4::\<real>) +
+        ((if v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) +
+         (if v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) * (4::\<real>))) *
+       (if \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / 9"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?lhs_f v\<^sub>0)"
 
-  have f1: "\<forall>v\<^sub>0. \<not>(\<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr>)"
+  have f1: "\<forall>v\<^sub>0. \<not>(v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> \<and> \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     using a2 by force
-  have f2: "\<forall>v\<^sub>0. \<not>(\<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr>)"
+  have f2: "\<forall>v\<^sub>0. \<not>(v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> \<and> \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     using a3 by force
-  have f3: "\<forall>v\<^sub>0. \<not>(\<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0 \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr>)"
+  have f3: "\<forall>v\<^sub>0. \<not>(v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> \<and> \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     using a1 by force
   have "?lhs = 0"
     apply (subst ring_distribs(2))+
@@ -605,7 +604,7 @@ lemma move_right_2_simp:
   apply (subst rvfun_assignment_inverse)
   apply (simp add: believe_2_def)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  apply (expr_auto add: rel)
+  apply (expr_auto add: rel assigns_r_def)
   apply (simp_all add: ring_distribs(2))
   apply (simp add: mult.assoc)+
   apply (subst conditional_conds_conj)+
@@ -618,25 +617,25 @@ lemma move_right_2_simp:
   defer
   apply (simp add: mult.assoc)+
   apply (subst conditional_conds_conj)+
-     defer 
+  defer 
 proof -
   let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. (2::\<real>) *
-       (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> then 1::\<real>
+       (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
         else (0::\<real>)) / (3::\<real>) +
-       (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> then 1::\<real>
+       (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
         else (0::\<real>)) / (6::\<real>) +
-       (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> then 1::\<real>
+       (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
         else (0::\<real>)) / (6::\<real>)"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?lhs_f v\<^sub>0)"
 
-  have f1: "\<forall>v\<^sub>0. (bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> (v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr>)) = 
+  have f1: "\<forall>v\<^sub>0. (bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> (\<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)) = 
       (\<lparr>bel\<^sub>v = 0::\<nat>\<rparr> = v\<^sub>0)"
     by auto
-  have f2: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr>)"
+  have f2: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     apply (auto)
     by (metis n_not_Suc_n robot_local_state.select_convs(1) robot_local_state.surjective 
         robot_local_state.update_convs(1))
-  have f3: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr>)"
+  have f3: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     apply (auto)
     by (metis n_not_Suc_n robot_local_state.select_convs(1) robot_local_state.surjective 
         robot_local_state.update_convs(1))
@@ -651,23 +650,23 @@ proof -
     by (simp)+
 next
   let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. (2::\<real>) *
-       (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v =  (0::\<nat>)\<rparr> then 1::\<real>
+       (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> \<lparr>bel\<^sub>v = (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
         else (0::\<real>)) / (3::\<real>) +
-       (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v =  (0::\<nat>)\<rparr> then 1::\<real>
+       (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> \<lparr>bel\<^sub>v = (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
         else (0::\<real>)) / (6::\<real>) +
-       (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v =  (0::\<nat>)\<rparr> then 1::\<real>
+       (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> \<lparr>bel\<^sub>v = (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
         else (0::\<real>)) / (6::\<real>)"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?lhs_f v\<^sub>0)"
 
-  have f1: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> (v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (0::\<nat>)\<rparr>))"
+  have f1: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> (\<lparr>bel\<^sub>v = (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>))"
     apply (auto)
     by (metis n_not_Suc_n robot_local_state.select_convs(1) robot_local_state.surjective 
         robot_local_state.update_convs(1))
-  have f2: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (0::\<nat>)\<rparr>)"
+  have f2: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> \<lparr>bel\<^sub>v = (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     apply (auto)
     by (metis nat.distinct(1) robot_local_state.select_convs(1) robot_local_state.surjective 
         robot_local_state.update_convs(1))
-  have f3: "\<forall>v\<^sub>0. (bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (0::\<nat>)\<rparr>)  = 
+  have f3: "\<forall>v\<^sub>0. (bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> \<lparr>bel\<^sub>v = (0::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)  = 
       (\<lparr>bel\<^sub>v = 2::\<nat>\<rparr> = v\<^sub>0)"
     by (auto)
   show "?lhs * (6::\<real>) = (1::\<real>)"
@@ -677,23 +676,23 @@ next
     apply (subst infsum_constant_finite_states)
     by (simp)+
 next
-let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. (2::\<real>) *
-       (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> then 1::\<real>
+  let ?lhs_f = "\<lambda>v\<^sub>0::robot_local_state. (2::\<real>) *
+       (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
         else (0::\<real>)) / (3::\<real>) +
-       (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> then 1::\<real>
+       (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
         else (0::\<real>)) / (6::\<real>) +
-       (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> then 1::\<real>
+       (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
         else (0::\<real>)) / (6::\<real>)"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state. ?lhs_f v\<^sub>0)"
 
-  have f1: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> (v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr>))"
+  have f1: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> (\<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>))"
     apply (auto)
     by (metis n_not_Suc_n numeral_2_eq_2 robot_local_state.select_convs(1) 
         robot_local_state.surjective robot_local_state.update_convs(1))
-  have f2: "\<forall>v\<^sub>0. (bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr>) =  
+  have f2: "\<forall>v\<^sub>0. (bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>) =  
       (\<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> = v\<^sub>0)"
     by (auto)
-  have f3: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr>)"
+  have f3: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> \<lparr>bel\<^sub>v = (2::\<nat>)\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     apply (auto)
     by (metis robot_local_state.select_convs(1) robot_local_state.surjective 
         robot_local_state.update_convs(1) zero_neq_numeral)
@@ -709,27 +708,27 @@ next
   assume a2: "(0::\<nat>) < bel"
   assume a3: "\<not> bel = (2::\<nat>)"
 
-  have f1: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr>)"
+  have f1: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     apply (auto)
     by (metis a1 robot_local_state.select_convs(1) robot_local_state.surjective 
         robot_local_state.update_convs(1))
-  have f2: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr>)"
+  have f2: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     apply (auto)
     by (metis a3 numeral_2_eq_2 robot_local_state.select_convs(1) robot_local_state.surjective 
         robot_local_state.update_convs(1))
-  have f3: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr>)"
+  have f3: "\<forall>v\<^sub>0. \<not>(bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr>)"
     apply (auto)
     by (metis a2 nat_neq_iff robot_local_state.select_convs(1) robot_local_state.surjective 
         robot_local_state.update_convs(1))
 
   show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
-          (2::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr> then 1::\<real>
+          (2::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<and> \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
            else (0::\<real>)) /
           (3::\<real>) +
-          (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr> then 1::\<real>
+          (if bel\<^sub>v v\<^sub>0 = Suc (0::\<nat>) \<and> \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
            else (0::\<real>)) /
           (6::\<real>) +
-          (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>bel\<^sub>v = bel\<rparr> then 1::\<real>
+          (if bel\<^sub>v v\<^sub>0 = (2::\<nat>) \<and> \<lparr>bel\<^sub>v = bel\<rparr> = v\<^sub>0\<lparr>bel\<^sub>v := Suc (bel\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
            else (0::\<real>)) /
           (6::\<real>)) =
        (0::\<real>) "
