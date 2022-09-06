@@ -81,7 +81,7 @@ lemma dice_throw_altdef: "rvfun_of_prfun dice_throw = (\<lbrakk>d1\<^sup>> \<in>
   apply (simp)+
   apply (subst rvfun_uniform_dist_altdef)
   apply (simp)+
-  apply (rel_auto)
+  apply (pred_auto)
   defer
   apply (smt (verit, ccfv_SIG) atLeastAtMost_iff divide_eq_0_iff dstate.ext_inject 
         dstate.update_convs(2) infsum_0 mult_eq_0_iff)
@@ -97,10 +97,10 @@ proof -
   assume a2: "d1\<^sub>v \<le> (6::\<nat>)"
   assume a3: "Suc (0::\<nat>) \<le> d2\<^sub>v'"
   assume a4: "d2\<^sub>v' \<le> (6::\<nat>)"
-  let ?f1 = "\<lambda>v\<^sub>0. (if \<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
-          (if \<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. v\<^sub>0\<lparr>d2\<^sub>v := x\<rparr> = \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>))"
-  let ?f2 = "\<lambda>v\<^sub>0. (if (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> = v\<^sub>0 \<and> 
-              (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. v\<^sub>0\<lparr>d2\<^sub>v := x\<rparr> = \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v'\<rparr>)) 
+  let ?f1 = "\<lambda>v\<^sub>0. (if \<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. v\<^sub>0 = \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> then 1::\<real> else (0::\<real>)) *
+          (if \<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v'\<rparr> =v\<^sub>0\<lparr>d2\<^sub>v := x\<rparr> then 1::\<real> else (0::\<real>))"
+  let ?f2 = "\<lambda>v\<^sub>0. (if (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. v\<^sub>0 = \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> \<and> 
+              (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v'\<rparr> =v\<^sub>0\<lparr>d2\<^sub>v := x\<rparr>)) 
               then 1::\<real> else (0::\<real>))"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::dstate. ?f1 v\<^sub>0 / (36::\<real>))"
   have f1_f2_eq: "\<forall>v\<^sub>0. ?f1 v\<^sub>0 = ?f2 v\<^sub>0"
@@ -110,26 +110,22 @@ proof -
     apply (subst finite_Collect_bex)
     by (simp)+
 
-  have set_eq: "{v\<^sub>0::dstate. \<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> = v\<^sub>0 \<and> 
-                    (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. v\<^sub>0\<lparr>d2\<^sub>v := x\<rparr> = \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v'\<rparr>)}
+  have set_eq: "{v\<^sub>0::dstate. \<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. v\<^sub>0 = \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> \<and> 
+                    (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v'\<rparr> = v\<^sub>0\<lparr>d2\<^sub>v := x\<rparr>)}
     = {v\<^sub>0::dstate. \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v\<rparr> = v\<^sub>0}"
     using a1 a2 a3 a4 by fastforce
 
   have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::dstate. ?f1 v\<^sub>0) = (\<Sum>\<^sub>\<infinity>v\<^sub>0::dstate. ?f2 v\<^sub>0)"
     using f1_f2_eq infsum_cong by presburger
   also have "... = card {v\<^sub>0. \<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}.
-             \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> = v\<^sub>0 \<and>
-             (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. v\<^sub>0\<lparr>d2\<^sub>v := x\<rparr> = \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v'\<rparr>)}"
+       v\<^sub>0 = \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> \<and> (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v'\<rparr> = v\<^sub>0\<lparr>d2\<^sub>v := x\<rparr>)}"
     apply (subst infsum_constant_finite_states)
-    apply (subst finite_subset[where B = "{s::dstate. (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> = s)}"])
+    apply (subst finite_subset[where B = "{s::dstate. (\<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. s= \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr>)}"])
     apply blast
     by (simp add: finite_d1)+
   also have lhs_1: "... = 1"
     using set_eq by simp
-  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::dstate.
-          (if \<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. \<lparr>d1\<^sub>v = x, d2\<^sub>v = d2\<^sub>v\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
-          (if \<exists>x::\<nat>\<in>{Suc (0::\<nat>)..6::\<nat>}. v\<^sub>0\<lparr>d2\<^sub>v := x\<rparr> = \<lparr>d1\<^sub>v = d1\<^sub>v, d2\<^sub>v = d2\<^sub>v'\<rparr> then 1::\<real> else (0::\<real>)) /
-          (36::\<real>)) * (36::\<real>) = (1::\<real>)"
+  show "?lhs * (36::\<real>) = (1::\<real>)"
     apply (subst infsum_cdiv_left)
     apply (simp add: f1_f2_eq)
     apply (subst infsum_constant_finite_states_summable)
@@ -227,7 +223,7 @@ lemma iterate_dice_throw_bottom_simp:
   apply (simp add: dist_defs)
   apply (expr_auto)
   apply (simp add: infsum_nonneg iverson_bracket_def)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: dstate_UNIV_set)
   apply (smt (verit, ccfv_SIG) prfun_in_0_1' rvfun_skip_inverse)
   apply (simp add: prfun_of_rvfun_def)
@@ -236,14 +232,14 @@ lemma iterate_dice_throw_bottom_simp:
   apply (simp add: infsum_0 iverson_bracket_def real2ureal_def rel_skip)
   apply (meson Tcoin.exhaust)
   apply (simp add: dstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: real2ureal_def)
   using real2ureal_def apply blast+
   apply (simp add: dstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   using real2ureal_def apply blast+
   apply (simp add: dstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   using real2ureal_def apply blast+
   (* *)
   apply (simp)
@@ -255,7 +251,7 @@ lemma iterate_dice_throw_bottom_simp:
   apply (simp add: dist_defs)
   apply (expr_auto)
   apply (simp add: infsum_nonneg  prfun_in_0_1')
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: dstate_UNIV_set)
   apply (simp add: rvfun_of_prfun_def)
   apply (auto)
@@ -265,7 +261,7 @@ lemma iterate_dice_throw_bottom_simp:
   apply (subst rvfun_of_prfun_def)+
   apply (expr_auto)
   apply (simp add: dstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   defer
   apply (subst prfun_skip_id)
   apply (simp add: one_ureal.rep_eq real2ureal_def ureal2real_def)
@@ -362,7 +358,7 @@ lemma dice_throw_iterate_limit_cH:
   apply (simp only: assms)
   apply (subst iterate_dice_throw_bottom_simp(3))
   apply (subst sum_geometric_series_1)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: fa)
   apply (simp add: fb)
   apply (metis LIMSEQ_const_iff nle_le real2ureal_def ureal_lower_bound ureal_real2ureal_smaller)
@@ -418,7 +414,7 @@ lemma iterate_dice_throw_bottom_simp:
   apply (simp add: dist_defs)
   apply (expr_auto)
   apply (simp add: infsum_nonneg iverson_bracket_def)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: dstate_UNIV_set)
   apply (smt (verit, ccfv_SIG) prfun_in_0_1' rvfun_skip_inverse)
   apply (simp add: prfun_of_rvfun_def)
@@ -427,14 +423,14 @@ lemma iterate_dice_throw_bottom_simp:
   apply (simp add: infsum_0 iverson_bracket_def real2ureal_def rel_skip)
   apply (meson Tcoin.exhaust)
   apply (simp add: dstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: real2ureal_def)
   using real2ureal_def apply blast+
   apply (simp add: dstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   using real2ureal_def apply blast+
   apply (simp add: dstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   using real2ureal_def apply blast+
   (* *)
   apply (simp)
@@ -446,7 +442,7 @@ lemma iterate_dice_throw_bottom_simp:
   apply (simp add: dist_defs)
   apply (expr_auto)
   apply (simp add: infsum_nonneg  prfun_in_0_1')
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: dstate_UNIV_set)
   apply (simp add: rvfun_of_prfun_def)
   apply (auto)
@@ -456,7 +452,7 @@ lemma iterate_dice_throw_bottom_simp:
   apply (subst rvfun_of_prfun_def)+
   apply (expr_auto)
   apply (simp add: dstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   defer
   apply (subst prfun_skip_id)
   apply (simp add: one_ureal.rep_eq real2ureal_def ureal2real_def)
@@ -551,7 +547,7 @@ proof -
       by (metis a1 a2 a3 a4 a6 td2nat_inverse)
     also have f2: "td2nat x \<in> outcomes"
       using td2nat by blast
-    from f1 f2 show "false"
+    from f1 f2 show "False"
       by (auto)
   qed
 qed
@@ -633,7 +629,7 @@ lemma fd2_mem: "fd2\<^sub>v x \<in> outcomes1"
    by simp
 
 (* {\<lparr>fd1\<^sub>v = x1, fd2\<^sub>v = x2\<rparr> | x1 x2. x1 \<in> outcomes1 \<and> x2 \<in> outcomes1} *)
-lemma fdstate_set_eq: "{x::fdstate. true} = fdstate_set"
+lemma fdstate_set_eq: "{x::fdstate. True} = fdstate_set"
   apply (simp)
   apply (subst set_eq_iff)
   apply (auto)
@@ -695,7 +691,7 @@ proof -
     using fd2_mem a31 a32 a33 a34 a35 a36 
     by (metis (mono_tags, lifting) One_nat_def fdstate.surjective insert_iff old.unit.exhaust singletonD)
   
-  from f1 f2 show "false"
+  from f1 f2 show "False"
     using Tdice_UNIV_eq by blast
 qed
 
@@ -776,7 +772,7 @@ proof -
           then show ?thesis 
             using f2 by blast
         qed
-      show "false"
+      show "False"
         using f1 f2 f3 a3 by blast 
     qed
 
@@ -809,7 +805,7 @@ lemma fdstate_set_d1d2_eq_card: "card {x::fdstate. fd1\<^sub>v x = fd2\<^sub>v x
 lemma fdstate_set_d1d2_eq_card': "card fdstate_set_d1d2_eq = 6"
   using fdstate_set_d1_d2_eq fdstate_set_d1d2_eq_card by auto
 
-lemma fdstate_set_d1d2_neq: "{x::fdstate. \<not>fd1\<^sub>v x = fd2\<^sub>v x} = {x::fdstate. true} - {x::fdstate. fd1\<^sub>v x = fd2\<^sub>v x}"
+lemma fdstate_set_d1d2_neq: "{x::fdstate. \<not>fd1\<^sub>v x = fd2\<^sub>v x} = {x::fdstate. True} - {x::fdstate. fd1\<^sub>v x = fd2\<^sub>v x}"
   by auto
 
 lemma fdstate_set_d1d2_neq': "{x::fdstate. \<not>fd1\<^sub>v x = fd2\<^sub>v x} = fdstate_set - fdstate_set_d1d2_eq"
@@ -908,44 +904,56 @@ lemma fdice_throw_altdef: "rvfun_of_prfun fdice_throw = (\<lbrakk>fd1\<^sup>> \<
   apply (simp)+
   apply (subst rvfun_uniform_dist_altdef)
   apply (simp)+
-  apply (expr_simp_1 add: rel)
+  apply (expr_simp_1 add: rel assigns_r_def)
   apply (subst fun_eq_iff)
   apply (rule allI)
 proof -
   fix x::"fdstate \<times> fdstate"
-  let ?lhs1_b = "\<lambda>v\<^sub>0. ((fst x\<lparr>fd1\<^sub>v := (nat2td (Suc (0::\<nat>)))\<rparr> = v\<^sub>0) \<or>
+  let ?lhs1_b = "\<lambda>v\<^sub>0. v\<^sub>0 = fst x\<lparr>fd1\<^sub>v := nat2td (Suc (0::\<nat>))\<rparr> \<or>
+              v\<^sub>0 = fst x\<lparr>fd1\<^sub>v := nat2td (2::\<nat>)\<rparr> \<or>
+              v\<^sub>0 = fst x\<lparr>fd1\<^sub>v := nat2td (3::\<nat>)\<rparr> \<or>
+              v\<^sub>0 = fst x\<lparr>fd1\<^sub>v := nat2td (4::\<nat>)\<rparr> \<or> 
+              v\<^sub>0 = fst x\<lparr>fd1\<^sub>v := nat2td (5::\<nat>)\<rparr> \<or> 
+              v\<^sub>0 = fst x\<lparr>fd1\<^sub>v := nat2td (6::\<nat>)\<rparr>"
+  let ?lhs1_b' = "\<lambda>v\<^sub>0. ((fst x\<lparr>fd1\<^sub>v := (nat2td (Suc (0::\<nat>)))\<rparr> = v\<^sub>0) \<or>
               (fst x\<lparr>fd1\<^sub>v := nat2td (2::\<nat>)\<rparr> = v\<^sub>0) \<or>
               (fst x\<lparr>fd1\<^sub>v := nat2td (3::\<nat>)\<rparr> = v\<^sub>0) \<or>
               (fst x\<lparr>fd1\<^sub>v := nat2td (4::\<nat>)\<rparr> = v\<^sub>0) \<or>
               (fst x\<lparr>fd1\<^sub>v := nat2td (5::\<nat>)\<rparr> = v\<^sub>0) \<or> 
               (fst x\<lparr>fd1\<^sub>v := nat2td (6::\<nat>)\<rparr> = v\<^sub>0))"
   let ?lhs1 = "\<lambda>v\<^sub>0. (if ?lhs1_b v\<^sub>0 then 1::\<real> else (0::\<real>))"
-  let ?lhs2_b = "\<lambda>v\<^sub>0. v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (Suc (0::\<nat>))\<rparr> = snd x \<or>
+  let ?lhs2_b = "\<lambda>v\<^sub>0. snd x = v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (Suc (0::\<nat>))\<rparr> \<or>
+              snd x = v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (2::\<nat>)\<rparr> \<or>
+              snd x = v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (3::\<nat>)\<rparr> \<or>
+              snd x = v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (4::\<nat>)\<rparr> \<or> 
+              snd x = v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (5::\<nat>)\<rparr> \<or> 
+              snd x = v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (6::\<nat>)\<rparr>"
+  let ?lhs2_b' = "\<lambda>v\<^sub>0. v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (Suc (0::\<nat>))\<rparr> = snd x \<or>
            v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (2::\<nat>)\<rparr> = snd x \<or>
            v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (3::\<nat>)\<rparr> = snd x \<or>
            v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (4::\<nat>)\<rparr> = snd x \<or>
            v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (5::\<nat>)\<rparr> = snd x \<or> v\<^sub>0\<lparr>fd2\<^sub>v := nat2td (6::\<nat>)\<rparr> = snd x"
   let ?lhs2 = "\<lambda>v\<^sub>0. ((if ?lhs2_b v\<^sub>0 then 1::\<real> else (0::\<real>)))"
-  let ?lhs3 = "(real (card
-              {nat2td (Suc (0::\<nat>)), nat2td (2::\<nat>), nat2td (3::\<nat>), nat2td (4::\<nat>), nat2td (5::\<nat>),
-               nat2td (6::\<nat>)}) *
-           real (card
-              {nat2td (Suc (0::\<nat>)), nat2td (2::\<nat>), nat2td (3::\<nat>), nat2td (4::\<nat>), nat2td (5::\<nat>),
-               nat2td (6::\<nat>)}))"
+  let ?lhs3 = "(real (card {nat2td (Suc (0::\<nat>)), nat2td (2::\<nat>), nat2td (3::\<nat>), nat2td (4::\<nat>), nat2td (5::\<nat>), nat2td (6::\<nat>)}) *
+           real (card {nat2td (Suc (0::\<nat>)), nat2td (2::\<nat>), nat2td (3::\<nat>), nat2td (4::\<nat>), nat2td (5::\<nat>), nat2td (6::\<nat>)}))"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. ?lhs1 v\<^sub>0 * ?lhs2 v\<^sub>0 / ?lhs3)"
 
   have lhs3_simp: "?lhs3 = 36"
     using outcomes1_card by fastforce
 
   let ?rhs1 = "(if fd1\<^sub>v (snd x) = nat2td (Suc (0::\<nat>)) \<or>
-         fd1\<^sub>v (snd x) = nat2td (2::\<nat>) \<or>
-         fd1\<^sub>v (snd x) = nat2td (3::\<nat>) \<or>
-         fd1\<^sub>v (snd x) = nat2td (4::\<nat>) \<or> fd1\<^sub>v (snd x) = nat2td (5::\<nat>) \<or> fd1\<^sub>v (snd x) = nat2td (6::\<nat>)
+           fd1\<^sub>v (snd x) = nat2td (2::\<nat>) \<or>
+           fd1\<^sub>v (snd x) = nat2td (3::\<nat>) \<or> 
+           fd1\<^sub>v (snd x) = nat2td (4::\<nat>) \<or> 
+           fd1\<^sub>v (snd x) = nat2td (5::\<nat>) \<or> 
+           fd1\<^sub>v (snd x) = nat2td (6::\<nat>)
       then 1::\<real> else (0::\<real>))"
   let ?rhs2 = "(if fd2\<^sub>v (snd x) = nat2td (Suc (0::\<nat>)) \<or>
-         fd2\<^sub>v (snd x) = nat2td (2::\<nat>) \<or>
-         fd2\<^sub>v (snd x) = nat2td (3::\<nat>) \<or>
-         fd2\<^sub>v (snd x) = nat2td (4::\<nat>) \<or> fd2\<^sub>v (snd x) = nat2td (5::\<nat>) \<or> fd2\<^sub>v (snd x) = nat2td (6::\<nat>)
+           fd2\<^sub>v (snd x) = nat2td (2::\<nat>) \<or>
+           fd2\<^sub>v (snd x) = nat2td (3::\<nat>) \<or> 
+           fd2\<^sub>v (snd x) = nat2td (4::\<nat>) \<or> 
+           fd2\<^sub>v (snd x) = nat2td (5::\<nat>) \<or> 
+           fd2\<^sub>v (snd x) = nat2td (6::\<nat>)
       then 1::\<real> else (0::\<real>))"
   let ?rhs = "?rhs1 * ?rhs2 / 36"
 
@@ -964,11 +972,11 @@ proof -
         using f1 f2 apply force
         apply (auto)
         proof -
-          assume a1: "\<not> fst x\<lparr>fd1\<^sub>v := nat2td (Suc (0::\<nat>))\<rparr> = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr>"
-          assume a2: "\<not> fst x\<lparr>fd1\<^sub>v := nat2td (2::\<nat>)\<rparr> = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr>"
-          assume a3: "\<not> fst x\<lparr>fd1\<^sub>v := nat2td (3::\<nat>)\<rparr> = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr>"
-          assume a4: "\<not> fst x\<lparr>fd1\<^sub>v := nat2td (4::\<nat>)\<rparr> = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr>"
-          assume a6: "\<not> fst x\<lparr>fd1\<^sub>v := nat2td (6::\<nat>)\<rparr> = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr>"
+          assume a1: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr> = fst x\<lparr>fd1\<^sub>v := nat2td (Suc (0::\<nat>))\<rparr>"
+          assume a2: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr> = fst x\<lparr>fd1\<^sub>v := nat2td (2::\<nat>)\<rparr>"
+          assume a3: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr> = fst x\<lparr>fd1\<^sub>v := nat2td (3::\<nat>)\<rparr>"
+          assume a4: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr> = fst x\<lparr>fd1\<^sub>v := nat2td (4::\<nat>)\<rparr>"
+          assume a6: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr> = fst x\<lparr>fd1\<^sub>v := nat2td (6::\<nat>)\<rparr>"
           from a1 have f11: "\<not>fd1\<^sub>v (snd x) = nat2td (Suc (0::\<nat>))"
             by force
           from a2 have f12: "\<not>fd1\<^sub>v (snd x) = nat2td (2::\<nat>)"
@@ -981,14 +989,14 @@ proof -
             by force
           have "fd1\<^sub>v (snd x) = nat2td (5::\<nat>)"
             using f11 f12 f13 f14 f16 fd1_mem by (metis One_nat_def insertE singletonD)
-          then show "fst x\<lparr>fd1\<^sub>v := nat2td (5::\<nat>)\<rparr> = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr>"
+          then show "\<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = fd2\<^sub>v (fst x)\<rparr> = fst x\<lparr>fd1\<^sub>v := nat2td (5::\<nat>)\<rparr>"
             by simp
         next
-          assume a1: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (Suc (0::\<nat>))\<rparr> = snd x"
-          assume a2: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (2::\<nat>)\<rparr> = snd x"
-          assume a3: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (3::\<nat>)\<rparr> = snd x"
-          assume a4: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (4::\<nat>)\<rparr> = snd x"
-          assume a6: "\<not> \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (6::\<nat>)\<rparr> = snd x"
+          assume a1: "\<not> snd x = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (Suc (0::\<nat>))\<rparr>"
+          assume a2: "\<not> snd x = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (2::\<nat>)\<rparr>"
+          assume a3: "\<not> snd x = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (3::\<nat>)\<rparr>"
+          assume a4: "\<not> snd x = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (4::\<nat>)\<rparr>"
+          assume a6: "\<not> snd x = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (6::\<nat>)\<rparr>"
           from a1 have f11: "\<not>fd2\<^sub>v (snd x) = nat2td (Suc (0::\<nat>))"
             by force
           from a2 have f12: "\<not>fd2\<^sub>v (snd x) = nat2td (2::\<nat>)"
@@ -1001,7 +1009,7 @@ proof -
             by force
           have "fd2\<^sub>v (snd x) = nat2td (5::\<nat>)"
             using f11 f12 f13 f14 f16 fd2_mem by (metis One_nat_def insertE singletonD)
-          then show "\<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (5::\<nat>)\<rparr> = snd x"
+          then show "snd x = \<lparr>fd1\<^sub>v = fd1\<^sub>v (snd x), fd2\<^sub>v = nat2td (5::\<nat>)\<rparr>"
             by simp
         qed
     qed
@@ -1011,7 +1019,7 @@ proof -
     using lhs1_lhs2_simp infsum_cong by auto
   also have f2: "... = card {v\<^sub>0. (?lhs1_b v\<^sub>0 \<and> ?lhs2_b v\<^sub>0)}"
     apply (subst infsum_constant_finite_states)
-    apply (subst finite_subset[where B = "{s::fdstate. true}"])
+    apply (subst finite_subset[where B = "{s::fdstate. True}"])
     apply (simp)
     using fdstate_finite apply fastforce
     by (simp)+
@@ -1076,7 +1084,7 @@ proof -
     apply (subst ureal_zero)
     apply (simp add: ureal_defs)
     apply (subst fun_eq_iff)
-    by (expr_auto)
+    by (pred_auto)
 
   let ?lhs1_b = "\<lambda>v\<^sub>0::fdstate. fd1\<^sub>v v\<^sub>0 = nat2td (Suc (0::\<nat>)) \<or>
               fd1\<^sub>v v\<^sub>0 = nat2td (2::\<nat>) \<or>
@@ -1151,7 +1159,7 @@ proof -
     apply (auto)
     defer
     apply (expr_auto add: prfun_of_rvfun_def)
-    apply (simp add: real2ureal_def)+
+    apply (simp add: real2ureal_def skip_def)+
     apply (subst rvfun_skip\<^sub>_f_simp)
     apply (simp only: ureal_rzero_0 snd_conv)
     apply (auto)
@@ -1572,7 +1580,7 @@ lemma fdice_throw_iterate_limit_fH:
   apply (simp only: assms fH_def)
   apply (subst iterate_fdice_throw_bottom_simp(3))
   apply (subst sum_geometric_series_5_6)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: real2eureal_inverse)
   apply (metis comp_def real_of_ereal_0 tendsto_const ureal2real_def zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
   apply (simp add: sum_5_6_by_36_tendsto_1_6)
@@ -1715,7 +1723,7 @@ lemma fH_is_fp: "Fwhile (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw (
   apply (expr_auto add: dist_defs)
   apply (subst rvfun_inverse)
   apply (expr_auto add: dist_defs)
-  apply (expr_auto add: prfun_of_rvfun_def)
+  apply (expr_auto add: prfun_of_rvfun_def skip_def)
   defer
   apply (subst infsum_0)
   prefer 2
