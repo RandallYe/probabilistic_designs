@@ -2,7 +2,7 @@ section \<open> Probabilistic relation programming example 1: Doctor Who's Tardi
 
 theory utp_prob_rel_lattice_dwta
   imports 
-    "../utp_prob_rel_lattice_laws" 
+    "../utp_prob_rel" 
 begin 
 
 unbundle UTP_Syntax
@@ -81,7 +81,7 @@ lemma dwta_scomp_simp:
   "(((r := C)::DWTA_state prhfun); (a := S)) = prfun_of_rvfun (\<lbrakk> $r\<^sup>> = C \<and> $a\<^sup>> = S \<rbrakk>\<^sub>\<I>\<^sub>e)"
   apply (simp add: prfun_passign_comp)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  by (rel_auto)
+  by (pred_auto)
 
 lemma dwta_infsum_two_instances: "(\<Sum>\<^sub>\<infinity>s::DWTA_state.
           p * (if \<lparr>r\<^sub>v = rr, a\<^sub>v = S\<rparr> = s then 1::\<real> else (0::\<real>)) +
@@ -123,7 +123,7 @@ proof -
   apply (subst rvfun_pchoice_inverse_c)
   using rvfun_assignment_is_prob apply blast+
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  by (rel_auto)
+  by (pred_auto)
 qed
 
 lemma dwta_simp: "dwta = prfun_of_rvfun (

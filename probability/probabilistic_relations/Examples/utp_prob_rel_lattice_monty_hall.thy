@@ -64,19 +64,18 @@ lemma zero_to_two: "{0..2::\<nat>} = {0, 1, 2}"
   by force
 
 lemma infsum_alt_3: 
-  "(\<Sum>\<^sub>\<infinity>v::\<nat>. if v = (0::\<nat>) \<or> Suc (0::\<nat>) = v \<or> v = (2::\<nat>) then 1::\<real> else (0::\<real>)) = (3::\<real>)"
+  "(\<Sum>\<^sub>\<infinity>v::\<nat>. if v = (0::\<nat>) \<or> v = Suc (0::\<nat>) \<or> v = (2::\<nat>) then 1::\<real> else (0::\<real>)) = (3::\<real>)"
   apply (simp add: infsum_constant_finite_states)
-  apply (subgoal_tac "{s::\<nat>. s = (0::\<nat>) \<or> Suc (0::\<nat>) = s \<or> s = (2::\<nat>)} = {0, Suc 0, 2}")
+  apply (subgoal_tac "{v::\<nat>. v = (0::\<nat>) \<or> v = Suc (0::\<nat>) \<or> v = (2::\<nat>)} = {0, Suc 0, 2}")
   apply simp
-  apply (simp add: set_eq_iff)
-  by meson
+  by (simp add: set_eq_iff)
 
 lemma INIT_p_altdef: 
   "INIT_p = prfun_of_rvfun ((\<lbrakk>p\<^sup>> \<in> {0..2}\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>> = c\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>m\<^sup>> = m\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) / 3)\<^sub>e"
   apply (simp add: zero_to_two INIT_p_def)
   apply (simp add: dist_defs)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  apply (rel_auto)
+  apply (pred_auto)
   by (simp_all add: infsum_alt_3)
 
 lemma INIT_p_is_dist: 
@@ -91,7 +90,7 @@ lemma INIT_c_altdef:
   apply (simp add: zero_to_two INIT_c_def)
   apply (simp add: dist_defs)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  apply (rel_auto)
+  apply (pred_auto)
   by (simp_all add: infsum_alt_3)
 
 lemma INIT_c_is_dist: 
@@ -103,6 +102,13 @@ lemma INIT_c_is_dist:
 
 lemma record_update_simp:
   assumes "m\<^sub>v (r\<^sub>1::DWTA_state) = m\<^sub>v r\<^sub>2"
+  shows "(r\<^sub>1\<lparr>p\<^sub>v := p\<^sub>v (r\<^sub>2), c\<^sub>v := x\<rparr> = r\<^sub>2) \<longleftrightarrow> c\<^sub>v r\<^sub>2 = x"
+  apply (auto)
+  apply (metis DWTA_state.select_convs(2) DWTA_state.surjective DWTA_state.update_convs(2))
+  by (simp add: assms)
+
+lemma record_update_simp':
+  assumes "m\<^sub>v r\<^sub>2 = m\<^sub>v (r\<^sub>1::DWTA_state)"
   shows "(r\<^sub>1\<lparr>p\<^sub>v := p\<^sub>v (r\<^sub>2), c\<^sub>v := x\<rparr> = r\<^sub>2) \<longleftrightarrow> c\<^sub>v r\<^sub>2 = x"
   apply (auto)
   apply (metis DWTA_state.select_convs(2) DWTA_state.surjective DWTA_state.update_convs(2))
@@ -138,7 +144,7 @@ lemma INIT_altdef: "INIT = prfun_of_rvfun ((\<lbrakk>p\<^sup>> \<in> {0..2}\<rbr
   apply (simp add: INIT_def INIT_p_def INIT_c_def zero_to_two)
   apply (simp add: pfun_defs)
   apply (simp add: prfun_uniform_dist_altdef')
-  apply (simp add: expr_defs rel lens_defs prod.case_eq_if alpha_splits)
+  apply (expr_simp_1 add: assigns_r_def)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp only: fun_eq_iff)
   apply (rule allI)
@@ -151,11 +157,11 @@ proof -
        (c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>)) \<and>
        (m\<^sub>v (snd x) = m\<^sub>v (fst x)) then 1::\<real> else (0::\<real>))"
 
-  let ?lhs_1 = "\<lambda>v\<^sub>0. (if fst x\<lparr>p\<^sub>v := 0::\<nat>\<rparr> = v\<^sub>0 \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>\<rparr> = v\<^sub>0 then 1::\<real>
+  let ?lhs_1 = "\<lambda>v\<^sub>0. (if v\<^sub>0 = fst x\<lparr>p\<^sub>v := 0::\<nat>\<rparr> \<or> v\<^sub>0 = fst x\<lparr>p\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> v\<^sub>0 = fst x\<lparr>p\<^sub>v := 2::\<nat>\<rparr> then 1::\<real>
            else (0::\<real>)) *
-     (if v\<^sub>0\<lparr>c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> v\<^sub>0\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> v\<^sub>0\<lparr>c\<^sub>v := 2::\<nat>\<rparr> = snd x then 1::\<real> else (0::\<real>))"
-  let ?lhs_2 = "\<lambda>v\<^sub>0. (if (fst x\<lparr>p\<^sub>v := 0::\<nat>\<rparr> = v\<^sub>0 \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>\<rparr> = v\<^sub>0) \<and>
-          (v\<^sub>0\<lparr>c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> v\<^sub>0\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> v\<^sub>0\<lparr>c\<^sub>v := 2::\<nat>\<rparr> = snd x) then 1::\<real>
+     (if snd x = v\<^sub>0\<lparr>c\<^sub>v := 0::\<nat>\<rparr> \<or> snd x = v\<^sub>0\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> snd x = v\<^sub>0\<lparr>c\<^sub>v := 2::\<nat>\<rparr> then 1::\<real> else (0::\<real>))"
+  let ?lhs_2 = "\<lambda>v\<^sub>0. (if (v\<^sub>0 = fst x\<lparr>p\<^sub>v := 0::\<nat>\<rparr> \<or> v\<^sub>0 = fst x\<lparr>p\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> v\<^sub>0 = fst x\<lparr>p\<^sub>v := 2::\<nat>\<rparr>) \<and>
+          (snd x = v\<^sub>0\<lparr>c\<^sub>v := 0::\<nat>\<rparr> \<or> snd x = v\<^sub>0\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> snd x = v\<^sub>0\<lparr>c\<^sub>v := 2::\<nat>\<rparr>) then 1::\<real>
            else (0::\<real>))"
 
   have fr: "?rhs / (9::\<real>) = ?rhs_1 / (9::\<real>)"
@@ -171,13 +177,13 @@ proof -
     by simp
 
   also have fl: "... = 
-    (1 * card {v\<^sub>0. (fst x\<lparr>p\<^sub>v := 0::\<nat>\<rparr> = v\<^sub>0 \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>\<rparr> = v\<^sub>0) \<and>
-          (v\<^sub>0\<lparr>c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> v\<^sub>0\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> v\<^sub>0\<lparr>c\<^sub>v := 2::\<nat>\<rparr> = snd x)}
+    (1 * card {v\<^sub>0. (v\<^sub>0 = fst x\<lparr>p\<^sub>v := 0::\<nat>\<rparr> \<or> v\<^sub>0 = fst x\<lparr>p\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> v\<^sub>0 = fst x\<lparr>p\<^sub>v := 2::\<nat>\<rparr>) \<and>
+          (snd x = v\<^sub>0\<lparr>c\<^sub>v := 0::\<nat>\<rparr> \<or> snd x = v\<^sub>0\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> snd x = v\<^sub>0\<lparr>c\<^sub>v := 2::\<nat>\<rparr>)}
     ) * ( 1 / (9::\<real>))"
     by (simp add: infsum_constant_finite_states)
 
-  have ff1: "card {v\<^sub>0. (fst x\<lparr>p\<^sub>v := 0::\<nat>\<rparr> = v\<^sub>0 \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>)\<rparr> = v\<^sub>0 \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>\<rparr> = v\<^sub>0) \<and>
-        (v\<^sub>0\<lparr>c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> v\<^sub>0\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> v\<^sub>0\<lparr>c\<^sub>v := 2::\<nat>\<rparr> = snd x)}
+  have ff1: "card {v\<^sub>0. (v\<^sub>0 = fst x\<lparr>p\<^sub>v := 0::\<nat>\<rparr> \<or> v\<^sub>0 = fst x\<lparr>p\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> v\<^sub>0 = fst x\<lparr>p\<^sub>v := 2::\<nat>\<rparr>) \<and>
+        (snd x = v\<^sub>0\<lparr>c\<^sub>v := 0::\<nat>\<rparr> \<or> snd x = v\<^sub>0\<lparr>c\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> snd x = v\<^sub>0\<lparr>c\<^sub>v := 2::\<nat>\<rparr>)}
     = ?rhs_1"
     apply (simp add: if_bool_eq_conj)
     apply (rule conjI)
@@ -188,7 +194,7 @@ proof -
     apply (erule conjE)+
     apply (rule conjI)
     apply presburger
-    apply (simp add: record_update_simp)
+    using record_update_simp apply metis
     apply (erule conjE)+
     apply (smt (z3) DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(1) DWTA_state.update_convs(2))
     apply (rule conjI)
@@ -217,68 +223,62 @@ lemma INIT_altdef': "INIT = prfun_of_rvfun ((\<lbrakk>p\<^sup>> \<in> {0..2}\<rb
   apply (simp add: INIT_def INIT_p_def INIT_c_def zero_to_two)
   apply (simp add: prfun_uniform_dist_left)
   apply (simp add: prfun_uniform_dist_altdef')
-  apply (simp add: expr_defs rel lens_defs prod.case_eq_if alpha_splits)
+  apply (expr_simp_1 add: assigns_r_def)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp only: fun_eq_iff)
   apply (rule allI)
 proof -
   fix x :: "DWTA_state \<times> DWTA_state"
-  let ?lhs = "((if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> 
-            fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x then 1::\<real> else (0::\<real>)) /
-        (3::\<real>) +
-        ((if fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or>
-             fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x
-          then 1::\<real> else (0::\<real>)) /
-         (3::\<real>) +
-         (if fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> 
-            fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x then 1::\<real> else (0::\<real>)) /
-         (3::\<real>))) /
-       (3::\<real>)"
-  let ?rhs = "(if p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>) then 1::\<real> else (0::\<real>)) *
-       (if c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>) then 1::\<real> else (0::\<real>)) *
-       (if m\<^sub>v (snd x) = m\<^sub>v (fst x) then 1::\<real> else (0::\<real>)) /
-       (9::\<real>)"
-  let ?rhs_1 = "(if (p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>)) \<and>
-       (c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>)) \<and>
-       (m\<^sub>v (snd x) = m\<^sub>v (fst x)) then 1::\<real> else (0::\<real>)) / (9::\<real>)"
+  let ?lhs_1b = "snd x = fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> \<or> 
+            snd x = fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> 
+            snd x = fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr>"
+  let ?lhs_2b = "snd x = fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> \<or>
+             snd x = fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> 
+             snd x = fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr>"
+  let ?lhs_3b = "snd x = fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> \<or> 
+             snd x = fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> \<or> 
+             snd x = fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr>"
+  let ?lhs_1 = "(if ?lhs_1b then 1::\<real> else (0::\<real>))"
+  let ?lhs_2 = "(if ?lhs_2b then 1::\<real> else (0::\<real>))"
+  let ?lhs_3 = "(if ?lhs_3b then 1::\<real> else (0::\<real>))"
+  let ?lhs = "(?lhs_1 / (3::\<real>) + (?lhs_2 / (3::\<real>) + ?lhs_3 / (3::\<real>))) / (3::\<real>)"
+  let ?rhs_1b = "p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>)"
+  let ?rhs_2b = "c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>)"
+  let ?rhs_3b = "m\<^sub>v (snd x) = m\<^sub>v (fst x)"
+  let ?rhs = "(if ?rhs_1b then 1::\<real> else (0::\<real>)) * (if ?rhs_2b then 1::\<real> else (0::\<real>)) *
+       (if ?rhs_3b then 1::\<real> else (0::\<real>)) / (9::\<real>)"
+  let ?rhs_1 = "(if ?rhs_1b \<and> ?rhs_2b \<and> ?rhs_3b then 1::\<real> else (0::\<real>)) / (9::\<real>)"
   have rhs_1: "?rhs = ?rhs_1"
     by force
-  have lhs_1: "?lhs = ((if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
-         then 1::\<real> else (0::\<real>)) +
-        (if fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or>
-             fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x
-          then 1::\<real> else (0::\<real>)) +
-         (if fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
-          then 1::\<real> else (0::\<real>))) / (9::\<real>)"
+  have lhs_1: "?lhs = (?lhs_1 + ?lhs_2 + ?lhs_3) / (9::\<real>)"
     by force
-  have "((if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
-         then 1::\<real> else (0::\<real>)) +
-        (if fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or>
-             fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x
-          then 1::\<real> else (0::\<real>)) +
-         (if fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
-          then 1::\<real> else (0::\<real>))) = 
-      (if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
-          fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x 
-          then 1::\<real> else (0::\<real>)) + (if fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
-          then 1::\<real> else (0::\<real>))"
-    apply (simp add: conditionals_combined)
+
+  let ?lhs_1b' = "fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> 
+                  fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> 
+                  fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x"
+  let ?lhs_2b' = "fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> 
+                  fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> 
+                  fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x"
+  let ?lhs_3b' = "fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> 
+                  fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> 
+                  fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x"
+  have "((if ?lhs_1b' then 1::\<real> else (0::\<real>)) +
+        (if ?lhs_2b' then 1::\<real> else (0::\<real>)) + (if ?lhs_3b' then 1::\<real> else (0::\<real>))) 
+    =   (if ?lhs_1b' \<or> ?lhs_2b' then 1::\<real> else (0::\<real>)) + (if ?lhs_3b' then 1::\<real> else (0::\<real>))"
+    (* auto can be applied here very usefully, but not to lhs_2 "(?lhs_1 + ?lhs_2 + ?lhs_3)" below. Why?
+    That's why I use this formula *)
     apply auto
     by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(1) DWTA_state.update_convs(2) One_nat_def one_neq_zero)+
-  also have lhs_2: "... =  
-      (if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
-          fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
-          fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
-          then 1::\<real> else (0::\<real>))"
-    apply (simp add: conditionals_combined)
+  also have lhs_2': "... =  (if ?lhs_1b' \<or> ?lhs_2b' \<or> ?lhs_3b' then 1::\<real> else (0::\<real>))"
     apply auto
     using record_neq_p_c apply (metis zero_neq_numeral)+
     using record_neq_p_c by (metis n_not_Suc_n numeral_2_eq_2)+
 
-  have lhs_rhs: "(if fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 0::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
-          fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := Suc (0::\<nat>), c\<^sub>v := 2::\<nat>\<rparr> = snd x \<or>
-          fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 0::\<nat>\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := Suc (0::\<nat>)\<rparr> = snd x \<or> fst x\<lparr>p\<^sub>v := 2::\<nat>, c\<^sub>v := 2::\<nat>\<rparr> = snd x
-          then 1::\<real> else (0::\<real>)) = (if (p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>)) \<and>
+  have lhs_2: "(?lhs_1 + ?lhs_2 + ?lhs_3) = (if ?lhs_1b \<or>?lhs_2b \<or> ?lhs_3b then 1::\<real> else (0::\<real>))"
+    using lhs_2' by (smt (verit, best) calculation)
+
+  have lhs_rhs: "(if ?lhs_1b \<or>?lhs_2b \<or> ?lhs_3b then 1::\<real> else (0::\<real>)) 
+    = (if (p\<^sub>v (snd x) = (0::\<nat>) \<or> p\<^sub>v (snd x) = Suc (0::\<nat>) \<or> p\<^sub>v (snd x) = (2::\<nat>)) \<and>
        (c\<^sub>v (snd x) = (0::\<nat>) \<or> c\<^sub>v (snd x) = Suc (0::\<nat>) \<or> c\<^sub>v (snd x) = (2::\<nat>)) \<and>
        (m\<^sub>v (snd x) = m\<^sub>v (fst x)) then 1::\<real> else (0::\<real>))"
     apply (rule if_cong)
@@ -394,9 +394,9 @@ lemma ereal2real_1_2: "rvfun_of_prfun [\<lambda>x::DWTA_state \<times> DWTA_stat
 
 lemma MHA_altdef: "MHA = 
     prfun_of_rvfun (
-      (\<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> \<lbrakk>m := (c + 1) mod 3\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>\<^sub>e / 2) + 
-      (\<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> \<lbrakk>m := (c + 2) mod 3\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>\<^sub>e / 2) + 
-      (\<lbrakk>c\<^sup>< \<noteq> p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> \<lbrakk>m := 3 - c - p\<rbrakk>\<^sub>P \<rbrakk>\<^sub>\<I>\<^sub>e)
+      (\<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> m := (c + 1) mod 3 \<rbrakk>\<^sub>\<I>\<^sub>e / 2) + 
+      (\<lbrakk>c\<^sup>< = p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> m := (c + 2) mod 3 \<rbrakk>\<^sub>\<I>\<^sub>e / 2) + 
+      (\<lbrakk>c\<^sup>< \<noteq> p\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> m := 3 - c - p \<rbrakk>\<^sub>\<I>\<^sub>e)
     )\<^sub>e"
 proof -
   show ?thesis
@@ -431,7 +431,7 @@ proof -
     apply (subst rvfun_pcond_is_dist')
     using f0 apply meson
     apply (simp add: passigns_def rvfun_assignment_inverse rvfun_assignment_is_dist)
-    apply (rel_auto)
+    apply (pred_auto)
     by simp
 qed
 
@@ -468,7 +468,7 @@ proof -
     apply (simp add: set_eq_iff)
     apply (rule allI)
     apply (rule iffI)
-     apply (smt (z3) DWTA_state.surjective Orderings.order_eq_iff Suc_eq_numeral add.assoc 
+    apply (smt (z3) DWTA_state.surjective Orderings.order_eq_iff Suc_eq_numeral add.assoc 
         cong_exp_iff_simps(2) diff_add_zero diff_is_0_eq le_SucE mod_Suc mod_self numeral_1_eq_Suc_0 
         numeral_2_eq_2 numeral_3_eq_3 old.unit.exhaust one_eq_numeral_iff plus_1_eq_Suc)
     by force
@@ -555,7 +555,7 @@ lemma IMHA_NC_altdef: "IMHA_NC = prfun_of_rvfun IMHA_NC_altdef"
   apply (simp add: expr_defs dist_defs)
   apply (subst rvfun_inverse)
   apply (simp add: expr_defs dist_defs)
-  apply (simp add: expr_defs rel lens_defs prod.case_eq_if alpha_splits)
+  apply (expr_simp_1 add: assigns_r_def)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (subst fun_eq_iff, rule allI)
 proof -
@@ -565,9 +565,9 @@ proof -
   let ?lhs_m = "\<lambda>v\<^sub>0. (if m\<^sub>v v\<^sub>0 = m\<^sub>v (fst x) then 1::\<real> else (0::\<real>))"
   let ?lhs_c_p = "\<lambda>v\<^sub>0. (if c\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>))"
   let ?lhs_c_n_p = "\<lambda>v\<^sub>0. (if \<not> c\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>))"
-  let ?m_1_mod = "\<lambda>v\<^sub>0. (if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = snd x then 1::\<real> else (0::\<real>))"
-  let ?m_2_mod = "\<lambda>v\<^sub>0. (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = snd x then 1::\<real> else (0::\<real>))"
-  let ?m_3_c_p = "\<lambda>v\<^sub>0. (if v\<^sub>0\<lparr>m\<^sub>v := (3::\<nat>) - (c\<^sub>v v\<^sub>0 + p\<^sub>v v\<^sub>0)\<rparr> = snd x then 1::\<real> else (0::\<real>))"
+  let ?m_1_mod = "\<lambda>v\<^sub>0. (if snd x = v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>))"
+  let ?m_2_mod = "\<lambda>v\<^sub>0. (if snd x = v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>))"
+  let ?m_3_c_p = "\<lambda>v\<^sub>0. (if snd x = v\<^sub>0\<lparr>m\<^sub>v := (3::\<nat>) - (c\<^sub>v v\<^sub>0 + p\<^sub>v v\<^sub>0)\<rparr> then 1::\<real> else (0::\<real>))"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
           ?lhs_p v\<^sub>0 * ?lhs_c v\<^sub>0 * ?lhs_m v\<^sub>0 *
           (?lhs_c_p v\<^sub>0 * ?m_1_mod v\<^sub>0 / (2::\<real>) +
@@ -1126,7 +1126,7 @@ proof -
     by (expr_simp)
 
   have lhs_3_eq: "\<forall>(s\<^sub>1::DWTA_state) s::DWTA_state. ?lhs_3 s\<^sub>1 s = ?lhs_3' s"
-    by (expr_simp)
+    by (pred_simp)
 
   have lhs_lhs'_eq: "\<forall>(s\<^sub>1::DWTA_state) s::DWTA_state. ?lhs s\<^sub>1 s = ?lhs' s"
     by (simp add: c_def m_def p_def)
@@ -1138,10 +1138,12 @@ proof -
     apply (simp add: set_eq_iff)
     apply (rule allI)
     apply (rule iffI)
-    apply (smt (z3) DWTA_state.surjective Nat.add_0_right Nat.diff_add_assoc Nat.diff_cancel 
-        add_diff_cancel_left' add_diff_cancel_right add_le_cancel_left bot_nat_0.extremum_uniqueI 
-        diff_Suc_diff_eq2 diff_add_zero le_Suc_eq less_Suc_eq mod_less mod_self numeral_2_eq_2 
-        numeral_3_eq_3 old.unit.exhaust)
+    apply (smt (verit, best) DWTA_state.surjective Nat.add_0_right Nat.add_diff_assoc One_nat_def 
+        Suc_1 Suc_le_mono add.commute add_2_eq_Suc' add_cancel_left_left bot_nat_0.extremum 
+        diff_Suc_Suc diff_Suc_diff_eq2 diff_diff_left diff_is_0_eq diff_self_eq_0 
+        eval_nat_numeral(3) le0 le_SucE le_antisym lessI less_2_cases mod_Suc mod_Suc_eq_mod_add3 
+        mod_by_Suc_0 mod_less mod_mod_trivial mod_self nat.inject not_mod2_eq_Suc_0_eq_0 
+        numeral_1_eq_Suc_0 numeral_3_eq_3 numeral_plus_numeral old.unit.exhaust order_le_less plus_1_eq_Suc)
     by force
 
   have infsum_lhs_1: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_1' s) = 3"
@@ -1282,7 +1284,7 @@ lemma IMHA_C_altdef: "IMHA_C = prfun_of_rvfun IMHA_C_altdef"
   using IMHA_NC_altdef_dist apply (simp add: is_final_distribution_prob is_final_prob_prob)
   apply (simp add: rvfun_assignment_inverse)
   apply (simp add: IMHA_NC_altdef_def IMHA_C_altdef_def)
-  apply (simp add: expr_defs rel lens_defs prod.case_eq_if alpha_splits)
+  apply (expr_simp_1 add: assigns_r_def)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp only: fun_eq_iff)
   apply (rule allI)
@@ -1294,15 +1296,15 @@ proof -
   let ?lhs_1 = "\<lambda>v\<^sub>0::DWTA_state. (if c\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
           (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
           (if m\<^sub>v v\<^sub>0 = Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>) then 1::\<real> else (0::\<real>)) *
-          (if v\<^sub>0\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v v\<^sub>0 + m\<^sub>v v\<^sub>0)\<rparr> = snd x then 1::\<real> else (0::\<real>))"
+          (if snd x = v\<^sub>0\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v v\<^sub>0 + m\<^sub>v v\<^sub>0)\<rparr> then 1::\<real> else (0::\<real>))"
   let ?lhs_2 = "\<lambda>v\<^sub>0::DWTA_state. (if c\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
           (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
           (if m\<^sub>v v\<^sub>0 = Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>) then 1::\<real> else (0::\<real>)) *
-          (if v\<^sub>0\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v v\<^sub>0 + m\<^sub>v v\<^sub>0)\<rparr> = snd x then 1::\<real> else (0::\<real>))"
+          (if snd x = v\<^sub>0\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v v\<^sub>0 + m\<^sub>v v\<^sub>0)\<rparr> then 1::\<real> else (0::\<real>))"
   let ?lhs_3 = "\<lambda>v\<^sub>0::DWTA_state. (if \<not> c\<^sub>v v\<^sub>0 = p\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
           (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
           (if m\<^sub>v v\<^sub>0 = (3::\<nat>) - (c\<^sub>v v\<^sub>0 + p\<^sub>v v\<^sub>0) then 1::\<real> else (0::\<real>)) *
-          (if v\<^sub>0\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v v\<^sub>0 + m\<^sub>v v\<^sub>0)\<rparr> = snd x then 1::\<real> else (0::\<real>))"
+          (if snd x = v\<^sub>0\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v v\<^sub>0 + m\<^sub>v v\<^sub>0)\<rparr> then 1::\<real> else (0::\<real>))"
   let ?lhs = "\<lambda>s::DWTA_state. ?lhs_1 s / (18::\<real>) + ?lhs_2 s / (18::\<real>) + ?lhs_3 s / (9::\<real>) "
 
   let ?rhs_1 = "(if p\<^sub>v (snd x) \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * 
@@ -1397,36 +1399,36 @@ proof -
     apply (rule conjI)
     apply (simp)
     apply (simp)
-    apply (metis DWTA_state.select_convs(1) DWTA_state.surjective DWTA_state.update_convs(2))
+    apply (metis (no_types, lifting) DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(2))
     apply (auto)
-  proof -
-    assume a1: "\<not> c\<^sub>v (snd x) = (3::\<nat>) - (p\<^sub>v (snd x) + m\<^sub>v (snd x))"
-    have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)"
-      using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
-          DWTA_state.surjective DWTA_state.update_convs(2))
-    then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-      m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x} = (0::\<nat>)"
-      using card_0_singleton by blast
-  next
-    assume a1: "\<not> p\<^sub>v (snd x) \<le> (2::\<nat>)"
-    have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)"
-      using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
-          DWTA_state.surjective DWTA_state.update_convs(2))
-    then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-      m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x} = (0::\<nat>)"
-      using card_0_singleton by blast
-  next
-    assume a1: "\<not> m\<^sub>v (snd x) = Suc (p\<^sub>v (snd x)) mod (3::\<nat>)"
-    have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)"
-      using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
-          DWTA_state.surjective DWTA_state.update_convs(2))
-    then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-      m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x} = (0::\<nat>)"
-      using card_0_singleton by blast
-  qed
+    proof -
+      assume a1: "\<not> c\<^sub>v (snd x) = (3::\<nat>) - (p\<^sub>v (snd x) + m\<^sub>v (snd x))"
+      have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)"
+        using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
+            DWTA_state.surjective DWTA_state.update_convs(2))
+      then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+        m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>} = (0::\<nat>)"
+        using card_0_singleton by blast
+    next
+      assume a1: "\<not> p\<^sub>v (snd x) \<le> (2::\<nat>)"
+      have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)"
+        using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
+            DWTA_state.surjective DWTA_state.update_convs(2))
+      then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+        m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>} = (0::\<nat>)"
+        using card_0_singleton by blast
+    next
+      assume a1: "\<not> m\<^sub>v (snd x) = Suc (p\<^sub>v (snd x)) mod (3::\<nat>)"
+      have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)"
+        using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
+            DWTA_state.surjective DWTA_state.update_convs(2))
+      then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+        m\<^sub>v s = Suc (c\<^sub>v s) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>} = (0::\<nat>)"
+        using card_0_singleton by blast
+    qed
 
   have lhs_2_infsum: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_2 s) = ?rhs_2"
     apply (subst conditional_conds_conj)+
@@ -1447,34 +1449,34 @@ proof -
     apply (simp)
     apply (metis DWTA_state.select_convs(1) DWTA_state.surjective DWTA_state.update_convs(2))
     apply (auto)
-  proof -
-    assume a1: "\<not> c\<^sub>v (snd x) = (3::\<nat>) - (p\<^sub>v (snd x) + m\<^sub>v (snd x))"
-    have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)"
-      using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
-          DWTA_state.surjective DWTA_state.update_convs(2))
-    then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-      m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x} = (0::\<nat>)"
-      using card_0_singleton by blast
-  next
-    assume a1: "\<not> p\<^sub>v (snd x) \<le> (2::\<nat>)"
-    have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)"
-      using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
-          DWTA_state.surjective DWTA_state.update_convs(2))
-    then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-      m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x} = (0::\<nat>)"
-      using card_0_singleton by blast
-  next
-    assume a1: "\<not> m\<^sub>v (snd x) = Suc (Suc (p\<^sub>v (snd x))) mod (3::\<nat>)"
-    have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)"
-      using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
-          DWTA_state.surjective DWTA_state.update_convs(2))
-    then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-      m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x} = (0::\<nat>)"
-      using card_0_singleton by blast
-  qed
+    proof -
+      assume a1: "\<not> c\<^sub>v (snd x) = (3::\<nat>) - (p\<^sub>v (snd x) + m\<^sub>v (snd x))"
+      have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)"
+        using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
+            DWTA_state.surjective DWTA_state.update_convs(2))
+      then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+        m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>} = (0::\<nat>)"
+        using card_0_singleton by blast
+    next
+      assume a1: "\<not> p\<^sub>v (snd x) \<le> (2::\<nat>)"
+      have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)"
+        using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
+            DWTA_state.surjective DWTA_state.update_convs(2))
+      then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+        m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>} = (0::\<nat>)"
+        using card_0_singleton by blast
+    next
+      assume a1: "\<not> m\<^sub>v (snd x) = Suc (Suc (p\<^sub>v (snd x))) mod (3::\<nat>)"
+      have "\<not>(\<exists>s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)"
+        using a1 by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(2) DWTA_state.select_convs(3) 
+            DWTA_state.surjective DWTA_state.update_convs(2))
+      then show "card {s::DWTA_state. c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+        m\<^sub>v s = Suc (Suc (c\<^sub>v s)) mod (3::\<nat>) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>} = (0::\<nat>)"
+        using card_0_singleton by blast
+    qed
 
   have lhs_3_infsum: "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs_3 s) = ?rhs_3"
     apply (subst conditional_conds_conj)+
@@ -1496,69 +1498,67 @@ proof -
     apply (rule conjI, simp)
     apply simp
     apply (erule conjE)+
-  proof -
-    fix s::"DWTA_state" and y::"DWTA_state"
-    assume s1: " s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x"
-    assume y1: " y\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v y + m\<^sub>v y)\<rparr> = snd x"
-    assume s2: "m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s)"
-    assume y2: "m\<^sub>v y = (3::\<nat>) - (c\<^sub>v y + p\<^sub>v y)"
-    assume s3: "p\<^sub>v s \<le> (2::\<nat>)"
-    assume y3: "p\<^sub>v y \<le> (2::\<nat>)"
-    assume s4: "p\<^sub>v (snd x) \<le> (2::\<nat>)"
-    assume "(3::\<nat>) - (m\<^sub>v (snd x) + p\<^sub>v (snd x)) \<le> (2::\<nat>)"
-    assume "p\<^sub>v (snd x) \<le> (3::\<nat>) - m\<^sub>v (snd x)"
-    assume "c\<^sub>v (snd x) = p\<^sub>v (snd x)"
-    assume "\<not> (3::\<nat>) - (m\<^sub>v (snd x) + p\<^sub>v (snd x)) = p\<^sub>v (snd x)"
-    assume s4: "\<not> c\<^sub>v s = p\<^sub>v s"
-    assume y4: "\<not> c\<^sub>v y = p\<^sub>v y"
-    assume s5: "c\<^sub>v s \<le> (2::\<nat>)"
-    assume y5: "c\<^sub>v y \<le> (2::\<nat>)"
-
-    have psy: "p\<^sub>v s = p\<^sub>v y"
-      using s1 y1 by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(2))
-    have msy: "m\<^sub>v s = m\<^sub>v y"
-      using s1 y1 by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(2))
-    have csy: "c\<^sub>v s = c\<^sub>v y"
-      using psy msy s2 y2 
-      by (metis One_nat_def s4 y4 s5 y5 add.commute add_le_mono add_right_cancel diff_diff_cancel 
-            le_Suc_eq numeral_2_eq_2 numeral_3_eq_3 plus_1_eq_Suc s3)
-    show "s = y"
-      using psy msy csy by simp
-  next
-    have pm_equal_snd_x: 
-      "\<forall>s::DWTA_state. s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x \<longrightarrow> p\<^sub>v s = p\<^sub>v (snd x) \<and> m\<^sub>v s = m\<^sub>v (snd x)"
-      by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective DWTA_state.update_convs(2))
-    show "(p\<^sub>v (snd x) \<le> (3::\<nat>) - m\<^sub>v (snd x) \<longrightarrow> (3::\<nat>) - (m\<^sub>v (snd x) + p\<^sub>v (snd x)) \<le> (2::\<nat>) \<longrightarrow>
-      p\<^sub>v (snd x) \<le> (2::\<nat>) \<longrightarrow> (3::\<nat>) - (m\<^sub>v (snd x) + p\<^sub>v (snd x)) = p\<^sub>v (snd x) \<or> \<not> c\<^sub>v (snd x) = p\<^sub>v (snd x)) \<longrightarrow>
-      card {s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> 
-      s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x} =  (0::\<nat>)"
-      apply (auto)
-      apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)")
-      using card_0_singleton apply blast
-      apply (metis DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective 
-          DWTA_state.update_convs(2) Nat.le_diff_conv2 One_nat_def Suc_1 add.commute diff_le_mono2 
-          diff_le_self le_SucI le_add2 numeral_3_eq_3)
-      apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)")
-      using card_0_singleton apply blast
-      apply (smt (verit, best) add.assoc add.commute add_right_mono diff_le_mono2 le_diff_conv pm_equal_snd_x)
-      apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)")
-      using card_0_singleton apply blast
-      apply (metis pm_equal_snd_x)
-      apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)")
-      using card_0_singleton apply blast
-      apply (smt (z3) ab_semigroup_add_class.add_ac(1) add.right_neutral diff_add_inverse2 
-         diff_is_0_eq' le_SucE le_add_diff nle_le numeral_3_eq_3 one_neq_zero plus_1_eq_Suc pm_equal_snd_x)
-      apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
-            m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> = snd x)")
-      using card_0_singleton apply blast
-      by (smt (z3) DWTA_state.select_convs(2) DWTA_state.surjective DWTA_state.update_convs(2) 
-          One_nat_def add.commute add_diff_cancel_left' add_le_mono diff_cancel2 le_SucE 
-          le_add_diff_inverse numeral_2_eq_2 numeral_3_eq_3 plus_1_eq_Suc pm_equal_snd_x)
-  qed
+    proof -
+      fix s::"DWTA_state" and y::"DWTA_state"
+      assume s1: "snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>"
+      assume y1: "snd x =  y\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v y + m\<^sub>v y)\<rparr>"
+      assume s2: "m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s)"
+      assume y2: "m\<^sub>v y = (3::\<nat>) - (c\<^sub>v y + p\<^sub>v y)"
+      assume s3: "p\<^sub>v s \<le> (2::\<nat>)"
+      assume y3: "p\<^sub>v y \<le> (2::\<nat>)"
+      assume s4: "p\<^sub>v (snd x) \<le> (2::\<nat>)"
+      assume "(3::\<nat>) - (m\<^sub>v (snd x) + p\<^sub>v (snd x)) \<le> (2::\<nat>)"
+      assume "p\<^sub>v (snd x) \<le> (3::\<nat>) - m\<^sub>v (snd x)"
+      assume "c\<^sub>v (snd x) = p\<^sub>v (snd x)"
+      assume "\<not> (3::\<nat>) - (m\<^sub>v (snd x) + p\<^sub>v (snd x)) = p\<^sub>v (snd x)"
+      assume s4: "\<not> c\<^sub>v s = p\<^sub>v s"
+      assume y4: "\<not> c\<^sub>v y = p\<^sub>v y"
+      assume s5: "c\<^sub>v s \<le> (2::\<nat>)"
+      assume y5: "c\<^sub>v y \<le> (2::\<nat>)"
+  
+      have psy: "p\<^sub>v s = p\<^sub>v y"
+        using s1 y1 by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(2))
+      have msy: "m\<^sub>v s = m\<^sub>v y"
+        using s1 y1 by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(2))
+      have csy: "c\<^sub>v s = c\<^sub>v y"
+        using psy msy s2 y2 
+        by (metis One_nat_def s4 y4 s5 y5 add.commute add_le_mono add_right_cancel diff_diff_cancel 
+              le_Suc_eq numeral_2_eq_2 numeral_3_eq_3 plus_1_eq_Suc s3)
+      show "s = y"
+        using psy msy csy by simp
+    next
+      have pm_equal_snd_x: 
+        "\<forall>s::DWTA_state. snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr> \<longrightarrow> p\<^sub>v s = p\<^sub>v (snd x) \<and> m\<^sub>v s = m\<^sub>v (snd x)"
+        by (metis DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective DWTA_state.update_convs(2))
+      show "(p\<^sub>v (snd x) \<le> (3::\<nat>) - m\<^sub>v (snd x) \<longrightarrow> (3::\<nat>) - (m\<^sub>v (snd x) + p\<^sub>v (snd x)) \<le> (2::\<nat>) \<longrightarrow>
+        p\<^sub>v (snd x) \<le> (2::\<nat>) \<longrightarrow> (3::\<nat>) - (m\<^sub>v (snd x) + p\<^sub>v (snd x)) = p\<^sub>v (snd x) \<or> \<not> c\<^sub>v (snd x) = p\<^sub>v (snd x)) \<longrightarrow>
+        card {s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> 
+        snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>} =  (0::\<nat>)"
+        apply (auto)
+        apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)")
+        using card_0_singleton apply blast
+        apply (metis DWTA_state.select_convs(1) DWTA_state.select_convs(3) DWTA_state.surjective 
+            DWTA_state.update_convs(2) Nat.le_diff_conv2 One_nat_def Suc_1 add.commute diff_le_mono2 
+            diff_le_self le_SucI le_add2 numeral_3_eq_3)
+        apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)")
+        using card_0_singleton apply blast
+        apply (smt (verit, ccfv_SIG) add.assoc add.commute le_cases3 le_diff_conv le_trans pm_equal_snd_x)
+        apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)")
+        using card_0_singleton apply blast
+        apply (metis pm_equal_snd_x)
+        apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)")
+        using card_0_singleton apply blast
+        apply (smt (z3) ab_semigroup_add_class.add_ac(1) add.right_neutral diff_add_inverse2 
+           diff_is_0_eq' le_SucE le_add_diff nle_le numeral_3_eq_3 one_neq_zero plus_1_eq_Suc pm_equal_snd_x)
+        apply (subgoal_tac "\<not>(\<exists>s::DWTA_state. \<not> c\<^sub>v s = p\<^sub>v s \<and> p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> 
+              m\<^sub>v s = (3::\<nat>) - (c\<^sub>v s + p\<^sub>v s) \<and> snd x = s\<lparr>c\<^sub>v := (3::\<nat>) - (c\<^sub>v s + m\<^sub>v s)\<rparr>)")
+        using card_0_singleton apply blast
+        by (auto)
+    qed
 
   show "(\<Sum>\<^sub>\<infinity>s::DWTA_state. ?lhs s) = ?rhs"
     apply (subst infsum_add)
@@ -1587,28 +1587,30 @@ lemma IMHA_C_altdef_states_1_eq:
     "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> m\<^sub>v s = Suc (p\<^sub>v s) mod (3::\<nat>)} 
     = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = 2::\<nat>, m\<^sub>v = Suc (0::\<nat>)\<rparr>,\<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, 
       \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 1::\<nat>, m\<^sub>v = 0::\<nat>\<rparr>}"
-    apply (simp add: set_eq_iff)
-    apply (rule allI)
-    apply (rule iffI)
-    apply (smt (z3) DWTA_state.surjective Nat.add_0_right Nat.diff_add_assoc Nat.diff_cancel 
-        add_diff_cancel_left' add_diff_cancel_right add_le_cancel_left bot_nat_0.extremum_uniqueI 
-        diff_Suc_diff_eq2 diff_add_zero le_Suc_eq less_Suc_eq mod_less mod_self numeral_2_eq_2 
-        numeral_3_eq_3 old.unit.exhaust)
-  by force
-
-lemma IMHA_C_altdef_states_2_eq: 
-    "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> m\<^sub>v s = Suc (Suc (p\<^sub>v s)) mod (3::\<nat>)} 
-    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (2::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>, 
-      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = 1::\<nat>\<rparr>}"
-    apply (simp add: set_eq_iff)
-    apply (rule allI)
-    apply (rule iffI)
-    apply (smt (verit, best) DWTA_state.surjective Nat.add_0_right Nat.add_diff_assoc One_nat_def 
+  apply (simp add: set_eq_iff)
+  apply (rule allI)
+  apply (rule iffI)
+  apply (smt (verit, best) DWTA_state.surjective Nat.add_0_right Nat.add_diff_assoc One_nat_def 
         Suc_1 Suc_le_mono add.commute add_2_eq_Suc' add_cancel_left_left bot_nat_0.extremum 
         diff_Suc_Suc diff_Suc_diff_eq2 diff_diff_left diff_is_0_eq diff_self_eq_0 
         eval_nat_numeral(3) le0 le_SucE le_antisym lessI less_2_cases mod_Suc mod_Suc_eq_mod_add3 
         mod_by_Suc_0 mod_less mod_mod_trivial mod_self nat.inject not_mod2_eq_Suc_0_eq_0 
         numeral_1_eq_Suc_0 numeral_3_eq_3 numeral_plus_numeral old.unit.exhaust order_le_less plus_1_eq_Suc)
+  by (auto)
+
+lemma IMHA_C_altdef_states_2_eq: 
+    "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s = (3::\<nat>) - (p\<^sub>v s + m\<^sub>v s)) \<and> m\<^sub>v s = Suc (Suc (p\<^sub>v s)) mod (3::\<nat>)} 
+    = {\<lparr>p\<^sub>v = 0::\<nat>, c\<^sub>v = Suc (0::\<nat>), m\<^sub>v = (2::\<nat>)\<rparr>, \<lparr>p\<^sub>v = Suc (0::\<nat>), c\<^sub>v = (2::\<nat>), m\<^sub>v = (0::\<nat>)\<rparr>, 
+      \<lparr>p\<^sub>v = 2::\<nat>, c\<^sub>v = 0::\<nat>, m\<^sub>v = 1::\<nat>\<rparr>}"
+  apply (simp add: set_eq_iff)
+  apply (rule allI)
+  apply (rule iffI)
+  apply (smt (verit, best) DWTA_state.surjective Nat.add_0_right Nat.add_diff_assoc One_nat_def 
+      Suc_1 Suc_le_mono add.commute add_2_eq_Suc' add_cancel_left_left bot_nat_0.extremum 
+      diff_Suc_Suc diff_Suc_diff_eq2 diff_diff_left diff_is_0_eq diff_self_eq_0 
+      eval_nat_numeral(3) le0 le_SucE le_antisym lessI less_2_cases mod_Suc mod_Suc_eq_mod_add3 
+      mod_by_Suc_0 mod_less mod_mod_trivial mod_self nat.inject not_mod2_eq_Suc_0_eq_0 
+      numeral_1_eq_Suc_0 numeral_3_eq_3 numeral_plus_numeral old.unit.exhaust order_le_less plus_1_eq_Suc)
   by force
 
 lemma IMHA_C_altdef_states_3_eq: 
@@ -1675,7 +1677,7 @@ proof -
     by (expr_simp)
 
   have lhs_3_eq: "\<forall>(s\<^sub>1::DWTA_state) s::DWTA_state. ?lhs_3 s\<^sub>1 s = ?lhs_3' s"
-    by (expr_simp)
+    by (expr_simp_1)
 
   have lhs_lhs'_eq: "\<forall>(s\<^sub>1::DWTA_state) s::DWTA_state. ?lhs s\<^sub>1 s = ?lhs' s"
     by (simp add: c_def m_def p_def)
@@ -2040,20 +2042,17 @@ proof -
   have summable_on: "\<forall>(m\<^sub>v'::\<nat>) (p\<^sub>v'::\<nat>) c\<^sub>v'::\<nat>. (\<lambda>v\<^sub>0::DWTA_state.
            (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
            (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
-           ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real>
-             else (0::\<real>)) /
-            (2::\<real>) +
-            (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real>
-             else (0::\<real>)) /
-            (2::\<real>))) summable_on
-       UNIV"
+           ((if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real>
+             else (0::\<real>)) / (2::\<real>) +
+            (if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> then 1::\<real>
+             else (0::\<real>)) / (2::\<real>))) summable_on UNIV"
   proof (rule allI)+
     fix m\<^sub>v'::"\<nat>" and p\<^sub>v'::"\<nat>" and c\<^sub>v'::"\<nat>"
     show "(\<lambda>v\<^sub>0::DWTA_state.
            (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
            (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
-           ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
-            (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
+           ((if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+            (if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
             (2::\<real>))) summable_on
        UNIV "
     apply (subst conditional_conds_conj)+
@@ -2086,7 +2085,7 @@ proof -
   apply (subst rvfun_inverse)
   apply (simp add: is_prob_def iverson_bracket_def)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
-  apply (rel_auto)
+  apply (pred_auto)
   apply (subst infsum_cdiv_left)
   using summable_on apply blast
   using mod_Suc apply force
@@ -2097,14 +2096,14 @@ proof -
     assume a1: "p\<^sub>v' \<le> (2::\<nat>)"
     assume a2: "c\<^sub>v' \<le> (2::\<nat>)"
     have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr>} 
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> = s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr>} 
         = {\<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v'\<rparr>}"
       apply (auto)
       apply (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3))
       by (simp add: a1 a2)+
   
     have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr>} = {}"
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> = s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr>} = {}"
       apply (auto)
       by (smt (verit, best) DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) 
           lessI less_2_cases mod_Suc_eq mod_less mod_self nat.simps(3) numeral_2_eq_2 numeral_3_eq_3 
@@ -2113,8 +2112,8 @@ proof -
     show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
             (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
             (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
-            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
-             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
+            ((if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+             (if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc c\<^sub>v' mod (3::\<nat>)\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
              (2::\<real>)) / (9::\<real>)) * (18::\<real>) = (1::\<real>)"
       apply (subst conditional_conds_conj)+
       apply (simp add: ring_distribs(1))
@@ -2163,7 +2162,7 @@ proof -
     assume a1: "p\<^sub>v' \<le> (2::\<nat>)"
     assume a2: "c\<^sub>v' \<le> (2::\<nat>)"
     have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr>} 
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr> = s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr>} 
         = {}"
       apply (auto)
       by (smt (verit, best) DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) 
@@ -2171,7 +2170,7 @@ proof -
           order_le_less)
       
     have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr>} 
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr> = s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr>} 
       = {\<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v'\<rparr>}"
       apply (auto)
       apply (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3))
@@ -2180,9 +2179,9 @@ proof -
     show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
             (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
             (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
-            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
+            ((if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
              (2::\<real>) +
-             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
+             (if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = Suc (Suc c\<^sub>v') mod (3::\<nat>)\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) /
              (2::\<real>)) /  (9::\<real>)) * (18::\<real>) =  (1::\<real>)"
       apply (subst conditional_conds_conj)+
       apply (simp add: ring_distribs(1))
@@ -2233,20 +2232,20 @@ proof -
     assume a3: "\<not> m\<^sub>v'' = Suc c\<^sub>v' mod (3::\<nat>)"
     assume a4: "\<not> m\<^sub>v'' = Suc (Suc c\<^sub>v') mod (3::\<nat>)"
     have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr>} = {}"
       apply (auto)
       by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a3)
       
     have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr>} = {}"
       apply (auto)
       by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a4)
   
     show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
             (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
             (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
-            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
-             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>)) /
+            ((if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+             (if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>)) /
             (9::\<real>)) =
          (0::\<real>)"
       apply (subst conditional_conds_conj)+
@@ -2296,20 +2295,20 @@ proof -
     assume a1: "p\<^sub>v' \<le> (2::\<nat>)"
     assume a2: "\<not> c\<^sub>v' \<le> (2::\<nat>)"
     have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr>} = {}"
       apply (auto)
       by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a2)
       
     have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr>} = {}"
       apply (auto)
       by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a2)
   
     show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
             (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
             (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
-            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
-             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>)) /
+            ((if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+             (if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>)) /
             (9::\<real>)) = (0::\<real>)"
       apply (subst conditional_conds_conj)+
       apply (simp add: ring_distribs(1))
@@ -2357,20 +2356,20 @@ proof -
     fix m\<^sub>v'::"\<nat>" and p\<^sub>v'::"\<nat>" and c\<^sub>v'::"\<nat>" and m\<^sub>v''::"\<nat>"
     assume a1: "\<not> p\<^sub>v' \<le> (2::\<nat>)"
     have set_1_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = s\<lparr>m\<^sub>v := Suc (c\<^sub>v s) mod (3::\<nat>)\<rparr>} = {}"
       apply (auto)
       by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a1)
       
     have set_2_eq: "{s::DWTA_state. (p\<^sub>v s \<le> (2::\<nat>) \<and> c\<^sub>v s \<le> (2::\<nat>) \<and> m\<^sub>v s = m\<^sub>v') \<and>
-           s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr>} = {}"
+           \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = s\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v s)) mod (3::\<nat>)\<rparr>} = {}"
       apply (auto)
       by (metis DWTA_state.ext_inject DWTA_state.surjective DWTA_state.update_convs(3) a1)
   
     show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::DWTA_state.
             (if p\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 \<le> (2::\<nat>) then 1::\<real> else (0::\<real>)) *
             (if m\<^sub>v v\<^sub>0 = m\<^sub>v' then 1::\<real> else (0::\<real>)) *
-            ((if v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
-             (if v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> = \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>)) /
+            ((if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (c\<^sub>v v\<^sub>0) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>) +
+             (if \<lparr>p\<^sub>v = p\<^sub>v', c\<^sub>v = c\<^sub>v', m\<^sub>v = m\<^sub>v''\<rparr> = v\<^sub>0\<lparr>m\<^sub>v := Suc (Suc (c\<^sub>v v\<^sub>0)) mod (3::\<nat>)\<rparr> then 1::\<real> else (0::\<real>)) / (2::\<real>)) /
             (9::\<real>)) =
          (0::\<real>)"
       apply (subst conditional_conds_conj)+

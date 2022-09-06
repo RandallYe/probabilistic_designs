@@ -1,26 +1,29 @@
 section \<open> Iverson Bracket \<close>
 
 theory utp_iverson_bracket
-  imports "/Users/rye/Isabelle/New_UTP/UTP/utp"
-          "HOL-Analysis.Infinite_Sum"
+  imports "UTP2.utp"
+          "infsum_laws"
 begin 
 
 unbundle UTP_Syntax
+print_bundles
+
+(* Switch off lattice syntax from UTP *)
+unbundle no_UTP_lattice_syntax
+(* unbundle no_lattice_syntax *)
+print_bundles
+
+term "\<bottom>"
+
+(* Switch on lattice syntax from HOL *)
+unbundle lattice_syntax
+term "\<bottom>"
 
 declare [[show_types]]
 
 (* named_theorems iverson_bracket_defs *)
 
 subsection \<open> Iverson Bracket \<close>
-
-term "(P)\<^sub>e"
-term "(False)\<^sub>e"
-term "(P)\<^sub>u"
-term "\<lbrakk>P\<rbrakk>\<^sub>u"
-full_exprs
-term "(f + g)\<^sub>e::'s \<Rightarrow> real"
-term "(f+g)\<^sup>e"
-term "(if P then 1 else 0)\<^sub>e"
 
 (* syntax translation: \<s> *)
 (* syntax _iversion_bracket :: "logic => logic" ("...") *)
@@ -35,32 +38,17 @@ translations
   "_e_iverson_bracket P" == "CONST iverson_bracket (P)\<^sub>e"
   "_iverson_bracket P" == "CONST iverson_bracket P"
 
-(*
-definition "iverson_bracket_e P = iverson_bracket (P)\<^sub>e"
-
-consts iverson_bracket_c :: "'f \<Rightarrow> ('g \<Rightarrow> 'h)" 
-
-adhoc_overloading
-  (*iverson_bracket_c iverson_bracket and*)
-  iverson_bracket_c iverson_bracket_e
-
-notation iverson_bracket_c ("\<lbrakk>_\<rbrakk>\<^sub>\<I>" 150)
-*)
-
 definition nat_of_real_1 :: "real \<Rightarrow> nat" where
 "nat_of_real_1 r = (if r = (1::\<real>) then (1) else 0)"
 
 (* Declare your Iverson brackets operator as an expression constructor, to stop it being lifted *)
-expr_ctr iverson_bracket
+expr_constructor iverson_bracket
 
-lemma iverson_bracket_mono: "\<lbrakk> (P)\<^sub>u \<sqsupseteq> (Q)\<^sub>u \<rbrakk> \<Longrightarrow> \<lbrakk>P\<rbrakk>\<^sub>\<I> \<le> \<lbrakk>Q\<rbrakk>\<^sub>\<I>"
-  by (expr_auto add:  Collect_mono_iff le_funI ref_by_set_def)
-
-term "\<lbrakk>P\<rbrakk>\<^sub>\<I>"
-term "(0.5*\<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
-term "[\<lbrakk>P\<rbrakk>\<^sub>\<I>]\<^sub>e"
-(* term "[\<lambda>s. \<lbrakk>P\<rbrakk>\<^sub>\<I> s * \<lbrakk>Q\<rbrakk>\<^sub>\<I> s]\<^sub>e" *)
-term "(\<lbrakk>P\<rbrakk>\<^sub>\<I> * \<lbrakk>Q\<rbrakk>\<^sub>\<I>)\<^sub>e"
+lemma iverson_bracket_mono: "\<lbrakk> (P) \<sqsupseteq> (Q) \<rbrakk> \<Longrightarrow> \<lbrakk>P\<rbrakk>\<^sub>\<I> \<le> \<lbrakk>Q\<rbrakk>\<^sub>\<I>"
+  apply (simp add: ref_by_pred_is_leq)
+  apply (simp add: iverson_bracket_def)
+  apply (intro le_funI)
+  by auto
 
 lemma iverson_bracket_conj: "\<lbrakk>P \<and> Q\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>Q\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   by (expr_auto)
@@ -81,14 +69,6 @@ lemma iverson_bracket_plus: "(\<lbrakk>\<lambda>s. s \<in> A\<rbrakk>\<^sub>\<I>
 lemma iverson_bracket_inter : "\<lbrakk>\<lambda>s. s \<in> A \<inter> B\<rbrakk>\<^sub>\<I> = (\<lbrakk>\<lambda>s. s \<in> A\<rbrakk>\<^sub>\<I> * \<lbrakk>\<lambda>s. s \<in> B\<rbrakk>\<^sub>\<I>)\<^sub>e"
   by (expr_auto)
 
-
-term "(\<Prod> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
-term "\<lbrakk>(\<forall>m. P(m))\<rbrakk>\<^sub>\<I>\<^sub>e"
-term "prod"
-term "1 dvd 2"
-thm "infinite_finite_induct"
-term "(\<Prod> m|True. ((P::'a\<Rightarrow>real) m))"
-
 (* Infinite products give 1 (instead of 0), no matter how P is defined. *)
 lemma infinite_prod_is_1:
   fixes P::"'b \<Rightarrow> real"
@@ -96,18 +76,16 @@ lemma infinite_prod_is_1:
   shows "(\<Prod> m|True. (P m)) = (1::real)"
   using assms by force
 
-
 (* There are three theories in Isabelle regarding summation 
   1. Group_Big, where infinite sum is 0 and infinite product is 1
 *)
-term "c" 
 term "sum"
 term "(sum (\<lambda>s. (\<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e s) A)"
 term "(\<Sum>x\<in>\<guillemotleft>A\<guillemotright>. \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
 (*
   2. Series, where n in "\<Sum>n" is over natural numbers.
 *)
-term "sums"
+(* term "sums" *)
 term "suminf"
 (*
   3. Inf_Sum, where sums over possibly infinite sets
@@ -144,26 +122,18 @@ proof -
     using a1 by auto
 qed
 
-term "\<lbrakk>P\<rbrakk>\<^sub>\<I>"
-term "(\<Sum> m|True. (\<lbrakk>P \<guillemotleft>m\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
-term "\<lambda>s. (min (1::real) ((\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e s))"
-(* term "(min (1::real) (\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I>)))\<^sub>e" *)
-
-(* How about infinite? *)
+text \<open> We use @{text "\<Sum>\<^sub>\<infinity>"} (@{term "infsum"}) to take into account infinite sets that satisfy @{text "P"}. 
+For this case, the summation is just equal to 0. Then this lemma is not true, and so we have added 
+a finite assumption.
+\<close>
 lemma iverson_bracket_exist_sum:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
-  assumes "finite (UNIV::'b set)"
-  shows "\<lbrakk>(\<exists>m. P m)\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lambda>s. (min (1::real) ((\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e s)))"
-  apply (expr_auto)
-  by (smt (verit) UNIV_I assms sum_nonneg_leq_bound)
-
-(* TODO
-lemma iverson_bracket_exist_sum:
-  fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
+  assumes "`finite {m. P m}`"
   shows "\<lbrakk>(\<exists>m. P m)\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lambda>s. (min (1::real) ((\<Sum>\<^sub>\<infinity> m. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e s)))"
   apply (expr_auto)
-  by (smt (verit) UNIV_I assms sum_nonneg_leq_bound)
-*)
+  apply (subst infsum_constant_finite_states)
+  using assms apply (simp add: taut_def)
+  by (smt (verit, del_insts) assms SEXP_def taut_def mem_Collect_eq real_of_card sum_nonneg_leq_bound)
 
 lemma iverson_bracket_exist_sum_1:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
@@ -172,51 +142,28 @@ lemma iverson_bracket_exist_sum_1:
   apply (expr_auto)
   using assms by auto
 
-(* The use of @{term card} implies (UNIV::'b set) is finite *)
+(* The use of @{term card} implies finite *)
 lemma iverson_bracket_card:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
-  assumes "finite (UNIV::'b set)"
-  shows "(card {m. P m})\<^sub>e = (\<Sum> m|True. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
+  assumes "`finite ({m::'b. P m})`"
+  shows "(card {m. P m})\<^sub>e = (\<Sum>\<^sub>\<infinity> m. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
   apply (expr_auto)
-proof -
-  fix x::"'a"
-  let ?P = "\<lambda>m. if P x m then 1::\<real> else (0::\<real>)"
-  have f1: "(\<Sum>m::'b\<in>UNIV. if P x m then 1::\<real> else (0::\<real>)) = 
-        (\<Sum>m::'b\<in>{m. \<not> P x m} \<union> {m. P x m}. ?P m)"
-    by (simp add: Un_def)
-  have f2: "... = sum ?P {m. P x m} + 
-      sum (\<lambda>m. if P x m then 1::\<real> else (0::\<real>)) {m. \<not>P x m}"
-    apply (subst sum_Un)
-    apply (metis assms boolean_algebra.disj_cancel_left finite_Un)
-    apply (metis assms finite_Un ref_lattice.inf_bot_right)
-    using sum.not_neutral_contains_not_neutral by auto
-    
-  show "(real (card (Collect (P x))) = (\<Sum>m::'b\<in>UNIV. ?P m))"
-    using f1 f2 by force
-qed
+  apply (subst infsum_constant_finite_states)
+  using assms apply (simp add: taut_def)
+  by force
 
+text \<open> With the Iverson bracket, summation with index (LHS) can be defined without its index (RHS). 
+As Donald E. Knuth mentioned in ``Two Notes on Notation'', the summation without indices (or limits) 
+is better (not easily make a mistake when dealing with its index). \<close>
 lemma iverson_bracket_summation:
-  fixes P::"'s \<Rightarrow> bool"
-  assumes "finite (UNIV::'s set)"
-  shows "(\<Sum> m|True. (f * \<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e m) = (\<Sum> m|P m. (f)\<^sub>e m)"
-proof -
-  let ?P = "\<lambda>m. (if P m then 1::\<real> else (0::\<real>))"
-  have f1: "(\<Sum>m::'s\<in>UNIV. f m * ?P m) = (\<Sum>m::'s\<in>{m. \<not> P m} \<union> {m. P m}. f m * ?P m)"
-    by (simp add: Un_def)
-  have f2: "... = (\<Sum>m::'s\<in>{m. \<not> P m}. f m * ?P m) + (\<Sum>m::'s\<in>{m. P m}. f m * ?P m)"
-    apply (subst sum_Un)
-    apply (meson assms rev_finite_subset subset_UNIV)
-    apply (meson assms rev_finite_subset subset_UNIV)
-    using sum.not_neutral_contains_not_neutral by auto
-  show ?thesis
-    apply (simp add: expr_defs)
-    by (simp add: f1 f2)
-qed
+  fixes P::"'s \<Rightarrow> bool" and f :: "'s \<Rightarrow> \<real>"
+  shows "(\<Sum>\<^sub>\<infinity> k|P k. (f)\<^sub>e k) = (\<Sum>\<^sub>\<infinity> k. (f * \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e k)"
+  by (simp add: infsum_mult_subset_right iverson_bracket_def)
 
 lemma iverson_bracket_product:
   fixes P::"'s \<Rightarrow> bool"
   assumes "finite (UNIV::'s set)"
-  shows "(\<Prod> m|True. (f ^ (\<guillemotleft>nat_of_real_1\<guillemotright> (\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)))\<^sub>e m) = (\<Prod> m|P m. (f)\<^sub>e m)"
+  shows "(\<Prod> m|P m. f m) = (\<Prod> m|True. (f ^ (\<guillemotleft>nat_of_real_1\<guillemotright> (\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)))\<^sub>e m)"
 proof -
   let ?P = "\<lambda>m. (if P m then 1::\<real> else (0::\<real>))"
   let ?Q = "\<lambda>r. (if r = (1::\<real>) then 1::\<nat> else (0::\<nat>))"
@@ -236,128 +183,72 @@ qed
 
 lemma max_iverson_bracket:
   "(max x y)\<^sub>e = (x * (\<lbrakk>x > y\<rbrakk>\<^sub>\<I>\<^sub>e) + y * (\<lbrakk>x \<le> y\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
-  (*"(\<guillemotleft>max\<guillemotright> \<guillemotleft>(x)\<guillemotright> \<guillemotleft>y\<guillemotright>) = (\<forall>s. (\<guillemotleft>x\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> > \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I> s) + \<guillemotleft>y\<guillemotright> * (\<lbrakk>(\<guillemotleft>x\<guillemotright> \<le> \<guillemotleft>y\<guillemotright>)\<^sub>e\<rbrakk>\<^sub>\<I> s)))"*)
   by (expr_auto)
 
 lemma min_iverson_bracket:
   "(min x y)\<^sub>e = (x * (\<lbrakk>x \<le> y\<rbrakk>\<^sub>\<I>\<^sub>e) + y * (\<lbrakk>x > y\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e"
   by (expr_auto)
 
-(* Floor and ceiling functions *)
-(* Need an infinite sum to prove this law *)
 lemma floor_iverson_bracket:
-  "(\<lfloor>x\<rfloor>)\<^sub>e = (\<Sum>n|True. n*\<lbrakk>((real_of_int) \<guillemotleft>n\<guillemotright> \<le> x \<and> x < (real_of_int) (\<guillemotleft>n\<guillemotright>+1))\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  "(real_of_int \<lfloor>x\<rfloor>)\<^sub>e = (\<Sum>\<^sub>\<infinity> n. n * \<lbrakk>((real_of_int) \<guillemotleft>n\<guillemotright> \<le> x \<and> x < (real_of_int) (\<guillemotleft>n\<guillemotright> + 1))\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   apply (expr_auto)
-  oops
+  apply (subst infsum_mult_subset_right)
+proof -
+  fix xa
+  have "{v\<^sub>0::\<int>. real_of_int v\<^sub>0 \<le> x xa \<and> x xa < real_of_int v\<^sub>0 + (1::\<real>)} = {\<lfloor>x xa\<rfloor>}"
+    by (smt (verit) Collect_cong floor_split singleton_conv)
+  then show "real_of_int \<lfloor>x xa\<rfloor> =
+       infsum real_of_int {v\<^sub>0::\<int>. real_of_int v\<^sub>0 \<le> x xa \<and> x xa < real_of_int v\<^sub>0 + (1::\<real>)}"
+    by simp
+qed
 
-(* Need an infinite sum to prove this law *)
 lemma ceiling_iverson_bracket:
-  "(\<lceil>x\<rceil>)\<^sub>e = (\<Sum>n|True. n*\<lbrakk>((real_of_int) \<guillemotleft>n-1\<guillemotright> < x \<and> x \<le> (real_of_int) (\<guillemotleft>n\<guillemotright>))\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  "(real_of_int \<lceil>x\<rceil>)\<^sub>e = (\<Sum>\<^sub>\<infinity> n. n * \<lbrakk>((real_of_int) \<guillemotleft>n - 1\<guillemotright> < x \<and> x \<le> (real_of_int) (\<guillemotleft>n\<guillemotright>))\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   apply (expr_auto)
-  oops
+  apply (subst infsum_mult_subset_right)
+proof -
+  fix xa
+  have "{v\<^sub>0::\<int>. real_of_int v\<^sub>0 - (1::\<real>) < x xa \<and> x xa \<le> real_of_int v\<^sub>0} = {\<lceil>x xa\<rceil>}"
+    by (smt (verit) Collect_cong ceiling_split singleton_conv)
+  then show "real_of_int \<lceil>x xa\<rceil> =
+       infsum real_of_int {v\<^sub>0::\<int>. real_of_int v\<^sub>0 - (1::\<real>) < x xa \<and> x xa \<le> real_of_int v\<^sub>0}"
+    by simp
+qed
 
 subsection \<open> Inverse Iverson Bracket \<close>
-term "`(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
 (* Simon: maybe we need to find out a definition for inverse bracket using THE etc. 
 TODO: leave this mechanisation as is now.
 *)
 axiomatization iverson_bracket_inv :: "('s \<Rightarrow> real) \<Rightarrow> 's pred" ("\<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I>") where 
-iverson_bracket_inv_def: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = `(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)`"
+iverson_bracket_inv_def: "(\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I> \<sqsupseteq> (P)) = `(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)`"
 
-expr_ctr iverson_bracket_inv
+expr_constructor iverson_bracket_inv
 
-lemma false_0: "\<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I> = (0)\<^sub>e"
-  by (simp add: iverson_bracket_def)
+lemma false_0: "\<lbrakk>false\<rbrakk>\<^sub>\<I> = (0)\<^sub>e"
+  by (pred_simp)
 
-term "(\<not> \<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u)"
-term "\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u = true"
-(* Here (1::\<real>) is a constant and (1)\<^sub>e inside `_` cannot automatically become "(1)\<^sub>e s". 
- So `@((1)\<^sub>e) ... ` will be expanded to "\<forall>s. (\<lambda>ss. 1::\<real>) s ..."*)
-term "`(@((1)\<^sub>e) \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I>)`"
-lemma iverson_bracket_inv_1: "\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I> = (true)\<^sub>e"
-proof -
-  (*have 1: "(\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (false)\<^sub>u) = `(@((1)\<^sub>e) \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I>)`"
-    by (smt (verit) SEXP_def false_0 iverson_bracket_inv_def taut_def)
-  then have 2: "(\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = (1 \<le> (0::real))"
-    by (simp add: false_0)
-  then have 3: "(\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = false"
-    by simp
-  (* A \<sqsupseteq> false \<longrightarrow> \<not> (A \<subseteq> {}) *)
-  then have 4: "\<not> ((\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false))"
-    by simp
-  then *)
-  have "\<lbrakk>\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u = true"
-    by (smt (verit, best) Collect_cong SEXP_def UNIV_def iverson_bracket_def iverson_bracket_inv_def 
-        pred_set_def pred_ba.order_refl taut_def true_pred_def)
-  then show ?thesis
-    by (metis pred_UNIV pred_set true_pred_def)
-qed
+lemma iverson_bracket_inv_1: "\<^bold>\<langle>(1)\<^sub>e\<^bold>\<rangle>\<^sub>\<I> = true"
+  by (smt (verit, best) SEXP_def false_pred_def iverson_bracket_def iverson_bracket_inv_def le_funI 
+      le_fun_def order_antisym_conv pred_ba.order_eq_iff pred_ba.order_refl ref_by_fun_def 
+      ref_lattice.bot_least ref_lattice.top_greatest ref_preorder.order_refl taut_True taut_def true_pred_def zero_neq_one)
 
-lemma iverson_bracket_inv_0: "\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I> = (false)\<^sub>e"
+lemma iverson_bracket_inv_0: "\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I> = false"
   by (smt (verit, ccfv_SIG) SEXP_def false_0 iverson_bracket_inv_def pred_ba.bot.extremum 
-      pred_ba.order_eq_iff pred_set taut_def true_false_pred_expr(2))
-(*
-proof -
-  have 1: "(\<lbrakk>\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (false)\<^sub>u) = `(@((0)\<^sub>e) \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I>)`"
-    by (smt (verit, ccfv_threshold) SEXP_def false_0 iverson_bracket_inv_def taut_def)
-  have 2: "(\<lbrakk>\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = (\<forall>s. 0 \<le> (0::real))"
-    using 1 by (simp add: false_0)
-  then have 3: "(\<lbrakk>\<^bold>\<langle>(0)\<^sub>e\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = true"
-    by simp
-  then show ?thesis
-    by (metis false_pred_def pred_ba.bot.extremum_uniqueI pred_empty pred_set)
-qed
-*)
+      pred_ba.order_eq_iff taut_def)
 
 lemma iverson_bracket_approximate_inverse: "`N \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I>\<^sub>e`"
   by (metis SEXP_def iverson_bracket_inv_def pred_ba.order_refl)
-(*
-proof -
-  have 1: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u) = `N \<le> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>\<I>`"
-    using iverson_bracket_inv_def
-    by (metis SEXP_def ref_order.order_refl)
-  then show ?thesis
-    by auto
-qed
-*)
 
-lemma iverson_bracket_inv_approximate_inverse: "(\<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u)"
-  using iverson_bracket_inv_def
-  by (smt (verit, ccfv_SIG) SEXP_def taut_def)
-(*
-proof -
-  have 1: "(\<lbrakk>\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (P)\<^sub>u) = `(\<lbrakk>P\<rbrakk>\<^sub>\<I> \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>)`"
-    using iverson_bracket_inv_def
-    by blast
-  then show ?thesis
-    by auto
-qed
-*)
+lemma iverson_bracket_inv_approximate_inverse: "\<^bold>\<langle>\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^bold>\<rangle>\<^sub>\<I> \<sqsupseteq> P"
+  using iverson_bracket_inv_def by (smt (verit, ccfv_SIG) SEXP_def taut_def)
 
-term "(\<forall>s. \<not>(\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I> s))"
-term "`\<not>(\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>)`"
 lemma iverson_bracket_inv_N_0:
   assumes "`N \<ge> 0`"
   shows "`\<not>(\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>)` = `N = 0`"
-proof -
-  have 1: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> (false)\<^sub>u) = `N \<le> \<lbrakk>(false)\<^sub>e\<rbrakk>\<^sub>\<I>`"
-    using iverson_bracket_inv_def
-    by force
-  have 2: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = `N \<le> 0`"
-    using 1 by (simp add: false_0)
-  then have 3: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> false) = `N = 0`"
-    using assms nle_le by (smt (verit) SEXP_def taut_def)
-  then have 4: "(\<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u = false) = `N = 0`"
-    by (simp add: pred_ba.bot.extremum_unique)
-  then show ?thesis
-    by (simp add: false_pred_def pred_set_def taut_def)
-qed
+  by (smt (verit, best) SEXP_def assms false_pred_def iverson_bracket_approximate_inverse 
+      iverson_bracket_def iverson_bracket_inv_def order_antisym_conv pred_ba.bot.extremum_unique taut_def)
 
-term "`(M \<le> N)`"
-lemma iverson_bracket_inv_mono: "\<lbrakk> `(M \<le> N)` \<rbrakk> \<Longrightarrow> \<lbrakk>\<^bold>\<langle>M\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u \<sqsupseteq> \<lbrakk>\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>\<rbrakk>\<^sub>u"
-  apply (expr_auto)
-  by (metis (no_types, lifting) SEXP_def dual_order.trans iverson_bracket_approximate_inverse 
-      iverson_bracket_inv_def pred_set_def taut_def)
-  
+lemma iverson_bracket_inv_mono: "\<lbrakk> `(M \<le> N)` \<rbrakk> \<Longrightarrow> \<^bold>\<langle>M\<^bold>\<rangle>\<^sub>\<I> \<sqsupseteq> \<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I>"
+  by (smt (verit) SEXP_def dual_order.trans iverson_bracket_approximate_inverse iverson_bracket_inv_def taut_def)
 
 end

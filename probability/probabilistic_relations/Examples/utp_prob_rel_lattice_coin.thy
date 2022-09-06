@@ -1,8 +1,8 @@
 section \<open> Probabilistic relation programming example 1 \<close>
 
-theory utp_prob_rel_loop_coin
+theory utp_prob_rel_lattice_coin
   imports 
-    "../utp_prob_rel_lattice_laws" 
+    "../utp_prob_rel" 
 begin 
 
 unbundle UTP_Syntax
@@ -45,13 +45,13 @@ lemma cflip_is_dist: "is_final_distribution (rvfun_of_prfun cflip)"
   using rvfun_pchoice_is_dist'
   using rvfun_assignment_is_dist by fastforce
 
-lemma cflip_altdef: "rvfun_of_prfun cflip = (\<lbrakk>\<lbrakk>\<Union> v \<in> {ctail, chead}. c := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
+lemma cflip_altdef: "rvfun_of_prfun cflip = (\<lbrakk>\<Squnion> v \<in> {ctail, chead}. c := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
   apply (simp add: cflip_def pfun_defs)
   apply (subst rvfun_assignment_inverse)+
   apply (simp add: r_simp)
   apply (subst rvfun_pchoice_inverse_c)
   apply (simp add: rvfun_assignment_is_prob)+
-  apply (rel_auto)
+  apply (pred_auto)
   by (simp add: ereal2ureal_def real2uereal_inverse' ureal2real_def)+
 
 lemma cstate_UNIV_set: "(UNIV::\<bbbP> cstate) = {\<lparr>c\<^sub>v = chead\<rparr>, \<lparr>c\<^sub>v = ctail\<rparr>}"
@@ -132,7 +132,7 @@ lemma iterate_cflip_bottom_simp:
   apply (subst ureal_zero)
   apply (simp add: ureal_defs)
   apply (subst fun_eq_iff)
-  apply (expr_auto)
+  apply (pred_auto)
   apply (meson Tcoin.exhaust)
   apply (induct_tac n)
   apply (simp)
@@ -149,23 +149,24 @@ lemma iterate_cflip_bottom_simp:
   apply (simp add: dist_defs)
   apply (expr_auto)
   apply (simp add: infsum_nonneg iverson_bracket_def)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: cstate_UNIV_set)
   apply (smt (verit, ccfv_SIG) prfun_in_0_1' rvfun_skip_inverse)
   apply (simp add: prfun_of_rvfun_def)
-  apply (expr_auto)
+  apply (simp only: skip_def)
+  apply (expr_auto add: assigns_r_def)
   apply (simp add: real2ureal_def)
-  apply (simp add: infsum_0 iverson_bracket_def real2ureal_def rel_skip)
+  apply (smt (verit, best) SEXP_def case_prod_conv cstate.select_convs(1) cstate.surjective div_0 infsum_0 mult_cancel_right1 real2ureal_def rvfun_skip\<^sub>_f_simp skip_def snd_conv)
   apply (meson Tcoin.exhaust)
   apply (simp add: cstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: real2ureal_def)
   using real2ureal_def apply blast+
   apply (simp add: cstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   using real2ureal_def apply blast+
   apply (simp add: cstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   using real2ureal_def apply blast+
   (* *)
   apply (simp)
@@ -177,7 +178,7 @@ lemma iterate_cflip_bottom_simp:
   apply (simp add: dist_defs)
   apply (expr_auto)
   apply (simp add: infsum_nonneg  prfun_in_0_1')
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: cstate_UNIV_set)
   apply (simp add: rvfun_of_prfun_def)
   apply (auto)
@@ -187,7 +188,7 @@ lemma iterate_cflip_bottom_simp:
   apply (subst rvfun_of_prfun_def)+
   apply (expr_auto)
   apply (simp add: cstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   defer
   apply (subst prfun_skip_id)
   apply (simp add: one_ureal.rep_eq real2ureal_def ureal2real_def)
@@ -284,7 +285,7 @@ lemma cflip_iterate_limit_cH:
   apply (simp only: assms)
   apply (subst iterate_cflip_bottom_simp(3))
   apply (subst sum_geometric_series_1)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: fa)
   apply (simp add: fb)
   apply (metis LIMSEQ_const_iff nle_le real2ureal_def ureal_lower_bound ureal_real2ureal_smaller)
@@ -319,7 +320,7 @@ lemma coin_flip_loop: "cflip_loop = prfun_of_rvfun cH"
   by auto
 
 subsubsection \<open> Using unique fixed point theorem \<close>
-lemma cstate_set_simp: "{s::cstate. \<lparr>c\<^sub>v = ctail\<rparr> = s \<or> \<lparr>c\<^sub>v = chead\<rparr> = s} = {\<lparr>c\<^sub>v = chead\<rparr>, \<lparr>c\<^sub>v = ctail\<rparr>}"
+lemma cstate_set_simp: "{s::cstate. s = \<lparr>c\<^sub>v = ctail\<rparr> \<or> s = \<lparr>c\<^sub>v = chead\<rparr>} = {\<lparr>c\<^sub>v = chead\<rparr>, \<lparr>c\<^sub>v = ctail\<rparr>}"
   by fastforce
 
 lemma cflip_iter_seq_simp:
@@ -340,7 +341,7 @@ proof -
     apply (simp add: ureal_is_prob)
     apply (metis ureal_is_prob ureal_one)
     apply (simp add: prfun_of_rvfun_def)
-    apply (expr_auto add: rel)
+    apply (expr_auto add: rel assigns_r_def)
     apply (subst infsum_cdiv_left)
     apply (rule infsum_constant_finite_states_summable)
     apply (simp)
@@ -360,7 +361,7 @@ proof -
     apply (expr_auto add: dist_defs)
     apply (simp add: power_le_one)
     apply (subst cflip_altdef)
-    apply (expr_auto add: rel)  
+    apply (expr_auto add: rel assigns_r_def)  
     defer
     apply (simp add: pfun_defs)
     apply (subst ureal_zero)
@@ -368,7 +369,7 @@ proof -
   proof -
     fix n
     let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate.
-           (if \<lparr>c\<^sub>v = ctail\<rparr> = v\<^sub>0 \<or> \<lparr>c\<^sub>v = chead\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+           (if v\<^sub>0 = \<lparr>c\<^sub>v = ctail\<rparr> \<or> v\<^sub>0 = \<lparr>c\<^sub>v = chead\<rparr> then 1::\<real> else (0::\<real>)) *
            ((if c\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * ((1::\<real>) / (2::\<real>)) ^ n) /
            (2::\<real>))"
     have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate.
@@ -413,9 +414,9 @@ lemma cH_is_fp: "Fwhile (c\<^sup>< = ctail)\<^sub>e cflip (prfun_of_rvfun cH) = 
   apply (expr_auto add: dist_defs)
   apply (subst rvfun_inverse)
   apply (expr_auto add: dist_defs)
-  apply (expr_auto add: prfun_of_rvfun_def)
+  apply (expr_auto add: prfun_of_rvfun_def skip_def)
   using Tcoin.exhaust apply blast
-  apply (rel_auto)
+  apply (pred_auto)
   apply (subst infsum_cdiv_left)
   apply (rule infsum_constant_finite_states_summable)
   apply (simp)
@@ -503,17 +504,17 @@ lemma cpflip_altdef: "rvfun_of_prfun (cpflip p) =
   apply (simp add: r_simp)
   apply (subst rvfun_pchoice_inverse_c)
   apply (simp add: rvfun_assignment_is_prob)+
-  apply (rel_auto)
+  apply (pred_auto)
   by (simp add: ureal_1_minus_real)
 
 lemma cpflip_altdef': "rvfun_of_prfun (cpflip p) = 
-  (\<lbrakk>\<lbrakk>c := chead\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real \<guillemotleft>p\<guillemotright>) + \<lbrakk>\<lbrakk>c := ctail\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>)))\<^sub>e"
+  (\<lbrakk>c := chead\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real \<guillemotleft>p\<guillemotright>) + \<lbrakk>c := ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>)))\<^sub>e"
   apply (simp add: cpflip_def pfun_defs)
   apply (subst rvfun_assignment_inverse)+
   apply (simp add: r_simp)
   apply (subst rvfun_pchoice_inverse_c)
   apply (simp add: rvfun_assignment_is_prob)+
-  apply (rel_auto)
+  apply (pred_auto)
   by (simp add: ureal_1_minus_real)
 
 subsubsection \<open> Using unique fixed point theorem \<close>
@@ -637,7 +638,7 @@ lemma cpH_is_fp: "Fwhile (c\<^sup>< = ctail)\<^sub>e (cpflip p) (prfun_of_rvfun 
   apply (expr_auto add: dist_defs)
   apply (subst rvfun_inverse)
   apply (expr_auto add: dist_defs)
-  apply (expr_auto add: prfun_of_rvfun_def)
+  apply (expr_auto add: prfun_of_rvfun_def skip_def)
   using Tcoin.exhaust apply blast
   using cpflip_sum_1 apply presburger
   using Tcoin.exhaust by blast
@@ -676,11 +677,11 @@ lemma flip_is_dist: "is_final_distribution (rvfun_of_prfun flip)"
   using rvfun_uniform_dist_is_dist
   by (metis coin_vwb_lens finite.emptyI finite.insertI insert_not_empty)
 
-lemma flip_altdef: "rvfun_of_prfun flip = (\<lbrakk>\<lbrakk>\<Union> v \<in> {ctail, chead}. coin := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>P\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
+lemma flip_altdef: "rvfun_of_prfun flip = (\<lbrakk>\<Squnion> v \<in> {ctail, chead}. coin := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
   apply (simp add: flip_def)
   apply (subst prfun_uniform_dist_altdef')
   apply simp+
-  by (rel_auto)
+  by (pred_auto)
 
 definition flip_t_alt :: "coin_state rvhfun" where
 "flip_t_alt \<equiv> (\<lbrakk>coin\<^sup>> \<in> {chead, ctail} \<and> $t\<^sup>> = $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
@@ -693,14 +694,7 @@ lemma flip_t: "(Pt flip) = prfun_of_rvfun flip_t_alt"
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp add: fun_eq_iff)
   apply (rule allI)+
-  apply (expr_auto add: rel)
-  apply (metis Tcoin.distinct(2) coin_state.ext_inject coin_state.surjective coin_state.update_convs(1) time.ext_inject time.update_convs(1))
-  apply (metis Tcoin.distinct(2) coin_state.ext_inject coin_state.surjective coin_state.update_convs(1) time.select_convs(2) time.update_convs(1))
-  apply (meson Tcoin.exhaust)
-  using Tcoin.exhaust apply blast
-  apply (metis time.select_convs(1) time.surjective time.update_convs(1))
-  using Tcoin.exhaust apply blast
-  by (metis time.select_convs(1) time.surjective time.update_convs(1))
+  by (expr_auto add: rel assigns_r_def)
 
 lemma flip_t_set_eq: 
   "\<forall>t. {s::coin_state. (coin\<^sub>v s = chead \<or> coin\<^sub>v s = ctail) \<and> t\<^sub>v s = Suc t} = 
@@ -753,7 +747,7 @@ lemma iterate_tflip_bottom_simp:
   apply (simp add: dist_defs)
   apply (expr_auto)
   apply (simp add: infsum_nonneg iverson_bracket_def)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: cstate_UNIV_set)
   apply (smt (verit, ccfv_SIG) prfun_in_0_1' rvfun_skip_inverse)
   apply (simp add: prfun_of_rvfun_def)
@@ -762,14 +756,14 @@ lemma iterate_tflip_bottom_simp:
   apply (simp add: infsum_0 iverson_bracket_def real2ureal_def rel_skip)
   apply (meson Tcoin.exhaust)
   apply (simp add: cstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: real2ureal_def)
   using real2ureal_def apply blast+
   apply (simp add: cstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   using real2ureal_def apply blast+
   apply (simp add: cstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   using real2ureal_def apply blast+
   (* *)
   apply (simp)
@@ -781,7 +775,7 @@ lemma iterate_tflip_bottom_simp:
   apply (simp add: dist_defs)
   apply (expr_auto)
   apply (simp add: infsum_nonneg  prfun_in_0_1')
-  apply (rel_auto)
+  apply (pred_auto)
   apply (simp add: cstate_UNIV_set)
   apply (simp add: rvfun_of_prfun_def)
   apply (auto)
@@ -791,7 +785,7 @@ lemma iterate_tflip_bottom_simp:
   apply (subst rvfun_of_prfun_def)+
   apply (expr_auto)
   apply (simp add: cstate_UNIV_set)
-  apply (rel_auto)
+  apply (pred_auto)
   defer
   apply (subst prfun_skip_id)
   apply (simp add: one_ureal.rep_eq real2ureal_def ureal2real_def)

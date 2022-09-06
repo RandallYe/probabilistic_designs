@@ -3,8 +3,13 @@ section \<open> Probabilistic relation programming laws \<close>
 theory infsum_laws
   imports 
     "HOL-Analysis.Infinite_Sum"
-    "utp_distribution"
+    "UTP2.utp" (* This is not necessary for this theory. The only reason for importing it here is
+      because there is a syntax error without unbundle UTP_Syntax. For example, (0::\<nat>) cannot be
+      correctly parsed. Please comment this line to see effect. This should be fixed. *)
+    (* "utp_distribution" *)
 begin 
+unbundle UTP_Syntax
+print_bundles
 
 declare [[show_types]]
 
