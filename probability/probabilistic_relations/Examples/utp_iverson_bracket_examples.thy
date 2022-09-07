@@ -4,9 +4,6 @@ theory utp_iverson_bracket_examples
   imports "HOL.Series" "HOL-Analysis.Infinite_Sum" "utp_iverson_bracket" 
 begin 
 
-(* This unbundle is necessary in order to make the term below correct. 
-Otherwise, with the imported Series, the term below is not syntactically correct. *)
-unbundle UTP_Syntax
 term "(($r\<^sup>> = C) \<and> ($a\<^sup>> = $a\<^sup><))\<^sub>e"
 
 declare [[show_types]]
@@ -26,7 +23,7 @@ lemma Example_2: "(\<Sum>i::int \<in> {1..4}. (2*i+1)) = 3 + 5 + 7 + 9"
   using simp_from_to apply auto[1]
   by (auto)
 
-term "(\<lbrakk>(\<lambda>i. (i \<in> {1..4}))\<rbrakk>\<^sub>\<I> i)"
+term "(\<lbrakk>(\<lambda>i. (i \<in> {1..4}))\<rbrakk>\<^sub>\<I>) i"
 (*
 lemma Example_2_iverson_bracket: 
   (* shows "(\<Sum>\<^sub>\<infinity>i::int. ((2*i+1)*(\<lbrakk>(\<lambda>i. i \<in> {1::int..4})\<rbrakk>\<^sub>\<I> i))) = 3 + 5 + 7 + 9" *)

@@ -20,12 +20,10 @@ lemma if_div_distrib': "n * (if a then (bb::\<real>) else c) / d = (if a then (n
 
 text \<open>This example is from Hehner's paper "a Probability Perspective" 
 \cite[Sect.~Probabilistic programming]{Hehner2011} \<close>
-term "\<lbrakk>(b := e) :: state1 rel\<rbrakk>\<^sub>P"
-term "(b\<^sup>> = f)\<^sub>e"
 
-lemma b_assign_rel: "\<lbrakk>(b := e) :: state1 rel\<rbrakk>\<^sub>P = (b\<^sup>> = e\<^sup><)\<^sub>e"
-  apply (simp add: expr_defs)
-  by (rel_auto)
+lemma b_assign_rel: "((b := e)::state1 hrel) = (b\<^sup>> = e\<^sup><)\<^sub>e"
+  apply (simp add: expr_defs assigns_r_def)
+  by (pred_auto)
 
 lemma r1_3: "(real_of_ereal (ureal2ereal (ereal2ureal' (min ((1::ereal) / ereal (3::\<real>)) (1::ereal))))) = 1/3"
   using ereal_1_div real2uereal_min_inverse' by auto
