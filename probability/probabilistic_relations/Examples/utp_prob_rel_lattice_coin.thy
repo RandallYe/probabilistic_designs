@@ -967,5 +967,8 @@ lemma "flip_loop = H"
   apply (expr_auto)
   apply (subst rvfun_inverse)
   apply (simp add: is_prob_def)
-  apply (rel_simp)
+   apply (rel_simp)
+  sorry
+
+lemma "H ; ($t\<^sup><)\<^sub>e = "
 end

@@ -998,4 +998,30 @@ lemma believe_3_simp: "robot_localisation = prfun_of_rvfun believe_3"
   apply (auto)
   by (simp add: believe_3_sum)+
 
+lemma robot_localisation: "
+    (((   init \<parallel> scale_door) ; 
+    move_right \<parallel> scale_door) ; 
+    move_right \<parallel> scale_wall)
+  = 
+    prfun_of_rvfun (
+      1/18 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 
+      8/9  * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 
+      1/18 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e
+    )\<^sub>e"
+  apply (simp add: robot_localisation_def)
+  apply (simp add: move_right_2_simp believe_3_def)
+  apply (simp add: scale_wall_def door_def pfun_defs)
+  apply (simp add: move_right_2_dist)
+  apply (simp add: move_right_2_def dist_defs)
+  apply (expr_simp_1)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (simp add: ring_distribs(2))
+  apply (subst fun_eq_iff, rule allI)
+  apply (auto)
+  by (simp add: believe_3_sum)+
+
+lemma robot_localisation': "
+  ((((init \<parallel> scale_door) ; move_right) \<parallel> scale_door) ; move_right) \<parallel> scale_wall 
+  = prfun_of_rvfun (1/18 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 8/9 * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 1/18 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  using believe_3_def believe_3_simp robot_localisation_def by presburger
 end
