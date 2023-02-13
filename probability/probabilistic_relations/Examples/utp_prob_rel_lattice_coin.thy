@@ -125,7 +125,7 @@ lemma iterate_cflip_bottom_simp:
               (\<lbrakk>$c\<^sup>< = chead \<and> $c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e + 
                \<lbrakk>$c\<^sup>< = ctail \<and> $c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
   apply (auto)
-  apply (simp add: Fwhile_def)
+  apply (simp add: loopfunc_def)
   apply (simp add: prfun_zero_right')
   apply (simp add: pfun_defs)
   apply (subst rvfun_skip_inverse)
@@ -136,7 +136,7 @@ lemma iterate_cflip_bottom_simp:
   apply (meson Tcoin.exhaust)
   apply (induct_tac n)
   apply (simp)
-  apply (simp add: Fwhile_def)
+  apply (simp add: loopfunc_def)
   apply (simp add: prfun_zero_right')
   apply (simp add: pfun_defs)
   apply (subst rvfun_skip_inverse)+
@@ -170,7 +170,7 @@ lemma iterate_cflip_bottom_simp:
   using real2ureal_def apply blast+
   (* *)
   apply (simp)
-  apply (subst Fwhile_def)
+  apply (subst loopfunc_def)
   apply (subst pseqcomp_def)
   apply (subst pcond_def)
   apply (subst cflip_altdef)
@@ -323,14 +323,14 @@ subsubsection \<open> Using unique fixed point theorem \<close>
 lemma cstate_set_simp: "{s::cstate. s = \<lparr>c\<^sub>v = ctail\<rparr> \<or> s = \<lparr>c\<^sub>v = chead\<rparr>} = {\<lparr>c\<^sub>v = chead\<rparr>, \<lparr>c\<^sub>v = ctail\<rparr>}"
   by fastforce
 
-lemma cflip_iter_seq_simp:
-  shows "(iter_seq 0 (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) = 1\<^sub>p"
-        "(iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+lemma cflip_iterdiff_simp:
+  shows "(iterdiff 0 (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) = 1\<^sub>p"
+        "(iterdiff (n+1) (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
 proof -
-  show "(iter_seq 0 (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) = 1\<^sub>p"
+  show "(iterdiff 0 (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) = 1\<^sub>p"
     by (auto)
 
-  show "(iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+  show "(iterdiff (n+1) (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
     apply (induction n)
     apply (simp add: pfun_defs)
     apply (subst cflip_altdef)
@@ -350,7 +350,7 @@ proof -
     apply (simp only: cstate_set_simp)
     apply (simp add: real2ureal_def)
     apply (simp only: add_Suc)
-    apply (simp only: iter_seq.simps(2))
+    apply (simp only: iterdiff.simps(2))
     apply (simp only: pcond_def)
     apply (simp only: pseqcomp_def)
     apply (subst rvfun_seqcomp_inverse)
@@ -385,12 +385,12 @@ proof -
   qed
 qed
 
-lemma cflip_iter_seq_tendsto_0:
-  "\<forall>s::cstate \<times> cstate. (\<lambda>n::\<nat>. ureal2real (iter_seq n (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+lemma cflip_iterdiff_tendsto_0:
+  "\<forall>s::cstate \<times> cstate. (\<lambda>n::\<nat>. ureal2real (iterdiff n (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
 proof 
   fix s
-  have "(\<lambda>n::\<nat>. ureal2real (iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
-    apply (subst cflip_iter_seq_simp)
+  have "(\<lambda>n::\<nat>. ureal2real (iterdiff (n+1) (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    apply (subst cflip_iterdiff_simp)
     apply (simp add: prfun_of_rvfun_def)
     apply (expr_auto)
     apply (subst real2ureal_inverse)
@@ -399,12 +399,12 @@ proof
     apply (simp add: LIMSEQ_realpow_zero)
     apply (subst real2ureal_inverse)
     by (simp)+
-  then show "(\<lambda>n::\<nat>. ureal2real (iter_seq n (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+  then show "(\<lambda>n::\<nat>. ureal2real (iterdiff n (c\<^sup>< = ctail)\<^sub>e cflip 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
     by (rule LIMSEQ_offset[where k = 1])
 qed
 
-lemma cH_is_fp: "Fwhile (c\<^sup>< = ctail)\<^sub>e cflip (prfun_of_rvfun cH) = prfun_of_rvfun cH"
-  apply (simp add: cH_def Fwhile_def)
+lemma cH_is_fp: "\<F> (c\<^sup>< = ctail)\<^sub>e cflip (prfun_of_rvfun cH) = prfun_of_rvfun cH"
+  apply (simp add: cH_def loopfunc_def)
   apply (simp add: pfun_defs)
   apply (subst cflip_altdef)
   apply (subst rvfun_skip_inverse)
@@ -433,7 +433,7 @@ lemma coin_flip_loop': "cflip_loop = prfun_of_rvfun cH"
   apply (subst unique_fixed_point_lfp_gfp'[where fp = "prfun_of_rvfun cH"])
   using cflip_is_dist apply auto[1]
   apply (metis (no_types, lifting) Collect_mono_iff cstate_rel_UNIV_set finite.emptyI finite_insert rev_finite_subset)
-  using cflip_iter_seq_tendsto_0 apply (simp)
+  using cflip_iterdiff_tendsto_0 apply (simp)
   using cH_is_fp apply blast
   by simp
 
@@ -540,14 +540,14 @@ lemma cpflip_sum_1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::cstate. (if c\<^sub>v v
   apply (simp add: cstate_tail)+
   using ureal_1_minus_real by fastforce
 
-lemma cpflip_iter_seq_simp:
-  shows "(iter_seq 0 (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) = 1\<^sub>p"
-        "(iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>))^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+lemma cpflip_iterdiff_simp:
+  shows "(iterdiff 0 (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) = 1\<^sub>p"
+        "(iterdiff (n+1) (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>))^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
 proof -
-  show "(iter_seq 0 (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) = 1\<^sub>p"
+  show "(iterdiff 0 (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) = 1\<^sub>p"
     by (auto)
 
-  show "(iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>))^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+  show "(iterdiff (n+1) (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>c\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real (1 - \<guillemotleft>p\<guillemotright>))^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
     apply (induction n)
     apply (simp add: pfun_defs)
     apply (subst cpflip_altdef)
@@ -562,7 +562,7 @@ proof -
     using cpflip_sum_1 apply presburger
 
     apply (simp only: add_Suc)
-    apply (simp only: iter_seq.simps(2))
+    apply (simp only: iterdiff.simps(2))
     apply (simp only: pcond_def)
     apply (simp only: pseqcomp_def)
     apply (subst rvfun_seqcomp_inverse)
@@ -601,13 +601,13 @@ proof -
   qed
 qed
 
-lemma cpflip_iter_seq_tendsto_0:
+lemma cpflip_iterdiff_tendsto_0:
   assumes "p \<noteq> 0"
-  shows "\<forall>s::cstate \<times> cstate. (\<lambda>n::\<nat>. ureal2real (iter_seq n (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+  shows "\<forall>s::cstate \<times> cstate. (\<lambda>n::\<nat>. ureal2real (iterdiff n (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
 proof 
   fix s
-  have "(\<lambda>n::\<nat>. ureal2real (iter_seq (n+1) (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
-    apply (subst cpflip_iter_seq_simp)
+  have "(\<lambda>n::\<nat>. ureal2real (iterdiff (n+1) (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    apply (subst cpflip_iterdiff_simp)
     apply (simp add: prfun_of_rvfun_def)
     apply (expr_auto)
     apply (subst real2ureal_inverse)
@@ -623,12 +623,12 @@ proof
     apply (subst real2ureal_inverse)
     by (simp)+
     
-  then show "(\<lambda>n::\<nat>. ureal2real (iter_seq n (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+  then show "(\<lambda>n::\<nat>. ureal2real (iterdiff n (c\<^sup>< = ctail)\<^sub>e (cpflip p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
     by (rule LIMSEQ_offset[where k = 1])
 qed
 
-lemma cpH_is_fp: "Fwhile (c\<^sup>< = ctail)\<^sub>e (cpflip p) (prfun_of_rvfun (cpH p)) = prfun_of_rvfun (cpH p)"
-  apply (simp add: cpH_def Fwhile_def)
+lemma cpH_is_fp: "\<F> (c\<^sup>< = ctail)\<^sub>e (cpflip p) (prfun_of_rvfun (cpH p)) = prfun_of_rvfun (cpH p)"
+  apply (simp add: cpH_def loopfunc_def)
   apply (simp add: pfun_defs)
   apply (subst cpflip_altdef)
   apply (subst rvfun_skip_inverse)
@@ -652,7 +652,7 @@ lemma cpflip_loop:
   apply (subst unique_fixed_point_lfp_gfp'[where fp = "prfun_of_rvfun (cpH p)"])
   using cpflip_is_dist apply auto[1]
   apply (metis (no_types, lifting) Collect_mono_iff cstate_rel_UNIV_set finite.emptyI finite_insert rev_finite_subset)
-  using cpflip_iter_seq_tendsto_0 apply (simp add: assms)
+  using cpflip_iterdiff_tendsto_0 apply (simp add: assms)
   using cpH_is_fp apply blast
   by simp
 
@@ -723,7 +723,7 @@ lemma iterate_tflip_bottom_simp:
                 * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
   sorry
   (*apply (auto)
-  apply (simp add: Fwhile_def)
+  apply (simp add: loopfunc_def)
   apply (simp add: prfun_zero_right')
   apply (simp add: pfun_defs)
   apply (subst rvfun_skip_inverse)
@@ -734,7 +734,7 @@ lemma iterate_tflip_bottom_simp:
   apply (meson Tcoin.exhaust)
   apply (induct_tac n)
   apply (simp)
-  apply (simp add: Fwhile_def)
+  apply (simp add: loopfunc_def)
   apply (simp add: prfun_zero_right')
   apply (simp add: pfun_defs)
   apply (subst rvfun_skip_inverse)+
@@ -767,7 +767,7 @@ lemma iterate_tflip_bottom_simp:
   using real2ureal_def apply blast+
   (* *)
   apply (simp)
-  apply (subst Fwhile_def)
+  apply (subst loopfunc_def)
   apply (subst pseqcomp_def)
   apply (subst pcond_def)
   apply (subst cflip_altdef)

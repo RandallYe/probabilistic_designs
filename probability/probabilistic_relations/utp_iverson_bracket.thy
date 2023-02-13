@@ -44,6 +44,14 @@ definition nat_of_real_1 :: "real \<Rightarrow> nat" where
 (* Declare your Iverson brackets operator as an expression constructor, to stop it being lifted *)
 expr_constructor iverson_bracket
 
+lemma iverson_bracket_true: "\<lbrakk>true\<rbrakk>\<^sub>\<I> = (1)\<^sub>e"
+  apply (simp add: iverson_bracket_def)
+  by (simp add: true_pred_def)
+
+lemma iverson_bracket_false: "\<lbrakk>false\<rbrakk>\<^sub>\<I> = (0)\<^sub>e"
+  apply (simp add: iverson_bracket_def)
+  by (simp add: false_pred_def)
+
 lemma iverson_bracket_mono: "\<lbrakk> (P) \<sqsupseteq> (Q) \<rbrakk> \<Longrightarrow> \<lbrakk>P\<rbrakk>\<^sub>\<I> \<le> \<lbrakk>Q\<rbrakk>\<^sub>\<I>"
   apply (simp add: ref_by_pred_is_leq)
   apply (simp add: iverson_bracket_def)

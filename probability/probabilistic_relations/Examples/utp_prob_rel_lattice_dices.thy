@@ -199,7 +199,7 @@ lemma iterate_dice_throw_bottom_simp:
               (\<lbrakk>$c\<^sup>< = chead \<and> $c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e + 
                \<lbrakk>$c\<^sup>< = ctail \<and> $c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
   apply (auto)
-  apply (simp add: Fwhile_def)
+  apply (simp add: loopfunc_def)
   apply (simp add: prfun_zero_right')
   apply (simp add: pfun_defs)
   apply (subst rvfun_skip_inverse)
@@ -210,7 +210,7 @@ lemma iterate_dice_throw_bottom_simp:
   apply (meson Tcoin.exhaust)
   apply (induct_tac n)
   apply (simp)
-  apply (simp add: Fwhile_def)
+  apply (simp add: loopfunc_def)
   apply (simp add: prfun_zero_right')
   apply (simp add: pfun_defs)
   apply (subst rvfun_skip_inverse)+
@@ -243,7 +243,7 @@ lemma iterate_dice_throw_bottom_simp:
   using real2ureal_def apply blast+
   (* *)
   apply (simp)
-  apply (subst Fwhile_def)
+  apply (subst loopfunc_def)
   apply (subst pseqcomp_def)
   apply (subst pcond_def)
   apply (subst dice_throw_altdef)
@@ -389,7 +389,7 @@ lemma iterate_dice_throw_bottom_simp:
               (\<lbrakk>d1\<^sup>> = d2\<^sup>> \<and> $d1\<^sup>> = $d1\<^sup>< \<and> $d2\<^sup>> = $d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e + 
                \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
   apply (simp add: f_def)+
-  apply (simp add: Fwhile_def)
+  apply (simp add: loopfunc_def)
   apply (simp add: prfun_zero_right')
   apply (simp add: pfun_defs)
   apply (subst rvfun_skip_inverse)
@@ -401,7 +401,7 @@ lemma iterate_dice_throw_bottom_simp:
   apply (meson Tcoin.exhaust)
   apply (induct_tac n)
   apply (simp)
-  apply (simp add: Fwhile_def)
+  apply (simp add: loopfunc_def)
   apply (simp add: prfun_zero_right')
   apply (simp add: pfun_defs)
   apply (subst rvfun_skip_inverse)+
@@ -434,7 +434,7 @@ lemma iterate_dice_throw_bottom_simp:
   using real2ureal_def apply blast+
   (* *)
   apply (simp)
-  apply (subst Fwhile_def)
+  apply (subst loopfunc_def)
   apply (subst pseqcomp_def)
   apply (subst pcond_def)
   apply (subst dice_throw_altdef)
@@ -1077,7 +1077,7 @@ proof -
 
   show "iterate\<^sub>p (Suc 0) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 0\<^sub>p = (\<lbrakk>$fd1\<^sup>< = $fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>$fd1\<^sup>> = $fd1\<^sup>< \<and> $fd2\<^sup>> = $fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
     apply (auto)
-    apply (simp add: Fwhile_def)
+    apply (simp add: loopfunc_def)
     apply (simp add: prfun_zero_right')
     apply (simp add: pfun_defs)
     apply (subst rvfun_skip_inverse)
@@ -1139,7 +1139,7 @@ proof -
            \<lbrakk>\<not>$fd1\<^sup>< = $fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>$fd1\<^sup>> = $fd2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e / 36 * (\<Sum>i\<in>{0..\<guillemotleft>n\<guillemotright>}. (5/6)^i))\<^sub>e"
     apply (induct_tac n)
     apply (simp)
-    apply (simp add: Fwhile_def)
+    apply (simp add: loopfunc_def)
     apply (simp add: prfun_zero_right')
     apply (simp add: pfun_defs)
     apply (subst rvfun_skip_inverse)+
@@ -1169,7 +1169,7 @@ proof -
     apply (auto)
     apply (simp add: infsum_0 real2ureal_def)
     (* *)
-    apply (subst Fwhile_def)
+    apply (subst loopfunc_def)
     apply (subst pseqcomp_def)
     apply (subst pcond_def)
     apply (subst fdice_throw_altdef)
@@ -1629,11 +1629,11 @@ lemma fdice_throw_loop: "fdice_throw_loop = prfun_of_rvfun fH"
 
 subsubsection \<open> Using unique fixed point theorem \<close>
 
-lemma fdice_throw_iter_seq_simp:
-  shows "(iter_seq 0 (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = 1\<^sub>p"
-        "(iter_seq (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>fd1\<^sup>< \<noteq> fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+lemma fdice_throw_iterdiff_simp:
+  shows "(iterdiff 0 (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = 1\<^sub>p"
+        "(iterdiff (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>fd1\<^sup>< \<noteq> fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
 proof -
-  show "(iter_seq 0 (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = 1\<^sub>p"
+  show "(iterdiff 0 (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = 1\<^sub>p"
     by (auto)
   
   have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::fdstate. (if fd1_pred v\<^sub>0 then 1::\<real> else (0::\<real>)) *
@@ -1647,7 +1647,7 @@ proof -
     apply (simp add: fdstate_pred_univ)
     using card_fdstate_set by auto
 
-  show "(iter_seq (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>fd1\<^sup>< \<noteq> fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+  show "(iterdiff (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>fd1\<^sup>< \<noteq> fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
     apply (induction n)
     apply (simp add: pfun_defs)
     apply (subst fdice_throw_altdef)
@@ -1660,7 +1660,7 @@ proof -
     apply (expr_auto add: rel)
     using f1 f2 apply presburger
     apply (simp only: add_Suc)
-    apply (simp only: iter_seq.simps(2))
+    apply (simp only: iterdiff.simps(2))
     apply (simp only: pcond_def)
     apply (simp only: pseqcomp_def)
     apply (subst rvfun_seqcomp_inverse)
@@ -1694,12 +1694,12 @@ proof -
   qed
 qed
 
-lemma fdice_throw_iter_seq_tendsto_0:
-  "\<forall>s::fdstate \<times> fdstate. (\<lambda>n::\<nat>. ureal2real (iter_seq n (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+lemma fdice_throw_iterdiff_tendsto_0:
+  "\<forall>s::fdstate \<times> fdstate. (\<lambda>n::\<nat>. ureal2real (iterdiff n (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
 proof 
   fix s
-  have "(\<lambda>n::\<nat>. ureal2real (iter_seq (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
-    apply (subst fdice_throw_iter_seq_simp)
+  have "(\<lambda>n::\<nat>. ureal2real (iterdiff (n+1) (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    apply (subst fdice_throw_iterdiff_simp)
     apply (simp add: prfun_of_rvfun_def)
     apply (expr_auto)
     apply (subst real2ureal_inverse)
@@ -1708,12 +1708,12 @@ proof
     apply (simp add: LIMSEQ_realpow_zero)
     apply (subst real2ureal_inverse)
     by (simp)+
-  then show "(\<lambda>n::\<nat>. ureal2real (iter_seq n (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+  then show "(\<lambda>n::\<nat>. ureal2real (iterdiff n (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
     by (rule LIMSEQ_offset[where k = 1])
 qed
 
-lemma fH_is_fp: "Fwhile (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw (prfun_of_rvfun fH) = prfun_of_rvfun fH"
-  apply (simp add: fH_def Fwhile_def)
+lemma fH_is_fp: "\<F> (fd1\<^sup>< \<noteq> fd2\<^sup><)\<^sub>e fdice_throw (prfun_of_rvfun fH) = prfun_of_rvfun fH"
+  apply (simp add: fH_def loopfunc_def)
   apply (simp add: pfun_defs)
   apply (subst fdice_throw_altdef)
   apply (subst rvfun_skip_inverse)
@@ -1842,7 +1842,7 @@ lemma fdice_throw_loop': "fdice_throw_loop = prfun_of_rvfun fH"
   apply simp
   using fdstate_finite finite_prod apply blast
   apply (simp)
-  using fdice_throw_iter_seq_tendsto_0 apply (simp)
+  using fdice_throw_iterdiff_tendsto_0 apply (simp)
   using fH_is_fp apply blast
   by simp
 

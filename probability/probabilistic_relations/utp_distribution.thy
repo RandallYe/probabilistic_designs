@@ -14,6 +14,9 @@ declare [[show_types]]
 named_theorems dist_defs
 
 subsection \<open> Probability and distributions \<close>
+definition is_nonneg:: "(real, 's) expr \<Rightarrow> bool" where
+[dist_defs]: "is_nonneg e = `0 \<le> e`"
+
 definition is_prob:: "(real, 's) expr \<Rightarrow> bool" where
 [dist_defs]: "is_prob e = `0 \<le> e \<and> e \<le> 1`"
 
@@ -56,14 +59,14 @@ text \<open> Normalisation of a real-valued expression. \<close>
 (* If e is not summable, the infinite summation will be equal to 0 based on the definition of infsum,
 then this definition here will have a problem (divide-by-zero). How to deal with it??
 *)
-(*
-definition dist_norm::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>N _") where
-[dist_defs]: "dist_norm e = (e / (\<Sum>\<^sub>\<infinity> s. \<guillemotleft>e\<guillemotright> s))\<^sub>e"
-*)
-definition dist_norm::"(real, 's\<^sub>1 \<times> 's\<^sub>2) expr \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr" ("\<^bold>N _") where
-[dist_defs]: "dist_norm P = (P / (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P)))\<^sub>e"
 
-thm "dist_norm_def"
+definition dist_norm::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>N _") where
+[dist_defs]: "dist_norm p = (p / (\<Sum>\<^sub>\<infinity> s. \<guillemotleft>p\<guillemotright> s))\<^sub>e"
+
+definition dist_norm_final ::"(real, 's\<^sub>1 \<times> 's\<^sub>2) expr \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr" ("\<^bold>N\<^sub>f _") where
+[dist_defs]: "dist_norm_final P = (P / (\<Sum>\<^sub>\<infinity> v\<^sub>0. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> P)))\<^sub>e"
+
+thm "dist_norm_final_def"
 
 definition dist_norm_alpha::"('v \<Longrightarrow> 's\<^sub>2) \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr \<Rightarrow> (real, 's\<^sub>1 \<times> 's\<^sub>2) expr" ("\<^bold>N\<^sub>\<alpha> _ _") where
 [dist_defs]: "dist_norm_alpha x P = (P / (\<Sum>\<^sub>\<infinity> v. ([ x\<^sup>> \<leadsto> \<guillemotleft>v\<guillemotright> ] \<dagger> P)))\<^sub>e"
@@ -77,10 +80,16 @@ definition uniform_dist:: "('b \<Longrightarrow> 's) \<Rightarrow> \<bbbP> 'b \<
 lemma "(\<Squnion> v \<in> {}. x := \<guillemotleft>v\<guillemotright>) = false"
   by (pred_auto)
 
+term "\<Union>"
+thm "Sup_set_def"
 term "x \<^bold>\<U> A"
 thm "uniform_dist_def"
 
 subsection \<open> Laws \<close>
+lemma is_prob_ibracket:
+  "is_prob (\<lbrakk>p\<rbrakk>\<^sub>\<I>\<^sub>e)"
+  by (simp add: is_prob_def expr_defs)
+
 lemma is_final_distribution_prob:
   assumes "is_final_distribution f"
   shows "is_final_prob f"
@@ -115,4 +124,17 @@ lemma is_final_sub_dist_prob:
   apply (simp add: dist_defs)
   by (metis (mono_tags, lifting) SEXP_def assms curry_def is_prob is_sub_dist_def tautI)
 
+lemma is_nonneg_simp: "\<lbrakk>is_nonneg e\<rbrakk> \<Longrightarrow> \<forall>s. e s \<ge> 0"
+  by (simp add: is_nonneg_def taut_def)
+
+lemma dist_norm_is_prob:
+  assumes "is_nonneg e"
+  assumes "infsum e UNIV > 0"
+  shows "is_prob (\<^bold>N e)"
+  apply (simp add: dist_defs expr_defs)
+  apply (rule allI, rule conjI)
+  using is_nonneg_simp assms(1) assms(2) divide_nonneg_pos apply blast
+  apply (insert infsum_geq_element[where f = "e"])
+  by (metis UNIV_I assms(1) assms(2) divide_le_eq_1_pos division_ring_divide_zero infsum_not_exists 
+      is_nonneg_simp linordered_nonzero_semiring_class.zero_le_one)
 end

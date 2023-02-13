@@ -522,7 +522,7 @@ lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) =
 subsubsection \<open> Parallel composition \<close>
 
 abbreviation pparallel_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun" (infixl "\<parallel>\<^sub>f" 58)
-  where "pparallel_f P Q \<equiv> (\<^bold>N (P * Q)\<^sub>e)"
+  where "pparallel_f P Q \<equiv> (\<^bold>N\<^sub>f (P * Q)\<^sub>e)"
 
 abbreviation pparallel_f' :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun"
   where "pparallel_f' P Q \<equiv> ((P * Q) / (\<Sum>\<^sub>\<infinity> s'. ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> P) * ([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>s'\<guillemotright> ] \<dagger> Q)))\<^sub>e"
@@ -598,6 +598,7 @@ replacing this one @{text "increasing_chain"} with that one. \<close>
 definition increasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Rightarrow> bool" where
 [chains_defs]: "increasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<le> f n)"
 
+term "mono"
 text \<open>Similarly @{term "decseq"}. \<close>
 definition decreasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Rightarrow> bool" where
 [chains_defs]: "decreasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<ge> f n)"
@@ -635,24 +636,24 @@ proof -
 qed
 *)
 
-definition Fwhile :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" where
-[pfun_defs]: "Fwhile b P X  \<equiv> (if\<^sub>c b then (P ; X) else II)"
+definition loopfunc :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("\<F>") where
+[pfun_defs]: "loopfunc b P X  \<equiv> (if\<^sub>c b then (P ; X) else II)"
 
 definition pwhile :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("while\<^sub>p _ do _ od") where
-[pfun_defs]: "pwhile b P = (\<mu>\<^sub>p X \<bullet> Fwhile b P X)"
+[pfun_defs]: "pwhile b P = (\<mu>\<^sub>p X \<bullet> \<F> b P X)"
 
 definition pwhile_top :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("while\<^sub>p\<^sup>\<top> _ do _ od") where
-[pfun_defs]: "pwhile_top b P = (\<nu>\<^sub>p X \<bullet> Fwhile b P X)"
+[pfun_defs]: "pwhile_top b P = (\<nu>\<^sub>p X \<bullet> \<F> b P X)"
 
 primrec iterate :: "\<nat> \<Rightarrow> ('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("iterate\<^sub>p") where
     "iterate 0 b P X = X"
-  | "iterate (Suc n) b P X = (Fwhile b P (iterate n b P X))"
+  | "iterate (Suc n) b P X = (\<F> b P (iterate n b P X))"
 
-text \<open> @{text "iter_seq"} constructs a form @{text "P ; (P ; ... ; (P ; X))"}. This particularly is 
+text \<open> @{text "iterdiff"} constructs a form @{text "P ; (P ; ... ; (P ; X))"}. This particularly is 
 used for @{text "X"} being @{text "1\<^sub>p"}\<close>
-primrec iter_seq :: "\<nat> \<Rightarrow> ('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" where
-    "iter_seq 0 b P X = X"
-  | "iter_seq (Suc n) b P X = (if\<^sub>c b then (P ; (iter_seq n b P X)) else 0\<^sub>p) "
+primrec iterdiff :: "\<nat> \<Rightarrow> ('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" where
+    "iterdiff 0 b P X = X"
+  | "iterdiff (Suc n) b P X = (if\<^sub>c b then (P ; (iterdiff n b P X)) else 0\<^sub>p)"
 
 definition "Pt (P::'a time_scheme prhfun) \<equiv> (P ; t := $t + 1)"
 

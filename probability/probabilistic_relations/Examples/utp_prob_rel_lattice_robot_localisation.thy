@@ -88,7 +88,7 @@ qed
 
 lemma believe_1_simp: "(init \<parallel> scale_door) = prfun_of_rvfun believe_1"
   apply (simp add: pparallel_def init_def scale_door_def believe_1_def)
-  apply (simp add: dist_norm_def)
+  apply (simp add: dist_norm_final_def)
   apply (simp add: rvfun_uniform_dist_altdef)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp add: door_def)
@@ -112,7 +112,7 @@ lemma believe_1_simp': "(init \<parallel> scale_door) = prfun_of_rvfun believe_1
 
 lemma move_right_1_simp: "(init \<parallel> scale_door) ; move_right = prfun_of_rvfun move_right_1"
   apply (simp add: pseqcomp_def move_right_1_def)
-  (* apply (simp add: pparallel_def dist_norm_def) *)
+  (* apply (simp add: pparallel_def dist_norm_final_def) *)
   apply (simp add: init_def)
   apply (subst prfun_parallel_uniform_dist')
   apply (simp)+
@@ -120,7 +120,7 @@ lemma move_right_1_simp: "(init \<parallel> scale_door) ; move_right = prfun_of_
   apply (expr_auto)
   apply (simp add: scale_door_def door_def)
    apply (expr_auto)
-  apply (simp add: pfun_defs dist_norm_def move_right_def scale_door_def door_def )
+  apply (simp add: pfun_defs dist_norm_final_def move_right_def scale_door_def door_def )
   apply (subst rvfun_assignment_inverse)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto add: rel assigns_r_def)
