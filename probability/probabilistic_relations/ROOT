@@ -1,0 +1,36 @@
+(* Probability *)
+session "UTP_prob_relations" = "UTP2" + 
+  options [document  = pdf, document_output = "output", timeout = 1000]
+  theories
+    utp_prob_rel
+  document_files
+    "root.bib"
+    "root.tex"
+    "document.sty"
+    "utp.sty"
+    "zed.sty"
+    "csp.sty"
+    "colornames.sty"
+    "crayola.sty"
+    "lstcustom.sty"
+
+session "UTP_prob_relations_examples" in "Examples" = "UTP_prob_relations" +
+  options [timeout = 600, document = pdf, document_output = "output"]
+  sessions
+    "UTP_prob_relations"
+  theories
+    utp_prob_rel_lattice_dwta
+    utp_prob_rel_lattice_monty_hall
+    utp_prob_rel_lattice_robot_localisation
+    utp_prob_rel_lattice_coin
+    utp_prob_rel_lattice_dices
+  document_files
+    "root.bib"
+    "root.tex"
+    "document.sty"
+    "utp.sty"
+    "zed.sty"
+    "csp.sty"
+    "colornames.sty"
+    "crayola.sty"
+    "lstcustom.sty"

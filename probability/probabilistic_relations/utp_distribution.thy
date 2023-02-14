@@ -1,4 +1,4 @@
-section \<open> Probabilistic Designs \<close>
+section \<open> Probabilistic distributions \<close>
 
 theory utp_distribution
   imports 
@@ -8,8 +8,6 @@ begin
 
 unbundle UTP_Syntax
 print_bundles   
-
-declare [[show_types]]
 
 named_theorems dist_defs
 
@@ -39,26 +37,20 @@ abbreviation "is_final_distribution f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. 
 abbreviation "is_final_sub_dist f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_sub_dist ((curry f) s\<^sub>1))"
 abbreviation "is_final_prob f \<equiv> (\<forall>s\<^sub>1::'s\<^sub>1. is_prob ((curry f) s\<^sub>1))"
 
-(*
-definition prob_prog::"('s\<^sub>1 \<leftrightarrow> 's\<^sub>2) \<Rightarrow> real" where
-"prob_prog s = 1"
-*)
-(*
-term "{1::nat..}"
-lemma "is_dist (\<lambda>(m::nat,n). (1/2)^(n+m))"
-  apply (simp add: dist_defs expr_defs)
-  apply (auto)
-  apply (simp add: power_le_one)
-  sorry
+(* Use the tautology notation 
+abbreviation "is_final_distribution f \<equiv> `is_dist (@(curry f))`"
+abbreviation "is_final_sub_dist f \<equiv> `is_sub_dist (@(curry f))`"
+abbreviation "is_final_prob f \<equiv> `is_prob (@(curry f))`"
 *)
 
 full_exprs
 
 subsection \<open> Normalisaiton \<close>
-text \<open> Normalisation of a real-valued expression. \<close>
-(* If e is not summable, the infinite summation will be equal to 0 based on the definition of infsum,
-then this definition here will have a problem (divide-by-zero). How to deal with it??
-*)
+text \<open> Normalisation of a real-valued expression. 
+If @{text "p"} is not summable, the infinite summation (@{text "\<Sum>\<^sub>\<infinity>"}) will be equal to 0 based on the 
+definition of infsum, then this definition here will have a problem (divide-by-zero). We need to 
+make sure that @{text "p"} is summable.
+\<close>
 
 definition dist_norm::"(real, 's) expr \<Rightarrow> (real, 's) expr" ("\<^bold>N _") where
 [dist_defs]: "dist_norm p = (p / (\<Sum>\<^sub>\<infinity> s. \<guillemotleft>p\<guillemotright> s))\<^sub>e"
@@ -79,11 +71,6 @@ definition uniform_dist:: "('b \<Longrightarrow> 's) \<Rightarrow> \<bbbP> 'b \<
 
 lemma "(\<Squnion> v \<in> {}. x := \<guillemotleft>v\<guillemotright>) = false"
   by (pred_auto)
-
-term "\<Union>"
-thm "Sup_set_def"
-term "x \<^bold>\<U> A"
-thm "uniform_dist_def"
 
 subsection \<open> Laws \<close>
 lemma is_prob_ibracket:

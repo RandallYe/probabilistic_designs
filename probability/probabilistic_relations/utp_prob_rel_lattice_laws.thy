@@ -1,11 +1,10 @@
-section \<open> Probabilistic relation programming \<close>
+section \<open> Probabilistic relation programming laws \<close>
 
 theory utp_prob_rel_lattice_laws
   imports 
     (* "HOL.limits" *)
     "HOL.Series"
     "utp_prob_rel_lattice"
-    (* "utp_prob_rel_prog" *)
 begin 
 
 text \<open> This version of @{term "expr_simp"} removes @{thm "fun_eq_iff"} because this method will 
@@ -22,7 +21,10 @@ method expr_simp_1 uses add =
    ;((simp add: prod.case_eq_if alpha_splits expr_defs lens_defs add) ; \<comment> \<open> Explode the rest \<close>
      (simp add: expr_defs lens_defs add)?))
 
-subsection \<open> @{text "ureal"} laws \<close>
+subsection \<open> @{type "ureal"} laws \<close>
+lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) = 1"
+  by (simp add: ereal2ureal'_inverse)
+
 lemma ureal2ereal_mono:
   "\<lbrakk>a < b\<rbrakk> \<Longrightarrow> ureal2ereal a < ureal2ereal b"
   by (simp add: less_ureal.rep_eq)
@@ -340,7 +342,7 @@ lemma real2uereal_inverse:
   apply (simp add: assms(1) assms(2) assms(3) divide_le_eq_1 order_less_le)
   by (auto)
 *)
-subsection \<open> Infinite sum \<close>
+subsection \<open> Infinite summation \<close>
 lemma rvfun_prob_sum1_summable:
   assumes "is_final_distribution p"
   shows "\<forall>s. 0 \<le> p s \<and> p s \<le> 1" 
@@ -369,6 +371,17 @@ next
   qed
 qed
 
+lemma rvfun_prob_sum1_summable':
+  assumes "is_final_distribution p"
+  shows "is_prob(p)" 
+        "(\<Sum>\<^sub>\<infinity> s. p (s\<^sub>1, s)) = (1::\<real>)"
+        "summable_on_final p"
+        "final_reachable p"
+  apply (simp add: assms is_final_distribution_prob is_final_prob_prob)+
+  apply (simp add: assms rvfun_prob_sum1_summable(2))
+  apply (simp add: assms rvfun_prob_sum1_summable(3))
+  by (simp add: assms rvfun_prob_sum1_summable(4))
+
 lemma rvfun_prob_sum_leq_1_summable:
   assumes "is_final_sub_dist p"
   shows "\<forall>s. 0 \<le> p s \<and> p s \<le> 1" 
@@ -393,6 +406,29 @@ next
     by (smt (verit, best) UNIV_I assms curry_conv infsum_not_exists is_sub_dist_def is_sum_leq_1_def 
         subsetI summable_on_cong summable_on_subset_banach)
 qed
+
+lemma rvfun_prob_sum_leq_1_summable':
+  assumes "is_final_sub_dist p"
+  shows "\<forall>s. 0 \<le> p s \<and> p s \<le> 1" 
+        "(\<Sum>\<^sub>\<infinity> s. p (s\<^sub>1, s)) \<le> (1::\<real>)"
+        "(\<Sum>\<^sub>\<infinity> s. p (s\<^sub>1, s)) > (0::\<real>)"
+        "summable_on_final p"
+        "final_reachable p"
+  using assms rvfun_prob_sum_leq_1_summable(1) apply blast
+  apply (simp add: assms rvfun_prob_sum_leq_1_summable(2))
+  apply (simp add: assms rvfun_prob_sum_leq_1_summable(3))
+  apply (simp add: assms rvfun_prob_sum_leq_1_summable(4))
+  apply (auto, rule ccontr)
+  proof -
+    fix s
+    assume a1: "\<not> (\<exists>s'::'b. (0::\<real>) < p (s, s'))"
+    then have "\<forall>s'. (0::\<real>) = p (s, s')"
+      by (meson assms linorder_not_le nle_le rvfun_prob_sum_leq_1_summable(1))
+    then have "(\<Sum>\<^sub>\<infinity> s'. p (s, s')) = 0"
+      by simp
+    then show "False"
+      by (metis assms order_less_irrefl rvfun_prob_sum_leq_1_summable(3))
+  qed
 
 text \<open> A probability distribution function is probabilistic, whose final states forms a distribution, 
 and summable (convergent). \<close>
@@ -518,7 +554,7 @@ lemma ureal_is_prob: "is_prob (rvfun_of_prfun P)"
 lemma ureal_1_minus_is_prob: "is_prob ((1)\<^sub>e - rvfun_of_prfun P)"
   by (simp add: is_prob_def rvfun_of_prfun_def ureal_lower_bound ureal_upper_bound)
 
-subsection \<open> Inverse between @{term "rvfun"} and @{term "prfun"}  \<close>
+subsection \<open> Inverse between @{type "rvfun"} and @{type "prfun"}  \<close>
 lemma rvfun_inverse: 
   assumes "is_prob P"
   shows "rvfun_of_prfun (prfun_of_rvfun P) = P"
@@ -540,7 +576,7 @@ lemma prfun_inverse:
       ereal_times(2) max.bounded_iff min_absorb1 nle_le real_of_ereal_le_0 
       type_definition.Rep_inverse type_definition_ureal ureal2ereal zero_ereal_def)
 
-subsection \<open> Laws of type @{type rvfun} \<close>
+subsection \<open> @{type rvfun} laws \<close>
 lemma Sigma_Un_distrib2:
   shows "Sigma A (\<lambda>s. B s) \<union> Sigma A (\<lambda>s. C s) = Sigma A (\<lambda>s. (B s \<union> C s))"
   apply (simp add: Sigma_def)
@@ -1591,7 +1627,6 @@ lemma prfun_zero_left: "\<^bold>0 ; P = \<^bold>0"
 lemma prfun_zero_left': "0\<^sub>p ; P = 0\<^sub>p"
   by (simp add: prfun_zero_left pzero_def)
 
-print_classes
 lemma prfun_pseqcomp_mono: 
   fixes P\<^sub>1 :: "'s prhfun"
   assumes "\<forall>a b. (\<lambda>v\<^sub>0::'s. real_of_ereal 
@@ -2177,9 +2212,8 @@ lemma rvfun_uniform_dist_inverse:
   apply (simp add: assms(1) assms(2) rvfun_uniform_dist_is_prob)
   by simp
 
-
 text \<open> The possible values of @{text "x"} are chosen from a set @{text "A"} and they are equally 
-likely to be observed in a program constructed by @{text "uniform_dist x A"} }.
+likely to be observed in a program constructed by @{term "uniform_dist x A"}.
 \<close>
 lemma rvfun_uniform_dist_is_dist:
   assumes "finite (A::'b set)"
@@ -3074,7 +3108,6 @@ proof -
     using f1 f3 f4 f6 by presburger
 qed
 
-thm "SUP_least"
 lemma increasing_chain_limit_exists_element:
   fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "increasing_chain f"
@@ -3099,49 +3132,8 @@ proof -
     using pos sup_least by (meson linorder_not_le ureal_minus_less)
 qed
 
-(* This is not valid
-lemma increasing_chain_limit_exists_element':
-  fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
-  assumes "increasing_chain f"
-  shows "\<forall>e > 0. \<forall>s. \<exists>m. f m s > (\<Squnion>n::\<nat>. f n s) - e"
-  apply (rule ccontr)
-  apply (auto)
-proof -
-  fix e s s'
-  assume pos: "(0::ureal) < e"
-  assume a1: "\<forall>m::\<nat>. \<not> (\<Squnion>n::\<nat>. f n (s, s')) - e < f m (s, s')"
-
-  from a1 have f1: "\<forall>m::\<nat>. f m (s, s') \<le> (\<Squnion>n::\<nat>. f n (s, s')) - e"
-    using linorder_not_less by blast
-  then have sup_least: "(\<Squnion>n::\<nat>. f n (s, s')) \<le> (\<Squnion>n::\<nat>. f n (s, s')) - e"
-    using SUP_least by metis
-  have sup_ge_0: "(\<Squnion>n::\<nat>. f n (s, s')) \<ge> 0"
-    using less_eq_ureal.rep_eq ureal2ereal zero_ureal.rep_eq by fastforce
-  show "False"
-  proof (cases "\<exists>n. f n (s, s') > 0")
-    case True
-    then have "(\<Squnion>n::\<nat>. f n (s, s')) > 0"
-      by (metis f1 linorder_not_less nless_le pos sup_ge_0 ureal_minus_larger_zero)
-    then show ?thesis 
-      using pos sup_least by (meson linorder_not_le ureal_minus_less)
-  next
-    (* This is not going to be sound because 0 \<le> 0 - (e::ureal) *)
-    case False
-    then have "\<forall>n. f n (s, s') = 0"
-      by (metis linorder_not_less ureal_minus_larger_zero ureal_minus_larger_zero_unit)
-    then show ?thesis 
-      sledgehammer
-  qed
-qed
-*)
-
-(*
-lemma 
-  assumes "increasing_chain f"
-  shows "(\<Squnion>n::\<nat>. (ureal2ereal (f n))) = ureal2ereal (\<Squnion>n::\<nat>. f n)"
-  sledgehammer
-*)
 text \<open> This lemma represents limit in a complete lattice ereal. So (0 - e) is not equal to 0 as in ureal \<close>
+(*
 lemma increasing_chain_limit_exists_element':
   fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "increasing_chain f"
@@ -3185,7 +3177,7 @@ proof -
       using local.sup_least pos zero_ureal.rep_eq by force
   qed
 qed
-
+*)
 (*
 lemma increasing_chain_limit_exists_element':
   fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
@@ -3869,6 +3861,38 @@ print_locale "lattice"
 print_locale "bot"
 print_locale "complete_lattice"
 
+text \<open> Existence of a fixed point for a mono function F in ureal: See 
+@{verbatim "Knaster_Tarski"} under @{verbatim "HOL/Examples"}
+\<close>
+lemma mu_id: "(\<mu>\<^sub>p (X::'a \<Rightarrow> ureal) \<bullet> X) = \<^bold>0"
+  apply (simp add: lfp_def)
+  by (metis bot.extremum_uniqueI bot_fun_def bot_ureal.rep_eq dual_order.refl less_eq_ureal.rep_eq 
+      zero_ureal.rep_eq)
+
+lemma mu_const: "(\<mu>\<^sub>p X \<bullet> P) = P"
+  by (simp add: lfp_const)
+
+lemma nu_id: "(\<nu>\<^sub>p (X::'a \<Rightarrow> ureal) \<bullet> X) = \<^bold>1"
+  apply (simp add: gfp_def)
+  using one_ureal_def top_ureal_def by auto
+
+lemma nu_const: "(\<nu>\<^sub>p X \<bullet> P) = P"
+  by (simp add: gfp_const)
+
+term "Complete_Partial_Order.chain (\<le>) x"
+term "monotone"
+thm "Complete_Partial_Order.iterates.induct"
+(*
+lemma mu_refine_intro:
+  assumes "(C \<Rightarrow> S) \<le> (F::'s prhfun \<Rightarrow> 's prhfun) (C \<Rightarrow> S)" "(C \<and> \<mu>\<^sub>p F) = (C \<and> \<nu>\<^sub>p F)"
+  shows "(C \<Rightarrow> S) \<le> \<mu>\<^sub>p F"
+proof -
+  from assms(1) have "(C \<Rightarrow> S) \<le> \<nu>\<^sub>p F"
+    by (simp add: gfp_upperbound )
+  with assms show ?thesis
+qed
+*)
+
 theorem loopfunc_mono:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   shows "mono (\<F> b P)"
@@ -4192,22 +4216,22 @@ lemma iterate_decreasing_chain:
 subsubsection \<open> Supreme \<close>
 lemma sup_iterate_not_zero_strict_increasing:
   shows "(\<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0) \<longleftrightarrow> 
-        (ureal2real (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s))"
+        (ureal2real (iter\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p s))"
   apply (rule iffI)
 proof (rule ccontr)
-  assume a1: "\<exists>n::\<nat>. \<not> iterate\<^sub>p n b P 0\<^sub>p s = (0::ureal)"
-  assume a2: "\<not> ureal2real (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s)"
-  then have "(\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s) = (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s)"
+  assume a1: "\<exists>n::\<nat>. \<not> iter\<^sub>p n b P 0\<^sub>p s = (0::ureal)"
+  assume a2: "\<not> ureal2real (iter\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p s)"
+  then have "(\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p s) = (iter\<^sub>p (0::\<nat>) b P 0\<^sub>p s)"
     by (metis not_le_imp_less pzero_def ureal2real_mono_strict ureal_minus_larger_zero 
         ureal_minus_larger_zero_unit utp_prob_rel_lattice.iterate.simps(1))
-  then have "\<forall>n. iterate n b P 0\<^sub>p s = (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s)"
+  then have "\<forall>n. iterate n b P 0\<^sub>p s = (iter\<^sub>p (0::\<nat>) b P 0\<^sub>p s)"
     by (metis SUP_upper bot.extremum bot_ureal.rep_eq iso_tuple_UNIV_I nle_le pzero_def 
         ureal2ereal_inverse utp_prob_rel_lattice.iterate.simps(1) zero_ureal.rep_eq)
   then show "False"
     by (metis a1 pzero_def utp_prob_rel_lattice.iterate.simps(1))
 next
-  assume "ureal2real (iterate\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s)"
-  then show "\<exists>n::\<nat>. \<not> iterate\<^sub>p n b P 0\<^sub>p s = (0::ureal)"
+  assume "ureal2real (iter\<^sub>p (0::\<nat>) b P 0\<^sub>p s) < ureal2real (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p s)"
+  then show "\<exists>n::\<nat>. \<not> iter\<^sub>p n b P 0\<^sub>p s = (0::ureal)"
     by (smt (verit, best) SUP_bot_conv(2) bot_ureal.rep_eq ureal2ereal_inverse zero_ureal.rep_eq)
   qed
 
@@ -4221,19 +4245,19 @@ lemma sup_iterate_continuous_limit:
 proof -
   fix r
   assume a1: "(0::\<real>) < r"
-  have f1: "\<forall>n. ureal2real (\<F> b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) \<le>
-              ureal2real (\<F> b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s'))"
+  have f1: "\<forall>n. ureal2real (\<F> b P (iter\<^sub>p n b P 0\<^sub>p) (s, s')) \<le>
+              ureal2real (\<F> b P (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, s'))"
     apply (auto)
     apply (rule ureal2real_mono)
     by (smt (verit) loopfunc_monoE SUP_upper UNIV_I assms le_fun_def)
-  have f2: "\<forall>n. \<bar>ureal2real (\<F> b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) -
-              ureal2real (\<F> b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s'))\<bar> = 
-    (ureal2real (\<F> b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s')) - 
-     ureal2real (\<F> b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')))"
+  have f2: "\<forall>n. \<bar>ureal2real (\<F> b P (iter\<^sub>p n b P 0\<^sub>p) (s, s')) -
+              ureal2real (\<F> b P (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, s'))\<bar> = 
+    (ureal2real (\<F> b P (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, s')) - 
+     ureal2real (\<F> b P (iter\<^sub>p n b P 0\<^sub>p) (s, s')))"
     using f1 by force
 
   (* *)
-  let ?f = "(\<lambda>n. (iterate\<^sub>p n b P 0\<^sub>p))"
+  let ?f = "(\<lambda>n. (iter\<^sub>p n b P 0\<^sub>p))"
 
   have f3: "\<forall>n. \<forall>s s'. ureal2real (?f n (s, s')) \<le> ureal2real (\<Squnion>n::\<nat>. ?f n (s, s'))"
     apply (auto)
@@ -4275,8 +4299,8 @@ obtain N where P_N: "\<forall>n\<ge>N. \<bar>ureal2real (?f n (s, s')) - ureal2r
   have P_NN': "\<forall>n\<ge>NN. \<forall>s s'. ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')) - ureal2real (?f n (s, s')) < r"
     by (smt (verit, del_insts) P_NN)
 
-  have "\<forall>n\<ge>NN. (ureal2real (\<F> b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s')) - 
-     ureal2real (\<F> b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s'))) < r"
+  have "\<forall>n\<ge>NN. (ureal2real (\<F> b P (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, s')) - 
+     ureal2real (\<F> b P (iter\<^sub>p n b P 0\<^sub>p) (s, s'))) < r"
     apply (auto)
     apply (subst loopfunc_minus_distr')
     apply (simp add: assms)
@@ -4293,14 +4317,14 @@ obtain N where P_N: "\<forall>n\<ge>N. \<bar>ureal2real (?f n (s, s')) - ureal2r
           (\<lambda>\<s>::'s \<times> 's.
               \<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
                 rvfun_of_prfun P (fst \<s>, v\<^sub>0) *
-                rvfun_of_prfun ((\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) - iterate\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, snd \<s>))
+                rvfun_of_prfun ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) - iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, snd \<s>))
           (s, s'))"
     have f10: "\<forall>s s'. (ureal2real (\<Squnion>n::\<nat>. ?f n (s, s')) - ureal2real (?f n (s, s'))) = 
           (ureal2real ((\<Squnion>n::\<nat>. ?f n (s, s')) - (?f n (s, s'))))"
       by (metis f3 linorder_not_le ureal2real_distr ureal2real_mono_strict)
     have f11: "((\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
           ureal2real (P (s, v\<^sub>0)) *
-          ureal2real ((\<Squnion>f::'s \<times> 's \<Rightarrow> ureal\<in>range (\<lambda>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p). f (v\<^sub>0, s')) - iterate\<^sub>p n b P 0\<^sub>p (v\<^sub>0, s'))))
+          ureal2real ((\<Squnion>f::'s \<times> 's \<Rightarrow> ureal\<in>range (\<lambda>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p). f (v\<^sub>0, s')) - iter\<^sub>p n b P 0\<^sub>p (v\<^sub>0, s'))))
       = ( (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
           ureal2real (P (s, v\<^sub>0)) * (ureal2real (\<Squnion>n::\<nat>. ?f n (v\<^sub>0, s')) - ureal2real (?f n (v\<^sub>0, s')))))"
       apply (rule infsum_cong)
@@ -4308,7 +4332,7 @@ obtain N where P_N: "\<forall>n\<ge>N. \<bar>ureal2real (?f n (s, s')) - ureal2r
     have f12: "... < (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. ureal2real (P (s, v\<^sub>0)) * r)"
     proof -
       let ?lhs = "\<lambda>v\<^sub>0. ureal2real (P (s, v\<^sub>0)) *
-        (ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p (v\<^sub>0, s')) - ureal2real (iterate\<^sub>p n b P 0\<^sub>p (v\<^sub>0, s')))"
+        (ureal2real (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p (v\<^sub>0, s')) - ureal2real (iter\<^sub>p n b P 0\<^sub>p (v\<^sub>0, s')))"
       let ?rhs = "\<lambda>v\<^sub>0. ureal2real (P (s, v\<^sub>0)) * r"
       obtain v\<^sub>0 where P_v\<^sub>0: "P (s, v\<^sub>0) > 0"
         using assms rvfun_prob_sum1_summable(4)
@@ -4378,8 +4402,8 @@ obtain N where P_N: "\<forall>n\<ge>N. \<bar>ureal2real (?f n (s, s')) - ureal2r
   qed
 
   then show "\<exists>no::\<nat>. \<forall>n\<ge>no.
-             \<bar>ureal2real (\<F> b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) -
-              ureal2real (\<F> b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s'))\<bar> < r"
+             \<bar>ureal2real (\<F> b P (iter\<^sub>p n b P 0\<^sub>p) (s, s')) -
+              ureal2real (\<F> b P (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, s'))\<bar> < r"
     apply (simp add: loopfunc_def)
     by (metis loopfunc_def f2)
 qed
@@ -4441,17 +4465,17 @@ proof -
   then have f1: "(\<Squnion>n::\<nat>. ?f n (s, s')) = ((\<F> b P (\<Squnion>n::nat. iterate n b P 0\<^sub>p)) (s, s'))"
     using ureal2real_eq by blast
 
-  have f2: "(\<Squnion>x::'s \<times> 's \<Rightarrow> ureal\<in> \<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 0\<^sub>p}. x (s, s'))
-    = Sup ((\<lambda>x. x (s, s')) ` (\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 0\<^sub>p}))"
+  have f2: "(\<Squnion>x::'s \<times> 's \<Rightarrow> ureal\<in> \<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iter\<^sub>p n b P 0\<^sub>p}. x (s, s'))
+    = Sup ((\<lambda>x. x (s, s')) ` (\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iter\<^sub>p n b P 0\<^sub>p}))"
     by auto
-  have f3: "(\<Squnion>n::\<nat>. \<F> b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')) = (Sup (range (\<lambda>n. \<F> b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s'))))"
+  have f3: "(\<Squnion>n::\<nat>. \<F> b P (iter\<^sub>p n b P 0\<^sub>p) (s, s')) = (Sup (range (\<lambda>n. \<F> b P (iter\<^sub>p n b P 0\<^sub>p) (s, s'))))"
     by simp
-  have f4: "((\<lambda>x. x (s, s')) ` (\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 0\<^sub>p})) = 
-        (range (\<lambda>n. \<F> b P (iterate\<^sub>p n b P 0\<^sub>p) (s, s')))"
+  have f4: "((\<lambda>x. x (s, s')) ` (\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iter\<^sub>p n b P 0\<^sub>p})) = 
+        (range (\<lambda>n. \<F> b P (iter\<^sub>p n b P 0\<^sub>p) (s, s')))"
     apply (simp add: image_def)
     by (auto)
-  show "\<F> b P (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) (s, s') =
-       (\<Squnion>x::'s \<times> 's \<Rightarrow> ureal\<in>\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 0\<^sub>p}. x (s, s'))"
+  show "\<F> b P (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, s') =
+       (\<Squnion>x::'s \<times> 's \<Rightarrow> ureal\<in>\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iter\<^sub>p n b P 0\<^sub>p}. x (s, s'))"
     apply (simp add: f1[symmetric])
     using f4 by presburger
 qed
@@ -4466,23 +4490,23 @@ theorem sup_iterate_continuous:
 subsubsection \<open> Infimum \<close>
 lemma inf_iterate_not_zero_strict_decreasing:
   shows "(\<exists>n. iterate n b P 1\<^sub>p s \<noteq> 1) \<longleftrightarrow> 
-        (ureal2real (iterate\<^sub>p (0::\<nat>) b P 1\<^sub>p s) > ureal2real (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p s))"
+        (ureal2real (iter\<^sub>p (0::\<nat>) b P 1\<^sub>p s) > ureal2real (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p s))"
   apply (rule iffI)
 proof (rule ccontr)
-  assume a1: "\<exists>n::\<nat>. \<not> iterate\<^sub>p n b P 1\<^sub>p s = (1::ureal)"
-  assume a2: "\<not> ureal2real (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p s) < ureal2real (iterate\<^sub>p (0::\<nat>) b P 1\<^sub>p s)"
-  then have "(\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p s) = (iterate\<^sub>p (0::\<nat>) b P 1\<^sub>p s)"
+  assume a1: "\<exists>n::\<nat>. \<not> iter\<^sub>p n b P 1\<^sub>p s = (1::ureal)"
+  assume a2: "\<not> ureal2real (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p s) < ureal2real (iter\<^sub>p (0::\<nat>) b P 1\<^sub>p s)"
+  then have "(\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p s) = (iter\<^sub>p (0::\<nat>) b P 1\<^sub>p s)"
     by (metis linorder_not_less not_less_iff_gr_or_eq o_apply one_ureal.rep_eq pone_def real_ereal_1 
         ureal2real_def ureal2real_mono_strict ureal_upper_bound utp_prob_rel_lattice.iterate.simps(1))
-  then have "\<forall>n. iterate n b P 1\<^sub>p s = (iterate\<^sub>p (0::\<nat>) b P 1\<^sub>p s)"
+  then have "\<forall>n. iterate n b P 1\<^sub>p s = (iter\<^sub>p (0::\<nat>) b P 1\<^sub>p s)"
     by (smt (verit, best) INF_top_conv(2) UNIV_I linorder_not_less not_less_iff_gr_or_eq o_apply 
         one_ureal.rep_eq pone_def real_ereal_1 top_greatest ureal2real_def ureal2real_mono_strict 
         ureal_upper_bound utp_prob_rel_lattice.iterate.simps(1))
   then show "False"
     by (metis a1 pone_def utp_prob_rel_lattice.iterate.simps(1))
 next
-  assume "ureal2real (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p s) < ureal2real (iterate\<^sub>p (0::\<nat>) b P 1\<^sub>p s)"
-  then show "\<exists>n::\<nat>. \<not> iterate\<^sub>p n b P 1\<^sub>p s = (1::ureal)"
+  assume "ureal2real (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p s) < ureal2real (iter\<^sub>p (0::\<nat>) b P 1\<^sub>p s)"
+  then show "\<exists>n::\<nat>. \<not> iter\<^sub>p n b P 1\<^sub>p s = (1::ureal)"
     by (smt (verit, ccfv_threshold) INF_top_conv(2) one_ureal.rep_eq top_ureal.rep_eq ureal2ereal_inject)
   qed
 
@@ -4496,18 +4520,18 @@ lemma inf_iterate_continuous_limit:
 proof -
   fix r
   assume a1: "(0::\<real>) < r"
-  have f1: "\<forall>n. ureal2real (\<F> b P (iterate\<^sub>p n b P 1\<^sub>p) (s, s')) \<ge>
-              ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p) (s, s'))"
+  have f1: "\<forall>n. ureal2real (\<F> b P (iter\<^sub>p n b P 1\<^sub>p) (s, s')) \<ge>
+              ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p) (s, s'))"
     apply (auto)
     apply (rule ureal2real_mono)
     by (smt (verit) loopfunc_monoE INF_lower UNIV_I assms(1) le_fun_def)
-  have f2: "\<forall>n. \<bar>ureal2real (\<F> b P (iterate\<^sub>p n b P 1\<^sub>p) (s, s')) -
-              ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p) (s, s'))\<bar> = 
-    (ureal2real (\<F> b P (iterate\<^sub>p n b P 1\<^sub>p) (s, s')) -
-        ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p) (s, s')))"
+  have f2: "\<forall>n. \<bar>ureal2real (\<F> b P (iter\<^sub>p n b P 1\<^sub>p) (s, s')) -
+              ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p) (s, s'))\<bar> = 
+    (ureal2real (\<F> b P (iter\<^sub>p n b P 1\<^sub>p) (s, s')) -
+        ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p) (s, s')))"
     using f1 by force
 
-  let ?f = "(\<lambda>n. (iterate\<^sub>p n b P 1\<^sub>p))"
+  let ?f = "(\<lambda>n. (iter\<^sub>p n b P 1\<^sub>p))"
 
   have f3: "\<forall>n. \<forall>s s'. ureal2real (?f n (s, s')) \<ge> ureal2real (\<Sqinter>n::\<nat>. ?f n (s, s'))"
     apply (auto)
@@ -4537,8 +4561,8 @@ proof -
   have P_NN': "\<forall>n\<ge>NN. \<forall>s s'. ureal2real (?f n (s, s')) - ureal2real (\<Sqinter>n::\<nat>. ?f n (s, s')) < r"
     by (smt (verit, del_insts) P_NN)
 
-  have "\<forall>n\<ge>NN. (ureal2real (\<F> b P (iterate\<^sub>p n b P 1\<^sub>p) (s, s')) - 
-            ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p) (s, s'))) < r"
+  have "\<forall>n\<ge>NN. (ureal2real (\<F> b P (iter\<^sub>p n b P 1\<^sub>p) (s, s')) - 
+            ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p) (s, s'))) < r"
     apply (auto)
     apply (subst loopfunc_minus_distr')
     apply (simp add: assms)
@@ -4555,14 +4579,14 @@ proof -
           (\<lambda>\<s>::'s \<times> 's.
               \<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
                 rvfun_of_prfun P (fst \<s>, v\<^sub>0) *
-                rvfun_of_prfun (iterate\<^sub>p n b P 1\<^sub>p - (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p)) (v\<^sub>0, snd \<s>))
+                rvfun_of_prfun (iter\<^sub>p n b P 1\<^sub>p - (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p)) (v\<^sub>0, snd \<s>))
           (s, s'))"
     have f10: "\<forall>s s'. (ureal2real (?f n (s, s')) - ureal2real (\<Sqinter>n::\<nat>. ?f n (s, s'))) = 
           (ureal2real ((?f n (s, s')) - (\<Sqinter>n::\<nat>. ?f n (s, s'))))"
       by (metis f3 linorder_not_le ureal2real_distr ureal2real_mono_strict)
     have f11: "((\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
           ureal2real (P (s, v\<^sub>0)) *
-          ureal2real (iterate\<^sub>p n b P 1\<^sub>p (v\<^sub>0, s') - (\<Sqinter>f::'s \<times> 's \<Rightarrow> ureal\<in>range (\<lambda>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p). f (v\<^sub>0, s')))))
+          ureal2real (iter\<^sub>p n b P 1\<^sub>p (v\<^sub>0, s') - (\<Sqinter>f::'s \<times> 's \<Rightarrow> ureal\<in>range (\<lambda>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p). f (v\<^sub>0, s')))))
       = ( (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
           ureal2real (P (s, v\<^sub>0)) * (ureal2real (?f n (v\<^sub>0, s')) - ureal2real (\<Sqinter>n::\<nat>. ?f n (v\<^sub>0, s')))))"
       apply (rule infsum_cong)
@@ -4570,7 +4594,7 @@ proof -
     have f12: "... < (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. ureal2real (P (s, v\<^sub>0)) * r)"
     proof -
       let ?lhs = "\<lambda>v\<^sub>0. ureal2real (P (s, v\<^sub>0)) *
-        (ureal2real (iterate\<^sub>p n b P 1\<^sub>p (v\<^sub>0, s')) - ureal2real (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p (v\<^sub>0, s')))"
+        (ureal2real (iter\<^sub>p n b P 1\<^sub>p (v\<^sub>0, s')) - ureal2real (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p (v\<^sub>0, s')))"
       let ?rhs = "\<lambda>v\<^sub>0. ureal2real (P (s, v\<^sub>0)) * r"
       obtain v\<^sub>0 where P_v\<^sub>0: "P (s, v\<^sub>0) > 0"
         using assms rvfun_prob_sum1_summable(4)
@@ -4640,8 +4664,8 @@ proof -
   qed
 
   then show "\<exists>no::\<nat>. \<forall>n\<ge>no.
-             \<bar>ureal2real (\<F> b P (iterate\<^sub>p n b P 1\<^sub>p) (s, s')) -
-              ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p) (s, s'))\<bar>
+             \<bar>ureal2real (\<F> b P (iter\<^sub>p n b P 1\<^sub>p) (s, s')) -
+              ureal2real (\<F> b P (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p) (s, s'))\<bar>
              < r"
     apply (simp add: loopfunc_def)
     by (metis loopfunc_def f2)
@@ -4696,17 +4720,17 @@ proof -
   then have f1: "(\<Sqinter>n::\<nat>. ?f n (s, s')) = ((\<F> b P (\<Sqinter>n::nat. iterate n b P 1\<^sub>p)) (s, s'))"
     using ureal2real_eq by blast
 
-  have f2: "(\<Sqinter>x::'s \<times> 's \<Rightarrow> ureal\<in> \<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 1\<^sub>p}. x (s, s'))
-    = Inf ((\<lambda>x. x (s, s')) ` (\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 1\<^sub>p}))"
+  have f2: "(\<Sqinter>x::'s \<times> 's \<Rightarrow> ureal\<in> \<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iter\<^sub>p n b P 1\<^sub>p}. x (s, s'))
+    = Inf ((\<lambda>x. x (s, s')) ` (\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iter\<^sub>p n b P 1\<^sub>p}))"
     by auto
-  have f3: "(\<Sqinter>n::\<nat>. \<F> b P (iterate\<^sub>p n b P 1\<^sub>p) (s, s')) = (Inf (range (\<lambda>n. \<F> b P (iterate\<^sub>p n b P 1\<^sub>p) (s, s'))))"
+  have f3: "(\<Sqinter>n::\<nat>. \<F> b P (iter\<^sub>p n b P 1\<^sub>p) (s, s')) = (Inf (range (\<lambda>n. \<F> b P (iter\<^sub>p n b P 1\<^sub>p) (s, s'))))"
     by simp
-  have f4: "((\<lambda>x. x (s, s')) ` (\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 1\<^sub>p})) = 
-        (range (\<lambda>n. \<F> b P (iterate\<^sub>p n b P 1\<^sub>p) (s, s')))"
+  have f4: "((\<lambda>x. x (s, s')) ` (\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iter\<^sub>p n b P 1\<^sub>p})) = 
+        (range (\<lambda>n. \<F> b P (iter\<^sub>p n b P 1\<^sub>p) (s, s')))"
     apply (simp add: image_def)
     by (auto)
-  show "\<F> b P (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p) (s, s') =
-       (\<Sqinter>x::'s \<times> 's \<Rightarrow> ureal\<in>\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iterate\<^sub>p n b P 1\<^sub>p}. x (s, s'))"
+  show "\<F> b P (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p) (s, s') =
+       (\<Sqinter>x::'s \<times> 's \<Rightarrow> ureal\<in>\<F> b P ` {uu::'s \<times> 's \<Rightarrow> ureal. \<exists>n::\<nat>. uu = iter\<^sub>p n b P 1\<^sub>p}. x (s, s'))"
     apply (simp add: f1[symmetric])
     using f4 by presburger
 qed
@@ -4722,16 +4746,16 @@ subsubsection \<open> Kleene fixed-point theorem \<close>
 lemma fp_between_lfp_gfp:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
   assumes "\<F> b P fp = fp"
-  shows "(\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) \<le> fp"
+  shows "(\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) \<le> fp"
         "fp \<le> (\<Sqinter>n::nat. (iterate n b P 1\<^sub>p))"
 proof -
-  show "(\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) \<le> fp"
+  show "(\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) \<le> fp"
     apply (rule Sup_least)
     apply (simp add: image_def)
     proof -
       fix x
-      assume a11: "\<exists>xa::\<nat>. x = iterate\<^sub>p xa b P 0\<^sub>p"
-      have "\<forall>n. iterate\<^sub>p n b P 0\<^sub>p \<le> fp"
+      assume a11: "\<exists>xa::\<nat>. x = iter\<^sub>p xa b P 0\<^sub>p"
+      have "\<forall>n. iter\<^sub>p n b P 0\<^sub>p \<le> fp"
         apply (rule allI)
         apply (induct_tac "n")
         apply (simp add: ureal_bottom_least')
@@ -4740,13 +4764,13 @@ proof -
         using a11 by blast
     qed
 
-  show "fp \<le> (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p)"
+  show "fp \<le> (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p)"
     apply (rule Inf_greatest)
     apply (simp add: image_def)
     proof -
       fix x
-      assume a11: "\<exists>xa::\<nat>. x = iterate\<^sub>p xa b P 1\<^sub>p"
-      have "\<forall>n. iterate\<^sub>p n b P 1\<^sub>p \<ge> fp"
+      assume a11: "\<exists>xa::\<nat>. x = iter\<^sub>p xa b P 1\<^sub>p"
+      have "\<forall>n. iter\<^sub>p n b P 1\<^sub>p \<ge> fp"
         apply (rule allI)
         apply (induct_tac "n")
         apply (simp add: ureal_top_greatest')
@@ -4791,11 +4815,11 @@ lemma unique_fixed_point:
 proof (auto)
   fix y :: "'s \<times> 's \<Rightarrow> ureal"
   assume a1: "\<F> b P y = y"
-  from a1 have f1: "(\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p) \<le> y"
+  from a1 have f1: "(\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) \<le> y"
     by (metis assms(1) fp_between_lfp_gfp(1))
   from a1 have f2: "y \<le> (\<Sqinter>n::nat. (iterate n b P 1\<^sub>p))"
     by (metis assms(1) fp_between_lfp_gfp(2))
-  then show "y = (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p)"
+  then show "y = (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p)"
     by (simp add: assms(3) f1 order_antisym)
 qed
 
@@ -4859,11 +4883,11 @@ lemma iterate_top_is_prob:
 proof -
   fix n ba
   assume a1: "\<forall>(a::'s) ba::'s.
-          (0::\<real>) \<le> rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iterdiff n b P \<^bold>1) (a, ba) \<and>
-          rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iterdiff n b P \<^bold>1) (a, ba) \<le> (1::\<real>)"
-  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
+          (0::\<real>) \<le> rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iterdiff n b P \<^bold>1) (a, ba) \<and>
+          rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iterdiff n b P \<^bold>1) (a, ba) \<le> (1::\<real>)"
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
       (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba)) = 
-      (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
+      (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
        rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba))"
     apply (rule infsum_add[symmetric])
     apply (simp add: rvfun_of_prfun_def)
@@ -4872,7 +4896,7 @@ proof -
     apply (simp add: rvfun_of_prfun_def)
     apply (rule pdrfun_product_summable')
     by (simp add: assms)
-  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * (rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * (rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
        rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba)))"
     by (simp add: distrib_left)
   also have "... \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0))"
@@ -4885,17 +4909,17 @@ proof -
     by (simp add: a1 mult_left_le prfun_in_0_1')
   also have "... = 1"
     by (simp add: assms pdrfun_prob_sum1_summable'(3))
-  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
+  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
        (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba))  \<le> (1::\<real>)"
     using calculation by presburger
 next
   fix n a ba
   assume a1: "\<forall>(a::'s) ba::'s.
-          (0::\<real>) \<le> rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iterdiff n b P \<^bold>1) (a, ba) \<and>
-          rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iterdiff n b P \<^bold>1) (a, ba) \<le> (1::\<real>)"
-  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
+          (0::\<real>) \<le> rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iterdiff n b P \<^bold>1) (a, ba) \<and>
+          rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (a, ba) + rvfun_of_prfun (iterdiff n b P \<^bold>1) (a, ba) \<le> (1::\<real>)"
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
        (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba)) = 
-    (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
+    (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
        rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba))"
     apply (rule infsum_add[symmetric])
     apply (simp add: rvfun_of_prfun_def)
@@ -4904,7 +4928,7 @@ next
     apply (simp add: rvfun_of_prfun_def)
     apply (rule pdrfun_product_summable')
     by (simp add: assms)
-  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * (rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * (rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba) +
        rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba)))"
     by (simp add: distrib_left)
   also have "... \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0))"
@@ -4917,7 +4941,7 @@ next
     by (simp add: a1 mult_left_le prfun_in_0_1')
   also have "... = 1"
     by (simp add: assms pdrfun_prob_sum1_summable'(3))
-  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
+  then show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba)) +
        (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba))
        \<le> (1::\<real>)"
     using calculation by presburger
@@ -4925,11 +4949,11 @@ qed
 
 lemma iterate_top_is_prob':
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  shows "\<forall>s. ureal2real (iterate\<^sub>p n b P \<^bold>0 s) + ureal2real (iterdiff n b P \<^bold>1 s) \<le> (1::\<real>)"
+  shows "\<forall>s. ureal2real (iter\<^sub>p n b P \<^bold>0 s) + ureal2real (iterdiff n b P \<^bold>1 s) \<le> (1::\<real>)"
 proof -
   have "is_prob ((@(rvfun_of_prfun (iterate n b P 0\<^sub>p)) + @(rvfun_of_prfun (iterdiff n b P 1\<^sub>p)))\<^sub>e)"
     using iterate_top_is_prob assms by blast
-  then have "\<forall>s. rvfun_of_prfun (iterate\<^sub>p n b P 0\<^sub>p) s + rvfun_of_prfun (iterdiff n b P 1\<^sub>p) s \<le> 1"
+  then have "\<forall>s. rvfun_of_prfun (iter\<^sub>p n b P 0\<^sub>p) s + rvfun_of_prfun (iterdiff n b P 1\<^sub>p) s \<le> 1"
     apply (subst (asm) dist_defs taut_def)
     by (simp add: taut_def)
   then show ?thesis
@@ -4967,15 +4991,15 @@ lemma iterate_top_eq_bot_plus:
   apply (pred_auto)
 proof -
   fix n ba
-  assume a1: "\<forall>(a::'s) ba::'s. iterate\<^sub>p n b P \<^bold>1 (a, ba) = iterate\<^sub>p n b P \<^bold>0 (a, ba) + iterdiff n b P \<^bold>1 (a, ba)"
+  assume a1: "\<forall>(a::'s) ba::'s. iter\<^sub>p n b P \<^bold>1 (a, ba) = iter\<^sub>p n b P \<^bold>0 (a, ba) + iterdiff n b P \<^bold>1 (a, ba)"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
            rvfun_of_prfun P (ba, v\<^sub>0) *
-           rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a + iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba))"
-  let ?rhs_1 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba))"
+           rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter\<^sub>p n b P \<^bold>0 a + iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba))"
+  let ?rhs_1 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba))"
   let ?rhs_2 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (ba, v\<^sub>0) * rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba))"
 
-  have f0: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a + iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba)
-    = (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
+  have f0: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter\<^sub>p n b P \<^bold>0 a + iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba)
+    = (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
             rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba))"
     apply (simp add: ureal_defs)
     apply (subst ureal2ereal_add_dist)
@@ -4984,7 +5008,7 @@ proof -
     by (metis abs_ereal_ge0 atLeastAtMost_iff ereal_less_eq(1) ereal_times(1) nle_le real_of_ereal_add ureal2ereal)
   have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
            rvfun_of_prfun P (ba, v\<^sub>0) *
-           (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
+           (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
             rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba)))"
     apply (rule infsum_cong)
     using f0 by presburger
@@ -5014,15 +5038,15 @@ proof -
     by simp
 next
   fix n a ba
-  assume a1: "\<forall>(a::'s) ba::'s. iterate\<^sub>p n b P \<^bold>1 (a, ba) = iterate\<^sub>p n b P \<^bold>0 (a, ba) + iterdiff n b P \<^bold>1 (a, ba)"
+  assume a1: "\<forall>(a::'s) ba::'s. iter\<^sub>p n b P \<^bold>1 (a, ba) = iter\<^sub>p n b P \<^bold>0 (a, ba) + iterdiff n b P \<^bold>1 (a, ba)"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
            rvfun_of_prfun P (a, v\<^sub>0) *
-           rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a + iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba))"
-  let ?rhs_1 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterate\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba))"
+           rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter\<^sub>p n b P \<^bold>0 a + iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba))"
+  let ?rhs_1 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iter\<^sub>p n b P \<^bold>0) (v\<^sub>0, ba))"
   let ?rhs_2 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (iterdiff n b P \<^bold>1) (v\<^sub>0, ba))"
 
-  have f0: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a + iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba)
-    = (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
+  have f0: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter\<^sub>p n b P \<^bold>0 a + iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba)
+    = (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
             rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba))"
     apply (simp add: ureal_defs)
     apply (subst ureal2ereal_add_dist)
@@ -5031,7 +5055,7 @@ next
     by (metis abs_ereal_ge0 atLeastAtMost_iff ereal_less_eq(1) ereal_times(1) nle_le real_of_ereal_add ureal2ereal)
   have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s.
            rvfun_of_prfun P (a, v\<^sub>0) *
-           (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterate\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
+           (rvfun_of_prfun (\<lambda>a::'s \<times> 's. iter\<^sub>p n b P \<^bold>0 a) (v\<^sub>0, ba) + 
             rvfun_of_prfun (\<lambda>a::'s \<times> 's. iterdiff n b P \<^bold>1 a) (v\<^sub>0, ba)))"
     apply (rule infsum_cong)
     using f0 by presburger
@@ -5133,14 +5157,14 @@ proof -
   have "\<forall>s. (ureal2real (\<Squnion>n::\<nat>. ?f1 n s)) = (ureal2real (\<Sqinter>n::\<nat>. ?f2 n s))"
   proof 
     fix s
-    show "ureal2real (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p s) = ureal2real (\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p s)"
+    show "ureal2real (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p s) = ureal2real (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p s)"
     apply (rule LIMSEQ_unique[where X = "(\<lambda>n. ureal2real (?f2 n s))"])
     using f6 apply fastforce
     using f2 by blast
   qed
   then have "\<forall>s. (\<Squnion>n::\<nat>. ?f1 n s) = (\<Sqinter>n::\<nat>. ?f2 n s)"
     using ureal2real_eq by blast
-  then show "(\<Sqinter>n::\<nat>. iterate\<^sub>p n b P 1\<^sub>p) = (\<Squnion>n::\<nat>. iterate\<^sub>p n b P 0\<^sub>p)"
+  then show "(\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p) = (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p)"
     apply (subst fun_eq_iff)
     apply (rule allI)
     by (metis INF_apply SUP_apply)
@@ -5156,141 +5180,4 @@ theorem unique_fixed_point_lfp_gfp':
   apply (simp add: iterate_sup_inf_eq assms unique_fixed_point_lfp_gfp(1))
   by (simp add: iterate_sup_inf_eq assms unique_fixed_point_lfp_gfp(2))
 
-(*
-lemma 
-  shows "(\<lambda>n. ureal2real ((iterdiff n b P 1\<^sub>p) s)) \<longlonglongrightarrow> 0"
-  apply (subst LIMSEQ_iff)
-  apply (auto)
-proof -
-  fix r::\<real>
-  assume "0 < r"
-  have "\<forall>n. \<bar>ureal2real (iterdiff n b P 1\<^sub>p s)\<bar> = ureal2real (iterdiff n b P 1\<^sub>p s)"
-    by (simp add: ureal_lower_bound)
-  have "\<exists>n. (iterdiff n b P 1\<^sub>p s) < r"
-    apply (rule ccontr)
-    apply (auto)
-  proof -
-    assume "\<forall>n::\<nat>. \<not> iterdiff n b P 1\<^sub>p s < ereal2ureal (ereal r)"
-    show "False"
-    qed
-
-  show "\<exists>no::\<nat>. \<forall>n\<ge>no. \<bar>ureal2real (iterdiff n b P 1\<^sub>p s)\<bar> < r"
-*)
-
-(*
-theorem increasing_chain_limit_is_lub:
-  fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
-  assumes "increasing_chain f"
-  (* We state the limits in real numbers because LIMSEQ_iff is only for type real_normed_vector,
-  ureal is not of that type. *)
-  shows "(\<lambda>n. ureal2real (f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n (s, s')))"
-*)
-
-(* abbreviation "Ftwhilen n b P X \<equiv> (Ftwhile b P X) ^^ n" *)
-(*
-lemma "Complete_Partial_Order.chain (\<le>) {(Ftwhile b P)}"
-*)
-(*
-lemma "Complete_Partial_Order2.cont Sup (\<le>) Sup (\<le>) (Ftwhile b P)"
-  apply (simp add: cont_def)
-  apply (simp add: pfun_defs)
-  apply (auto)
-  oops
-  
-
-definition ptwhile :: "('a time_scheme \<times> 'a time_scheme \<Rightarrow> \<bool>) \<Rightarrow> 'a time_scheme prhfun 
-  \<Rightarrow> 'a time_scheme prhfun" ("while\<^sub>p\<^sub>t _ do _ od") where
-"ptwhile b P = (while\<^sub>p b do (P; t := $t + 1) od)"
-
-term "$t"
-term "(t+1)\<^sub>e"
-
-thm "ptwhile_def"
-
-theorem ptwhile_unfold:
-  assumes "\<forall>s. (\<lambda>v\<^sub>0. real_of_ereal (ureal2ereal (P (s, v\<^sub>0)))) summable_on UNIV"
-  shows "while\<^sub>p\<^sub>t b do P od = (if\<^sub>c b then (P; t := $t + 1 ; (while\<^sub>p\<^sub>t b do P od)) else II)"
-  apply (simp add: ptwhile_def)
-  apply (rule pwhile_unfold)
-  apply (simp add: pfun_defs)
-  apply (expr_auto add: ureal_defs rel)
-proof -
-  fix t::"enat" and more :: "'a"
-  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
-            real_of_ereal
-             (ureal2ereal
-               (ereal2ureal'
-                 (ereal
-                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))
-    = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1} \<union> -{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
-            real_of_ereal
-             (ureal2ereal
-               (ereal2ureal'
-                 (ereal
-                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))"
-    by simp
-  also have f2: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
-            real_of_ereal
-             (ureal2ereal
-               (ereal2ureal'
-                 (ereal
-                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))"
-    apply (subst infsum_Un_disjoint)
-    sorry
-  also have f3: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))))"
-    sorry
-  have f4: "(\<lambda>v\<^sub>0::'a time_scheme. (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme\<in>{s. t\<^sub>v s = t\<^sub>v v\<^sub>0 - 1}.
-            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))))) summable_on UNIV"
-    sorry
-  show " (\<lambda>v\<^sub>0::'a time_scheme.
-           real_of_ereal
-            (ureal2ereal
-              (ereal2ureal'
-                (min (max (0::ereal)
-                       (ereal
-                         (\<Sum>\<^sub>\<infinity>v\<^sub>0'::'a time_scheme.
-                            real_of_ereal (ureal2ereal (P (\<lparr>t\<^sub>v = t, \<dots> = more\<rparr>, v\<^sub>0'))) *
-                            real_of_ereal
-                             (ureal2ereal
-                               (ereal2ureal'
-                                 (ereal
-                                   (if v\<^sub>0'\<lparr>t\<^sub>v := t\<^sub>v v\<^sub>0' + (1::enat)\<rparr> = v\<^sub>0 then 1::\<real> else (0::\<real>))))))))
-                  (1::ereal))))) summable_on
-       UNIV"
-    sorry
-qed
-
-theorem ptwhile_unique_fixed_point:
-  assumes "H\<^sub>1 = (if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>1) else II)"
-  assumes "H\<^sub>2 = (if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>2) else II)"
-  shows "H\<^sub>1 = H\<^sub>2"
-proof (rule ccontr)
-  assume a1: "\<not>H\<^sub>1 = H\<^sub>2"
-  have "(if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>1) else II) = H\<^sub>1"
-    apply (simp add: pfun_defs)
-    apply (expr_auto add: rel)
-  qed
-
-  thm "le_fun_def"
-
-(*
-  (if\<^sub>c b then (P; t := $t + 1 ; H\<^sub>1) else II)
-= 
-  (if b then (P; t := $t + 1 ; H\<^sub>1) else II)
-=
-  (if b then (P; H\<^sub>1[t+1/t]) else II)
-=
-  (if b then (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a time_scheme. P(s, v\<^sub>0) * H\<^sub>1(v\<^sub>0[t+1/t], s')) else s'=s)
-= 
-  (\<lbrakk>b\<rbrakk>\<^sub>\<I>*(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a time_scheme. P(s, v\<^sub>0) * H\<^sub>1(v\<^sub>0[t+1/t], s')) + \<lbrakk>\<not>b\<rbrakk>\<^sub>\<I>*
-*)
-
-subsection \<open> \<close>
-
-lemma
-*)
 end

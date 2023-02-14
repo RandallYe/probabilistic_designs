@@ -1,8 +1,8 @@
-section \<open> Probabilistic relation programming example 1: Doctor Who's Tardis Attacker  \<close>
+section \<open> Doctor Who's Tardis Attacker  \<close>
 
 theory utp_prob_rel_lattice_dwta
   imports 
-    "../utp_prob_rel" 
+    "UTP_prob_relations.utp_prob_rel"
 begin 
 
 unbundle UTP_Syntax

@@ -13,21 +13,19 @@ unbundle no_UTP_lattice_syntax
 (* unbundle no_lattice_syntax *)
 print_bundles
 
+(* This wouldn't be parsed correctly
 term "\<bottom>"
+*)
 
 (* Switch on lattice syntax from HOL *)
 unbundle lattice_syntax
 term "\<bottom>"
 
-declare [[show_types]]
-
-(* named_theorems iverson_bracket_defs *)
+(* declare [[show_types]] *)
 
 subsection \<open> Iverson Bracket \<close>
 
-(* syntax translation: \<s> *)
-(* syntax _iversion_bracket :: "logic => logic" ("...") *)
-definition iverson_bracket :: "'s pred \<Rightarrow> ('s \<Rightarrow> real)"  where 
+definition iverson_bracket :: "'s pred \<Rightarrow> ('s \<Rightarrow> \<real>)"  where 
 [expr_defs]: "iverson_bracket P = (if P then 1 else 0)\<^sub>e"
 
 syntax 
@@ -37,9 +35,6 @@ syntax
 translations
   "_e_iverson_bracket P" == "CONST iverson_bracket (P)\<^sub>e"
   "_iverson_bracket P" == "CONST iverson_bracket P"
-
-definition nat_of_real_1 :: "real \<Rightarrow> nat" where
-"nat_of_real_1 r = (if r = (1::\<real>) then (1) else 0)"
 
 (* Declare your Iverson brackets operator as an expression constructor, to stop it being lifted *)
 expr_constructor iverson_bracket
@@ -61,7 +56,6 @@ lemma iverson_bracket_mono: "\<lbrakk> (P) \<sqsupseteq> (Q) \<rbrakk> \<Longrig
 lemma iverson_bracket_conj: "\<lbrakk>P \<and> Q\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>Q\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   by (expr_auto)
 
-(* term "(a \<le> \<s> \<and> \<s> \<le> b)\<^sub>e" *)
 lemma iverson_bracket_conj1 : "\<lbrakk>\<lambda>s. (a \<le> s \<and> s \<le> b)\<rbrakk>\<^sub>\<I> = (\<lbrakk>\<lambda>s. a \<le> s\<rbrakk>\<^sub>\<I> * \<lbrakk>\<lambda>s. s \<le> b\<rbrakk>\<^sub>\<I>)\<^sub>e"
   by (expr_auto)
 
@@ -79,43 +73,19 @@ lemma iverson_bracket_inter : "\<lbrakk>\<lambda>s. s \<in> A \<inter> B\<rbrakk
 
 (* Infinite products give 1 (instead of 0), no matter how P is defined. *)
 lemma infinite_prod_is_1:
-  fixes P::"'b \<Rightarrow> real"
+  fixes P::"'b \<Rightarrow> \<real>"
   assumes "\<not> finite (UNIV::'b set)"
-  shows "(\<Prod> m|True. (P m)) = (1::real)"
+  shows "(\<Prod> m|True. (P m)) = (1::\<real>)"
   using assms by force
-
-(* There are three theories in Isabelle regarding summation 
-  1. Group_Big, where infinite sum is 0 and infinite product is 1
-*)
-term "sum"
-term "(sum (\<lambda>s. (\<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e s) A)"
-term "(\<Sum>x\<in>\<guillemotleft>A\<guillemotright>. \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e"
-(*
-  2. Series, where n in "\<Sum>n" is over natural numbers.
-*)
-(* term "sums" *)
-term "suminf"
-(*
-  3. Inf_Sum, where sums over possibly infinite sets
-*)
-(* term "\<Sum>\<^sub>\<infinity>" *)
-term "infsum"
-term "has_sum"
-term "f summable_on A"
-(*
-  4. Inf_Set_Sum
-*)
-term "infsetsum"
-(* term "\<Sum>\<^sub>a"*)
 
 (* Infinite sums give 0, no matter how P is defined. *)
 lemma infinite_sum_is_0:
-  fixes P::"'b \<Rightarrow> real"
+  fixes P::"'b \<Rightarrow> \<real>"
   assumes "\<not> finite (UNIV::'b set)"
-  shows "(\<Sum> m|True. (P m)) = (0::real)"
+  shows "(\<Sum> m|True. (P m)) = (0::\<real>)"
   using assms by auto
 
-(* So this theorem is only valid for finite (type of m)? ? ?*)
+(* TODO: is this theorem only valid for finite (type of m)? *)
 lemma iverson_bracket_forall_prod:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
   assumes "finite (UNIV::'b set)"
@@ -137,7 +107,7 @@ a finite assumption.
 lemma iverson_bracket_exist_sum:
   fixes P::"'a \<Rightarrow> 'b \<Rightarrow> bool"
   assumes "`finite {m. P m}`"
-  shows "\<lbrakk>(\<exists>m. P m)\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lambda>s. (min (1::real) ((\<Sum>\<^sub>\<infinity> m. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e s)))"
+  shows "\<lbrakk>(\<exists>m. P m)\<rbrakk>\<^sub>\<I>\<^sub>e = (\<lambda>s. (min (1::\<real>) ((\<Sum>\<^sub>\<infinity> m. (\<lbrakk>(P \<guillemotleft>m\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e))\<^sub>e s)))"
   apply (expr_auto)
   apply (subst infsum_constant_finite_states)
   using assms apply (simp add: taut_def)
@@ -167,6 +137,9 @@ lemma iverson_bracket_summation:
   fixes P::"'s \<Rightarrow> bool" and f :: "'s \<Rightarrow> \<real>"
   shows "(\<Sum>\<^sub>\<infinity> k|P k. (f)\<^sub>e k) = (\<Sum>\<^sub>\<infinity> k. (f * \<lbrakk>P\<rbrakk>\<^sub>\<I>)\<^sub>e k)"
   by (simp add: infsum_mult_subset_right iverson_bracket_def)
+
+definition nat_of_real_1 :: "\<real> \<Rightarrow> nat" where
+"nat_of_real_1 r = (if r = (1::\<real>) then (1) else 0)"
 
 lemma iverson_bracket_product:
   fixes P::"'s \<Rightarrow> bool"
@@ -227,7 +200,7 @@ subsection \<open> Inverse Iverson Bracket \<close>
 (* Simon: maybe we need to find out a definition for inverse bracket using THE etc. 
 TODO: leave this mechanisation as is now.
 *)
-axiomatization iverson_bracket_inv :: "('s \<Rightarrow> real) \<Rightarrow> 's pred" ("\<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I>") where 
+axiomatization iverson_bracket_inv :: "('s \<Rightarrow> \<real>) \<Rightarrow> 's pred" ("\<^bold>\<langle>_\<^bold>\<rangle>\<^sub>\<I>") where 
 iverson_bracket_inv_def: "(\<^bold>\<langle>N\<^bold>\<rangle>\<^sub>\<I> \<sqsupseteq> (P)) = `(N \<le> \<lbrakk>P\<rbrakk>\<^sub>\<I>\<^sub>e)`"
 
 expr_constructor iverson_bracket_inv

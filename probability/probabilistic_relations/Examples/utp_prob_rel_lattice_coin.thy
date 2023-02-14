@@ -1,8 +1,8 @@
-section \<open> Probabilistic relation programming example 1 \<close>
+section \<open> (Parametric) Coin flip \<close>
 
 theory utp_prob_rel_lattice_coin
   imports 
-    "../utp_prob_rel" 
+    "UTP_prob_relations.utp_prob_rel" 
 begin 
 
 unbundle UTP_Syntax
@@ -119,9 +119,9 @@ lemma sum_geometric_series_ureal:
   by (smt (z3) one_le_power)
 
 lemma iterate_cflip_bottom_simp:
-  shows "iterate\<^sub>p 0 (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p = 0\<^sub>p"
-        "iterate\<^sub>p (Suc 0) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p = (\<lbrakk>$c\<^sup>< = chead \<and> $c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)"
-        "iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p = 
+  shows "iter\<^sub>p 0 (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p = 0\<^sub>p"
+        "iter\<^sub>p (Suc 0) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p = (\<lbrakk>$c\<^sup>< = chead \<and> $c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)"
+        "iter\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p = 
               (\<lbrakk>$c\<^sup>< = chead \<and> $c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e + 
                \<lbrakk>$c\<^sup>< = ctail \<and> $c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
   apply (auto)
@@ -224,13 +224,13 @@ proof -
 qed
 
 lemma cflip_drop_initial_segments_eq: 
-  "(\<Squnion>n::\<nat>. iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p) = (\<Squnion>n::\<nat>. iterate\<^sub>p (n) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p)"
+  "(\<Squnion>n::\<nat>. iter\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p) = (\<Squnion>n::\<nat>. iter\<^sub>p (n) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p)"
   apply (rule increasing_chain_sup_subset_eq)
   apply (rule iterate_increasing_chain)
   by (simp add: cflip_is_dist)
 
 lemma cflip_iterate_limit_sup:
-  assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p))"
+  assumes "f = (\<lambda>n. (iter\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p))"
   shows "(\<lambda>n. ureal2real (f n s)) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n s))"
   apply (simp only: assms)
   apply (subst LIMSEQ_ignore_initial_segment[where k = "2"])
@@ -280,7 +280,7 @@ proof -
 qed
 
 lemma cflip_iterate_limit_cH:
-  assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p))"
+  assumes "f = (\<lambda>n. (iter\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p))"
   shows "(\<lambda>n. ureal2real (f n s)) \<longlonglongrightarrow> ((\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e s)"
   apply (simp only: assms)
   apply (subst iterate_cflip_bottom_simp(3))
@@ -294,7 +294,7 @@ lemma cflip_iterate_limit_cH:
   by (meson Tcoin.exhaust)+
 
 lemma fh:
-  assumes "f = (\<lambda>n. (iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p))"
+  assumes "f = (\<lambda>n. (iter\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p))"
   shows "((\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e s) = (ureal2real (\<Squnion>n::\<nat>. f n s))"
   apply (subst LIMSEQ_unique[where X = "(\<lambda>n. ureal2real (f n s))" and a = "((\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e s)" and 
           b = "(ureal2real (\<Squnion>n::\<nat>. f n s))"])
@@ -302,7 +302,7 @@ lemma fh:
   using cflip_iterate_limit_sup apply (simp add: assms)
   by auto
 
-lemma fi: "(\<Squnion>n::\<nat>. iterate\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p) = 
+lemma fi: "(\<Squnion>n::\<nat>. iter\<^sub>p (n+2) (c\<^sup>< = ctail)\<^sub>e cflip 0\<^sub>p) = 
   (\<lambda>x::cstate \<times> cstate. ereal2ureal (ereal ((\<lbrakk>c\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e x)))"
   apply (simp only: fh)
   apply (simp add: ureal2rereal_inverse)
@@ -656,6 +656,7 @@ lemma cpflip_loop:
   using cpH_is_fp apply blast
   by simp
 
+(*
 subsection \<open> Coin flip with time \<close>
 alphabet coin_state = time +
   coin :: Tcoin
@@ -715,9 +716,9 @@ lemma flip_t_is_dist: "is_final_distribution flip_t_alt"
       insert_not_empty of_nat_1 of_nat_add one_add_one singletonD time.ext_inject)
 
 lemma iterate_tflip_bottom_simp:
-  shows "iterate\<^sub>p 0 (coin\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = 0\<^sub>p"
-        "iterate\<^sub>p (Suc 0) (coinc\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = (\<lbrakk>$coin\<^sup>< = chead \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e)"
-        "iterate\<^sub>p (n+2) (coin\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = 
+  shows "iter\<^sub>p 0 (coin\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = 0\<^sub>p"
+        "iter\<^sub>p (Suc 0) (coinc\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = (\<lbrakk>$coin\<^sup>< = chead \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e)"
+        "iter\<^sub>p (n+2) (coin\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = 
               (\<lbrakk>$coin\<^sup>< = chead \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e + 
                \<lbrakk>$coin\<^sup>< = ctail \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> \<ge> $t\<^sup>< + 1 \<and> $t\<^sup>> \<le> $t\<^sup>< + \<guillemotleft>n\<guillemotright> + 1\<rbrakk>\<^sub>\<I>\<^sub>e 
                 * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
@@ -971,4 +972,5 @@ lemma "flip_loop = H"
   sorry
 
 lemma "H ; ($t\<^sup><)\<^sub>e = "
+*)
 end

@@ -1,7 +1,7 @@
 section \<open> Iverson Bracket examples from Jim's ``Uncertainty and Probabilistic UTP''\<close>
 
 theory utp_iverson_bracket_examples
-  imports "HOL.Series" "HOL-Analysis.Infinite_Sum" "utp_iverson_bracket" 
+  imports "HOL.Series" "HOL-Analysis.Infinite_Sum" "UTP_prob_relations.utp_iverson_bracket" 
 begin 
 
 term "(($r\<^sup>> = C) \<and> ($a\<^sup>> = $a\<^sup><))\<^sub>e"

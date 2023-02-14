@@ -1,8 +1,8 @@
-section \<open> Example of probabilistic relation programming: Robot localisation \<close>
+section \<open> Robot localisation \<close>
 
 theory utp_prob_rel_lattice_robot_localisation
   imports 
-    "../utp_prob_rel" 
+    "UTP_prob_relations.utp_prob_rel"
 begin 
 
 unbundle UTP_Syntax
