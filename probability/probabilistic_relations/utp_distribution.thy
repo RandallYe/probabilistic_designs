@@ -111,8 +111,12 @@ lemma is_final_sub_dist_prob:
   apply (simp add: dist_defs)
   by (metis (mono_tags, lifting) SEXP_def assms curry_def is_prob is_sub_dist_def tautI)
 
-lemma is_nonneg_simp: "\<lbrakk>is_nonneg e\<rbrakk> \<Longrightarrow> \<forall>s. e s \<ge> 0"
-  by (simp add: is_nonneg_def taut_def)
+lemma is_nonneg: "(is_nonneg e) \<longleftrightarrow> (\<forall>s. e s \<ge> 0)"
+  apply (auto)
+  by (simp add: is_nonneg_def taut_def)+
+
+lemma is_nonneg2: "\<lbrakk>is_nonneg p; is_nonneg q\<rbrakk> \<Longrightarrow> is_nonneg (p*q)\<^sub>e"
+  by (simp add: is_nonneg_def taut_def)+
 
 lemma dist_norm_is_prob:
   assumes "is_nonneg e"
@@ -120,8 +124,8 @@ lemma dist_norm_is_prob:
   shows "is_prob (\<^bold>N e)"
   apply (simp add: dist_defs expr_defs)
   apply (rule allI, rule conjI)
-  using is_nonneg_simp assms(1) assms(2) divide_nonneg_pos apply blast
+  apply (meson assms(1) assms(2) divide_nonneg_pos is_nonneg)
   apply (insert infsum_geq_element[where f = "e"])
   by (metis UNIV_I assms(1) assms(2) divide_le_eq_1_pos division_ring_divide_zero infsum_not_exists 
-      is_nonneg_simp linordered_nonzero_semiring_class.zero_le_one)
+      is_nonneg linordered_nonzero_semiring_class.zero_le_one)
 end

@@ -25,6 +25,9 @@ subsection \<open> @{type "ureal"} laws \<close>
 lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) = 1"
   by (simp add: ereal2ureal'_inverse)
 
+lemma real_1': "real_of_ereal (ureal2ereal (1::ureal)) = 1"
+  by (simp add: one_ureal.rep_eq)
+
 lemma ureal2ereal_mono:
   "\<lbrakk>a < b\<rbrakk> \<Longrightarrow> ureal2ereal a < ureal2ereal b"
   by (simp add: less_ureal.rep_eq)
@@ -377,7 +380,7 @@ lemma rvfun_prob_sum1_summable':
         "(\<Sum>\<^sub>\<infinity> s. p (s\<^sub>1, s)) = (1::\<real>)"
         "summable_on_final p"
         "final_reachable p"
-  apply (simp add: assms is_final_distribution_prob is_final_prob_prob)+
+  apply (metis assms is_dist_def is_final_prob_prob)
   apply (simp add: assms rvfun_prob_sum1_summable(2))
   apply (simp add: assms rvfun_prob_sum1_summable(3))
   by (simp add: assms rvfun_prob_sum1_summable(4))
@@ -679,38 +682,43 @@ lemma rvfun_product_summable':
 lemma rvfun_joint_prob_summable_on_product: 
   assumes "is_final_prob p"
   assumes "is_final_prob q"
-  assumes "(\<lambda>s'::'a. p (s\<^sub>1, s')) summable_on UNIV \<or> (\<lambda>s'::'a. q (s\<^sub>1, s')) summable_on UNIV"
-  shows "(\<lambda>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')) summable_on UNIV"
-proof (cases "(\<lambda>s'::'a. p (s\<^sub>1, s')) summable_on UNIV")
-  case True
-  then show ?thesis 
-    apply (subst summable_on_iff_abs_summable_on_real)
-    apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s'::'a. p (s\<^sub>1, s')"])
-    apply (subst summable_on_iff_abs_summable_on_real[symmetric])
-    using assms(3) apply blast
-    apply (simp add: assms(1) assms(2) is_final_prob_altdef)
-    by (simp add: assms(1) assms(2) is_final_prob_altdef mult_right_le_one_le)
-next
-  case False
-  then have "(\<lambda>s'::'a. q (s\<^sub>1, s')) summable_on UNIV"
-    using assms(3) by blast
-  then show ?thesis 
-    apply (subst summable_on_iff_abs_summable_on_real)
-    apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s'::'a. q (s\<^sub>1, s')"])
-    apply (subst summable_on_iff_abs_summable_on_real[symmetric])
-    using assms(3) apply blast
-    apply (simp add: assms(1) assms(2) is_final_prob_altdef)
-    by (simp add: assms(1) assms(2) is_final_prob_altdef mult_left_le_one_le)
+  assumes "summable_on_final p \<or> summable_on_final q"
+  shows "summable_on_final2 p q"
+  apply (auto)
+proof -
+  fix s
+  show "(\<lambda>s'::'b. p (s, s') * q (s, s')) summable_on UNIV"
+  proof (cases "summable_on_final p")
+    case True
+    then show ?thesis 
+      apply (subst summable_on_iff_abs_summable_on_real)
+      apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s'. p (s, s')"])
+      apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+      using assms(3) apply blast
+      apply (simp add: assms(1) assms(2) is_final_prob_altdef)
+      by (simp add: assms(1) assms(2) is_final_prob_altdef mult_right_le_one_le)
+  next
+    case False
+    then have "(\<lambda>s'. q (s, s')) summable_on UNIV"
+      using assms(3) by blast
+    then show ?thesis 
+      apply (subst summable_on_iff_abs_summable_on_real)
+      apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s'. q (s, s')"])
+      apply (subst summable_on_iff_abs_summable_on_real[symmetric])
+      using assms(3) apply blast
+      apply (simp add: assms(1) assms(2) is_final_prob_altdef)
+      by (simp add: assms(1) assms(2) is_final_prob_altdef mult_left_le_one_le)
+  qed
 qed
 
 lemma rvfun_joint_prob_summable_on_product_dist:
   assumes "is_final_distribution p"
-  assumes "\<forall>s. q s \<le> 1 \<and> q s \<ge> 0"
+  assumes "is_prob q"
   shows "(\<lambda>s::'a. p (x, s) * q (x, s)) summable_on UNIV"
     apply (subst summable_on_iff_abs_summable_on_real)
     apply (rule abs_summable_on_comparison_test[where g = "\<lambda>s::'a. p (x, s)"])
     apply (metis assms(1) rvfun_prob_sum1_summable(3) summable_on_iff_abs_summable_on_real)
-  using assms(2) by (smt (verit) SEXP_def mult_right_le_one_le norm_mult real_norm_def)
+  using assms(2) by (smt (verit) is_prob SEXP_def mult_right_le_one_le norm_mult real_norm_def)
 
 lemma rvfun_joint_prob_summable_on_product_dist':
   assumes "is_final_distribution p"
@@ -718,7 +726,7 @@ lemma rvfun_joint_prob_summable_on_product_dist':
   shows "(\<lambda>s::'a. p (x, s) * q (x, s)) summable_on UNIV"
   apply (rule rvfun_joint_prob_summable_on_product_dist)
   apply (simp add: assms(1))
-  using assms(2) rvfun_prob_sum1_summable(1) by blast
+  using assms(2) rvfun_prob_sum1_summable(1) by (simp add: is_dist_def is_final_prob_prob)
 
 lemma rvfun_joint_prob_sum_ge_zero:
   assumes "\<forall>s. P s \<ge> (0::\<real>)" "\<forall>s. Q s \<ge> 0" 
@@ -1684,6 +1692,17 @@ theorem prfun_seqcomp_right_unit: "(P::'a prhfun) ; II = P"
   apply (simp add: infsum_mult_singleton_right_1)
   by (simp add: prfun_inverse)
 
+theorem prfun_seqcomp_one: 
+  assumes "is_final_distribution (rvfun_of_prfun (P::'a prhfun))"
+  shows "(P::'a prhfun) ; 1\<^sub>p = 1\<^sub>p"
+  apply (simp add: pseqcomp_def pskip_def)
+  apply (simp add: ureal_defs pfun_defs)
+  apply (pred_auto)
+  apply (simp add: one_ureal.rep_eq)
+  apply (subst rvfun_prob_sum1_summable(2))
+  apply (smt (verit, best) SEXP_def assms case_prod_curry cond_case_prod_eta curry_conv o_apply rvfun_of_prfun_def ureal2real_def)
+  using ereal2ureal_def one_ereal_def one_ureal.abs_eq by presburger
+
 lemma prfun_passign_simp: "(x := e) = prfun_of_rvfun (\<lbrakk> x := e \<rbrakk>\<^sub>\<I>)"
   by (simp add: pfun_defs expr_defs)
 
@@ -2378,6 +2397,7 @@ proof -
 qed
 
 subsubsection \<open> Parallel composition \<close>
+(*
 lemma rvfun_parallel_f_is_prob: 
   assumes "\<forall>s. p s * q s \<ge> 0"
   shows "is_prob (p \<parallel>\<^sub>f q)"
@@ -2400,6 +2420,33 @@ proof -
       by (simp add: infsum_not_exists)
   qed
 qed
+*)
+
+lemma rvfun_parallel_f_is_prob: 
+  assumes "is_nonneg (p * q)\<^sub>e"
+  shows "is_prob (p \<parallel>\<^sub>f q)"
+  apply (simp add: dist_defs)
+  apply (expr_auto)
+  apply (metis (no_types, lifting) SEXP_def assms divide_nonneg_nonneg infsum_nonneg is_nonneg)
+proof -
+  fix a b
+  have nonneg: "\<forall>s. p s * q s \<ge> 0"
+    using assms is_nonneg by (metis SEXP_def)
+  show "p (a, b) * q (a, b) / (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<le> (1::\<real>)"
+  proof (cases "(\<lambda>s'. p (a, s') * q (a, s')) summable_on UNIV")
+    assume "(\<lambda>s'. p (a, s') * q (a, s')) summable_on UNIV"
+    then have "(\<Sum>\<^sub>\<infinity>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<ge> p (a, b) * q (a, b)"
+      by (meson UNIV_I infsum_geq_element nonneg)
+    then show "p (a, b) * q (a, b) / (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<le> (1::\<real>)"
+      by (smt (verit) nonneg divide_le_eq_1)
+  next
+    assume "\<not> ((\<lambda>s'. p (a, s') * q (a, s')) summable_on UNIV)"
+    (* division_ring_divide_zero *)
+    then show "p (a, b) * q (a, b) / (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (a, v\<^sub>0) * q (a, v\<^sub>0)) \<le> (1::\<real>)" 
+      by (simp add: infsum_not_exists)
+  qed
+qed
+
 
 lemma divide_eq: "\<lbrakk>p = q \<and> P = Q\<rbrakk> \<Longrightarrow> (p::\<real>) / P = q / Q"
   by simp
@@ -2594,7 +2641,8 @@ text \<open> A specific variant of associativity when @{text "p"}, @{text "q"}, 
 non-negative real values. 
 \<close>
 theorem rvfun_parallel_f_assoc_nonneg:
-  assumes "\<forall>s. p s \<ge> 0" "\<forall>s. q s \<ge> 0" "\<forall>s. r s \<ge> 0"
+  (* assumes "\<forall>s. p s \<ge> 0" "\<forall>s. q s \<ge> 0" "\<forall>s. r s \<ge> 0" *)
+  assumes "is_nonneg p" "is_nonneg q" "is_nonneg r"
     "\<forall>s. (\<not> (\<lambda>v\<^sub>0. p (s, v\<^sub>0) * q (s, v\<^sub>0)) summable_on UNIV) \<longrightarrow> 
          ((\<forall>v\<^sub>0. q (s, v\<^sub>0) * r (s, v\<^sub>0) = 0) \<or> (\<not> (\<lambda>v\<^sub>0. q (s, v\<^sub>0) * r (s, v\<^sub>0)) summable_on UNIV))"
     "\<forall>s. (\<not> (\<lambda>v\<^sub>0. q (s, v\<^sub>0) * r (s, v\<^sub>0)) summable_on UNIV) \<longrightarrow> 
@@ -2612,7 +2660,7 @@ proof -
   assume a2: "\<not> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b.  ?pqr v\<^sub>0) = (0::\<real>)"
 
   have pq_0: "(\<forall>s. ?pq s = 0) \<or> \<not> ?pq summable_on UNIV"
-    by (smt (verit) UNIV_I a1 assms(1) assms(2) infsum_geq_element mult_nonneg_nonneg nle_le)
+    by (smt (verit, ccfv_threshold) a1 a2 assms(1) assms(2) infset_0_not_summable_or_zero infsum_cong is_nonneg mult_cancel_left1 mult_nonneg_nonneg)
   show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?qr v\<^sub>0) = (0::\<real>)"
   proof (cases "(\<forall>s. ?pq s = 0)")
     case True
@@ -2639,7 +2687,7 @@ next
   assume a2: "\<not> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b.  ?pqr v\<^sub>0) = (0::\<real>)"
 
   have qr_0: "(\<forall>s. ?qr s = 0) \<or> \<not> ?qr summable_on UNIV"
-    by (smt (verit) UNIV_I a1 assms(2) assms(3) infsum_geq_element mult_nonneg_nonneg nle_le)
+    by (smt (verit, ccfv_SIG) a1 a2 assms(2) assms(3) distrib_left infset_0_not_summable_or_zero infsum_cong is_nonneg mult.assoc mult_nonneg_nonneg)
   show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pq v\<^sub>0) = (0::\<real>)"
   proof (cases "(\<forall>s. ?qr s = 0)")
     case True
@@ -2699,7 +2747,7 @@ proof -
   
   show ?thesis
     apply (rule rvfun_parallel_f_assoc_nonneg)
-    apply (simp add: a1 a2 a3)+
+    apply (simp add: a1 a2 a3 is_nonneg)+
     using pq_summable apply presburger
     using qr_summable by presburger
 qed
@@ -2745,7 +2793,7 @@ proof -
   
   show ?thesis
     apply (rule rvfun_parallel_f_assoc_nonneg)
-    apply (simp add: a1 a2 a3)+
+    apply (simp add: a1 a2 a3 is_nonneg)+
     using pq_summable apply presburger
     using qr_summable by presburger
 qed
@@ -2753,17 +2801,17 @@ qed
 lemma rvfun_pparallel_is_dist: 
   assumes "is_final_prob p"
   assumes "is_final_prob q"
-  assumes "\<forall>s\<^sub>1. (\<lambda>s'::'a. p (s\<^sub>1, s')) summable_on UNIV \<or> (\<lambda>s'::'a. q (s\<^sub>1, s')) summable_on UNIV"
-  assumes "\<forall>s\<^sub>1. \<exists>s'::'a. p (s\<^sub>1, s') > 0 \<and> q (s\<^sub>1, s') > 0"
+  assumes "summable_on_final p \<or> summable_on_final q"
+  assumes "final_reachable2 p q"
   shows "is_final_distribution (pparallel_f p q)"
   apply (expr_auto add: dist_defs)
   using infsum_nonneg is_final_prob_altdef assms(1) assms(2) 
   apply (metis (mono_tags, lifting) divide_nonneg_nonneg mult_nonneg_nonneg)
-  apply (subgoal_tac "p (s\<^sub>1, s) * q (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. p (s\<^sub>1, v\<^sub>0) * q (s\<^sub>1, v\<^sub>0))")
+  apply (subgoal_tac "p (s\<^sub>1, s) * q (s\<^sub>1, s) \<le> (\<Sum>\<^sub>\<infinity>v\<^sub>0. p (s\<^sub>1, v\<^sub>0) * q (s\<^sub>1, v\<^sub>0))")
   apply (smt (verit, del_insts) assms(1) assms(2) divide_le_eq_1 is_final_prob_altdef mult_nonneg_nonneg)
   apply (rule infsum_geq_element)
   apply (simp add: assms(1) assms(2) is_final_prob_altdef)
-  apply (simp add: assms(1) assms(2) assms(3) rvfun_joint_prob_summable_on_product)
+  using assms(1) assms(2) assms(3) rvfun_joint_prob_summable_on_product apply blast
   apply (simp add: assms(1))
 proof -
   fix s\<^sub>1
@@ -2773,22 +2821,22 @@ proof -
   have f1: "?P (SOME s'. ?P s')"
     apply (rule someI_ex[where P="?P"])
     using assms(4) by blast
-  have f2: "(\<lambda>s. p (s\<^sub>1, s) * q (s\<^sub>1, s)) (SOME s'. ?P s') \<le> (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s'))"
+  have f2: "(\<lambda>s. p (s\<^sub>1, s) * q (s\<^sub>1, s)) (SOME s'. ?P s') \<le> (\<Sum>\<^sub>\<infinity>s'. p (s\<^sub>1, s') * q (s\<^sub>1, s'))"
     apply (rule infsum_geq_element)
     apply (simp add: assms(1) assms(2) is_final_prob_altdef)
     apply (simp add: assms(1) assms(2) assms(3) rvfun_joint_prob_summable_on_product)
     by (simp)+
   also have f3: "... > 0"
     by (smt (verit, best) f1 f2 mult_le_0_iff)
-  have f4: "(\<Sum>\<^sub>\<infinity>s::'a. (p (s\<^sub>1, s) * q (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')))) =
-    (\<Sum>\<^sub>\<infinity>s::'a. (p (s\<^sub>1, s) * q (s\<^sub>1, s) * (1 / (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')))))"
+  have f4: "(\<Sum>\<^sub>\<infinity>s. (p (s\<^sub>1, s) * q (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>s'. p (s\<^sub>1, s') * q (s\<^sub>1, s')))) =
+    (\<Sum>\<^sub>\<infinity>s. (p (s\<^sub>1, s) * q (s\<^sub>1, s) * (1 / (\<Sum>\<^sub>\<infinity>s'. p (s\<^sub>1, s') * q (s\<^sub>1, s')))))"
     by force
-  also have f5: "... = (\<Sum>\<^sub>\<infinity>s::'a. (p (s\<^sub>1, s) * q (s\<^sub>1, s))) * (1 / (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')))"
+  also have f5: "... = (\<Sum>\<^sub>\<infinity>s. (p (s\<^sub>1, s) * q (s\<^sub>1, s))) * (1 / (\<Sum>\<^sub>\<infinity>s'. p (s\<^sub>1, s') * q (s\<^sub>1, s')))"
     apply (rule infsum_cmult_left)
     by (simp add: infsum_not_zero_summable)
   also have f6: "... = 1"
     using f3 by auto
-  show "(\<Sum>\<^sub>\<infinity>s::'a. (p (s\<^sub>1, s) * q (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>s'::'a. p (s\<^sub>1, s') * q (s\<^sub>1, s')))) = (1::\<real>)"
+  show "(\<Sum>\<^sub>\<infinity>s. (p (s\<^sub>1, s) * q (s\<^sub>1, s) / (\<Sum>\<^sub>\<infinity>s'. p (s\<^sub>1, s') * q (s\<^sub>1, s')))) = (1::\<real>)"
     using f4 f5 f6 by presburger
 qed
 
@@ -2798,29 +2846,29 @@ lemma rvfun_pparallel_is_conflict_zero:
   assumes conflict: "\<forall>s\<^sub>1. \<not>(\<exists>s'::'a. p (s\<^sub>1, s') > 0 \<and> q (s\<^sub>1, s') > 0)"
   shows "(pparallel_f p q) = 0\<^sub>R"
   apply (expr_auto add: dist_defs)
-  by (smt (verit, best) assms(1) assms(2) conflict is_nonneg_simp)
+  by (smt (verit, best) assms(1) assms(2) conflict is_nonneg)
 
 lemma rvfun_parallel_inverse: 
-  assumes "\<forall>s. p s * q s \<ge> 0"
+  assumes "is_nonneg (p*q)\<^sub>e"
   shows "rvfun_of_prfun (prfun_of_rvfun (pparallel_f p q)) = pparallel_f p q"
   apply (subst rvfun_inverse)
-  apply (simp add: assms(1) rvfun_parallel_f_is_prob)
+  apply (simp add: assms(1) is_nonneg2 rvfun_parallel_f_is_prob)
   by simp
 
 theorem prfun_rvfun_parallel_assoc_f:
   fixes P Q R :: "('s\<^sub>1, 's\<^sub>2) rvfun"
-  assumes "\<forall>s. P s \<ge> 0" "\<forall>s. Q s \<ge> 0" "\<forall>s. R s \<ge> 0"
-    "\<forall>s. ((\<lambda>v\<^sub>0. P (s, v\<^sub>0) * Q (s, v\<^sub>0)) summable_on UNIV)"
-    "\<forall>s. ((\<lambda>v\<^sub>0. Q (s, v\<^sub>0) * R (s, v\<^sub>0)) summable_on UNIV)"
-  assumes "\<forall>s\<^sub>1. \<exists>s'. (P) (s\<^sub>1, s') > 0 \<and> (Q) (s\<^sub>1, s') > 0"
-  assumes "\<forall>s\<^sub>1. \<exists>s'. (Q) (s\<^sub>1, s') > 0 \<and> (R) (s\<^sub>1, s') > 0"
+  assumes "is_nonneg P" "is_nonneg Q" "is_nonneg R"
+  assumes "summable_on_final2 P Q"
+  assumes "summable_on_final2 Q R"
+  assumes "final_reachable2 P Q"
+  assumes "final_reachable2 Q R"
   shows "(P \<parallel> Q) \<parallel> R = P \<parallel> (Q \<parallel> R)"
   apply (simp add: pfun_defs)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (subst rvfun_inverse)
-  apply (simp add: assms(1) assms(2) rvfun_parallel_f_is_prob)
+  apply (simp add: rvfun_parallel_f_is_prob is_nonneg2 assms(1) assms(2))
   apply (subst rvfun_parallel_inverse)
-  apply (simp add: assms(2) assms(3))
+  apply (simp add: assms(2) assms(3) is_nonneg2)
   apply (rule rvfun_parallel_f_assoc_nonneg)
   apply (simp add: assms(1-3))+
   apply (simp add: assms(4))
@@ -2828,14 +2876,14 @@ theorem prfun_rvfun_parallel_assoc_f:
 
 theorem prfun_parallel_assoc_p:
   fixes P Q R :: "('s\<^sub>1, 's\<^sub>2) prfun"
-  assumes "\<forall>s::'s\<^sub>1. (\<lambda>y::'s\<^sub>2. rvfun_of_prfun Q (s, y)) summable_on UNIV"
+  assumes "summable_on_final (rvfun_of_prfun Q)"
   shows "(P \<parallel> Q) \<parallel> R = P \<parallel> (Q \<parallel> R)"
   apply (simp add: pfun_defs)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (subst rvfun_inverse)
-  apply (simp add: prfun_in_0_1' rvfun_parallel_f_is_prob)
+  apply (simp add: prfun_in_0_1' rvfun_parallel_f_is_prob is_nonneg)
   apply (subst rvfun_inverse)
-  apply (simp add: prfun_in_0_1' rvfun_parallel_f_is_prob)
+  apply (simp add: prfun_in_0_1' rvfun_parallel_f_is_prob is_nonneg)
   apply (rule rvfun_parallel_f_assoc_prob)
   apply (simp add: is_prob_final_prob ureal_is_prob)+
   apply (simp add: curry_def)
@@ -4047,17 +4095,11 @@ proof -
   finally show ?thesis .
 qed
 
-theorem pwhile_false: 
-  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  shows "while\<^sub>p false do P od = II"
-  apply (subst pwhile_unfold)
-  using assms apply presburger
-  apply (simp add: pfun_defs false_pred_def)
-  apply (expr_auto)
-  apply (simp add: ureal_defs)
-  apply (auto)
-  apply (simp add: ereal2ureal'_inverse)
-  by (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
+theorem pwhile_false: "while\<^sub>p false do P od = II"
+  apply (simp add: pwhile_def loopfunc_def pcond_def)
+  apply (subst rvfun_pcond_altdef)
+  apply (pred_auto)
+  by (simp add: prfun_inverse utp_prob_rel_lattice_laws.mu_const)
 
 theorem pwhile_true: "while\<^sub>p true do P od = 0\<^sub>p"
   apply (simp add: pwhile_def pcond_def pzero_def)
@@ -4090,28 +4132,25 @@ proof -
   finally show ?thesis .
 qed
 
-theorem pwhile_top_false: 
-  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  shows "while\<^sub>p\<^sup>\<top> false do P od = II"
-  apply (subst pwhile_top_unfold)
-  using assms apply presburger
-  apply (simp add: pfun_defs false_pred_def)
-  apply (expr_auto)
-  apply (simp add: ureal_defs)
-  apply (auto)
-  apply (simp add: ereal2ureal'_inverse)
-  by (metis ereal2ureal_def real_of_ereal_0 ureal2ereal_inverse zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
+theorem pwhile_top_false: "while\<^sub>p\<^sup>\<top> false do P od = II"
+  apply (simp add: pwhile_top_def loopfunc_def pcond_def)
+  apply (subst rvfun_pcond_altdef)
+  apply (pred_auto)
+  by (simp add: prfun_inverse utp_prob_rel_lattice_laws.nu_const)
 
-theorem pwhile_top_true: "while\<^sub>p\<^sup>\<top> true do P od = (\<nu>\<^sub>p X \<bullet> P ; X)"
-  apply (simp add: pwhile_top_def true_pred_def)
-  apply (simp add: loopfunc_def)
-  apply (simp add: pcond_def)
+theorem pwhile_top_true: 
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  shows "while\<^sub>p\<^sup>\<top> true do P od = 1\<^sub>p"
+  apply (simp add: pwhile_top_def pcond_def pzero_def)
+  apply (rule antisym)
+  apply (simp add: ureal_top_greatest')
+  apply (rule gfp_upperbound)
+  apply (simp add: loopfunc_def true_pred_def)
+  apply (simp add: prfun_seqcomp_one assms)
+  apply (simp add: pfun_defs)
   by (simp add: SEXP_def prfun_inverse)
 
 subsubsection \<open> Iteration \<close>
-text \<open> Can we use approximation chain in UTP (Ch. 2.7) to prove a unique fix point for a probabilistic 
-iteration?
-\<close>
 lemma "iterate 0 b P 0\<^sub>p = 0\<^sub>p"
   by simp
 
