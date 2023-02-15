@@ -4,24 +4,65 @@ This folder (`probabilistic_relations`) contains our mechanisation of the theory
 # Installation/Set up instructions
 This instruction is based on Ubuntu/Linux. It would be similar on other operation systems.
 
+## Clone this repository
+1. Clone and enter the folder of this probabilistic relations
+```
+/path/to/yourfolder $ git clone https://github.com/RandallYe/probabilistic_programming_utp.git
+/path/to/yourfolder $ cd probabilistic_programming_utp/probability/probabilistic_relations/
+```
+We use `/path/to/.../probabilistic_relations/` to denote the path to this particular directory.
+2. Switch to the branch `TCS` in this case
+```
+/path/to/.../probabilistic_relations/ (main) $ git checkout TCS
+/path/to/.../probabilistic_relations/ (TCS) $ 
+```
+
+## Isabelle/UTP distributions with prebuild heap images on Linux
+
+1. Download Isabelle/UTP distributions from [here](https://isabelle-utp.york.ac.uk/download) and choose `Isabelle2021-1 on Linux (January 26th 2023)`, it is `Isabelle2021-1-CyPhyAssure-20230126.tar.bz2` in this case
+2. Uncompress it inside a folder, such as "/path/to/yourfolder":
+```
+/path/to/yourfolder $ tar -xvjf Isabelle2021-1-CyPhyAssure-20230126.tar.bz2
+/path/to/yourfolder $ cd Isabelle2021-1-CyPhyAssure/
+```
+3. Depending on your purposes of using this repository, choose one way to Launch Isabelle/UTP
+- for the development of probabilistic relations theories, go to Step 4.
+- for the development of examples using probabilistic relations theories, go to Step 5.
+4. Launch Isabelle/UTP with session `UTP2`
+```
+/path/to/yourfolder/Isabelle2021-1-CyPhyAssure/ $ ./bin/isabelle jedit -l UTP2
+```
+When it is the first time to load this, it takes a bit time to finish building of the session `UTP2`. Then you can load the probabilistic relations theories: open `utp_prob_rel.thy` under `/path/to/.../probabilistic_relations/` in Isabelle/jedit. 
+
+5. Launch Isabelle/UTP with session `UTP_prob_relations`
+```
+/path/to/yourfolder/Isabelle2021-1-CyPhyAssure/ $ bin/isabelle jedit -d ../probabilistic_programming_utp/probability/probabilistic_relations/ -l UTP_prob_relations
+```
+When it is the first time to load this, it takes a bit time to finish building of the session `UTP_prob_relations`. Then load one of the probabilistic relations examples: open `utp_prob_rel_lattice_coin.thy` under `/path/to/.../probabilistic_relations/Examples` in Isabelle/jedit. 
+
+## Standard
 1. Download **Isabelle2021-1_linux.tar.gz** from [here](https://isabelle.in.tum.de/website-Isabelle2021-1/index.html).
-2. Uncompress it inside a folder, such as "/path/to/ramics2021_prob":
-  > `/path/to/ramics2021_prob $ tar zxvf Isabelle2019_linux.tar.gz`
-3. Download the Isabelle/UTP version (**utp-main.ramics2021.tar.gz**) for Isabelle2019 from [here](https://github.com/RandallYe/probabilistic_designs/releases/download/ramics2021f/utp-main.ramics2021.tar.gz)
-4. Uncompress it to the same folder
-  > `/path/to/ramics2021_prob $ tar zxvf utp-main.ramics2021.tar.gz`
-5. Clone this repository inside the same folder, and then switch to the **ramics2021** branch
-  > `/path/to/ramics2021_prob $ git clone https://github.com/RandallYe/probabilistic_designs.git`
+2. Uncompress it inside a folder, such as "/path/to/yourfolder":
+```
+/path/to/yourfolder $ tar zxvf Isabelle2021-1_linux.tar.gz
+``` 
+3. Clone CyPhyAssure meta-repository (which is updated periodically to sync and try to keep in a stable state) from [here](https://github.com/isabelle-utp/CyPhyAssure) and checkout all submodules
+```
+/path/to/yourfolder $ git clone https://github.com/isabelle-utp/CyPhyAssure.git
+/path/to/yourfolder $ cd CyPhyAssure
+/path/to/yourfolder/CyPhyAssure (main) $ git submodule update --init --recursive
+```
+4. Depending on your purposes of using this repository, choose one way to Launch Isabelle/UTP
+- for the development of probabilistic relations theories, go to Step 5.
+- for the development of examples using probabilistic relations theories, go to Step 6.
+5. Launch Isabelle/UTP with session `UTP2`
+```
+/path/to/yourfolder $ ./Isabelle2021-1/bin/isabelle jedit -d CyPhyAssure -l UTP2
+```
+When it is the first time to load this, it takes a bit long time to finish building of the session `UTP2`. Then you can load the probabilistic relations theories: open `utp_prob_rel.thy` under `/path/to/.../probabilistic_relations/` in Isabelle/jedit. 
 
-  > `/path/to/ramics2021_prob $ cd probabilistic_designs; git checkout ramics2021`
-6. Add this folder to the **ROOTS** file of the Isabelle2019 installation
-  > `/path/to/ramics2021_prob $ echo "/path/to/ramics2021_prob" >> Isabelle2019/ROOTS`
-7. Add a **ROOT** file in the folder with the following contents
-  > `/path/to/ramics2021_prob $ echo "utp-main.ramics2021/" > ROOTS`
-
-  > `/path/to/ramics2021_prob $ echo "probabilistic_designs/" >> ROOTS`
-8. Build the **UTP-Prob-Designs** session [optional], then you don't need to build the seesion every time when you launch the session on Isabelle. Also, the document (**document.pdf**) in this repository will be generated in the folder _output_ under "probabilistic_designs/probability"
-  > `/path/to/ramics2021_prob $ ./Isabelle2019/bin/isabelle build -b UTP-Prob-Designs`
-9. Launch Isabelle2019
-  > `/path/to/ramics2021_prob $ ./Isabelle2019/bin/isabelle jedit -l UTP-Hybrid-Imports`
-10. Open the theory files of this repository, such as "probabilistic_designs/probability/utp_prob_HKM_ex33.thy", and wait for a while and you will see the theory is loaded and the theorems are proved.
+6. Launch Isabelle/UTP with session `UTP_prob_relations`
+```
+/path/to/yourfolder/Isabelle2021-1-CyPhyAssure/ $ ./Isabelle2021-1/bin/isabelle jedit -d CyPhyAssure -d ./probabilistic_programming_utp/probability/probabilistic_relations/ -l UTP_prob_relations
+```
+When it is the first time to load this, it takes a bit long time to finish building of the session `UTP_prob_relations`. Then load one of the probabilistic relations examples: open `utp_prob_rel_lattice_coin.thy` under `/path/to/.../probabilistic_relations/Examples` in Isabelle/jedit. 
