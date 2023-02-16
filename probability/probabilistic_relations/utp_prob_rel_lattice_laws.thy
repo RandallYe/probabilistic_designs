@@ -579,6 +579,9 @@ lemma prfun_inverse:
       ereal_times(2) max.bounded_iff min_absorb1 nle_le real_of_ereal_le_0 
       type_definition.Rep_inverse type_definition_ureal ureal2ereal zero_ereal_def)
 
+lemma rvfun_inverse_ibracket: "rvfun_of_prfun (prfun_of_rvfun (\<lbrakk>p\<rbrakk>\<^sub>\<I>)) = \<lbrakk>p\<rbrakk>\<^sub>\<I>"
+  by (simp add: is_prob_def iverson_bracket_def rvfun_inverse)
+
 subsection \<open> @{type rvfun} laws \<close>
 lemma Sigma_Un_distrib2:
   shows "Sigma A (\<lambda>s. B s) \<union> Sigma A (\<lambda>s. C s) = Sigma A (\<lambda>s. (B s \<union> C s))"
@@ -2104,19 +2107,19 @@ next
 qed
 
 lemma rvfun_normalisation_is_dist:
-  assumes "\<forall>s. p s \<ge> 0"
-  assumes "\<forall>s. \<exists>s'. p (s, s') > 0"
-  assumes "\<forall>s. (\<lambda>v\<^sub>0. p (s, v\<^sub>0)) summable_on UNIV"
+  assumes "is_nonneg p"
+  assumes "final_reachable p"
+  assumes "summable_on_final p"
   shows "is_final_distribution (\<^bold>N\<^sub>f p)"
   apply (simp add: dist_defs)
   apply (expr_auto)
-  apply (simp add: assms infsum_nonneg)
-  apply (smt (verit, best) UNIV_I assms(1) divide_le_eq_1 infsum_geq_element infsum_not_zero_summable)
+  apply (meson assms(1) divide_nonneg_nonneg infsum_nonneg is_nonneg)
+  apply (smt (verit, best) UNIV_I assms(1) divide_le_eq_1 infsum_geq_element infsum_not_zero_summable is_nonneg)
 proof -
   fix s\<^sub>1::"'a"
   have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. p (s\<^sub>1, v\<^sub>0)) \<ge> p (s\<^sub>1, (SOME s'. p (s\<^sub>1, s') > 0))"
     apply (rule infsum_geq_element)
-    using assms(1) apply blast
+    using assms(1) is_nonneg apply fastforce
     using assms(3) apply simp
     by auto
   have f2: "... > 0"
