@@ -1389,7 +1389,6 @@ lemma prfun_seqcomp_ibracket_contra:
   apply (pred_auto)
   by (simp add: assms ereal2ureal_def infsum_0 zero_ureal_def)
 
-declare [[show_types]]
 lemma rvfun_seqcomp_ibracket_onepoint:
   assumes "vwb_lens x"
   shows "((\<lbrakk>$x\<^sup>< = \<guillemotleft>c\<^sub>0\<guillemotright> \<and> (x := \<guillemotleft>c\<^sub>1\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e ;\<^sub>f \<lbrakk>$x\<^sup>< = \<guillemotleft>c\<^sub>1\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e) = \<lbrakk>$x\<^sup>< = \<guillemotleft>c\<^sub>0\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e"
