@@ -1364,6 +1364,87 @@ proof -
         is_sum_leq_1_def)
 qed
 
+lemma rvfun_seqcomp_ibracket: "\<lbrakk>p\<rbrakk>\<^sub>\<I> ;\<^sub>f \<lbrakk>q\<rbrakk>\<^sub>\<I> = (\<Sum>\<^sub>\<infinity> v\<^sub>0. \<lbrakk>([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> p) \<and> ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> q)\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  apply (pred_auto)
+  by (smt (verit, ccfv_threshold) infsum_cong mult_cancel_left1 mult_cancel_right1)
+
+lemma prfun_seqcomp_ibracket: "((prfun_of_rvfun (\<lbrakk>p\<rbrakk>\<^sub>\<I>)) ; (prfun_of_rvfun (\<lbrakk>q\<rbrakk>\<^sub>\<I>))) = 
+        prfun_of_rvfun (\<Sum>\<^sub>\<infinity> v\<^sub>0. \<lbrakk>([ \<^bold>v\<^sup>> \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> p) \<and> ([ \<^bold>v\<^sup>< \<leadsto> \<guillemotleft>v\<^sub>0\<guillemotright> ] \<dagger> q)\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
+  apply (simp add: pfun_defs)
+  apply (simp add: rvfun_inverse_ibracket)
+  by (simp add: rvfun_seqcomp_ibracket)
+
+lemma rvfun_seqcomp_ibracket_contra:
+  assumes "(c\<^sub>1::'a) \<noteq> c\<^sub>2"
+  shows "\<lbrakk>x\<^sup>> = \<guillemotleft>c\<^sub>1\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e ;\<^sub>f \<lbrakk>x\<^sup>< = \<guillemotleft>c\<^sub>2\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e = 0\<^sub>R"
+  apply (simp add: rvfun_seqcomp_ibracket)
+  apply (pred_auto)
+  by (simp add: assms infsum_0)
+
+lemma prfun_seqcomp_ibracket_contra:
+  assumes "(c\<^sub>1::'a) \<noteq> c\<^sub>2"
+  shows "(prfun_of_rvfun (\<lbrakk>x\<^sup>> = \<guillemotleft>c\<^sub>1\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e)) ; (prfun_of_rvfun (\<lbrakk>x\<^sup>< = \<guillemotleft>c\<^sub>2\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e)) = 0\<^sub>p"
+  apply (simp add: prfun_seqcomp_ibracket)
+  apply (simp add: pfun_defs ureal_defs)
+  apply (pred_auto)
+  by (simp add: assms ereal2ureal_def infsum_0 zero_ureal_def)
+
+declare [[show_types]]
+lemma rvfun_seqcomp_ibracket_onepoint:
+  assumes "vwb_lens x"
+  shows "((\<lbrakk>$x\<^sup>< = \<guillemotleft>c\<^sub>0\<guillemotright> \<and> (x := \<guillemotleft>c\<^sub>1\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e ;\<^sub>f \<lbrakk>$x\<^sup>< = \<guillemotleft>c\<^sub>1\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e) = \<lbrakk>$x\<^sup>< = \<guillemotleft>c\<^sub>0\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e"
+  (* apply (subst iverson_bracket_conj[symmetric]) *)
+  apply (simp add: rvfun_seqcomp_ibracket)
+  apply (pred_auto)
+proof -
+  fix a
+  have "get\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a c\<^sub>1) = c\<^sub>1"
+    by (meson assms mwb_lens_weak vwb_lens_iff_mwb_UNIV_src weak_lens.put_get)
+  then have f1: "\<forall>v\<^sub>0. (v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 \<and> get\<^bsub>x\<^esub> v\<^sub>0 = c\<^sub>1) = ( v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1)"
+    by (auto)
+  have f2: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. if v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 \<and> get\<^bsub>x\<^esub> v\<^sub>0 = c\<^sub>1 then 1::\<real> else (0::\<real>)) = 
+        (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. if v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 then 1::\<real> else (0::\<real>))"
+    using f1 by force
+  also have "... = 1"
+    using infsum_singleton_1 by fastforce
+  finally show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. if v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 \<and> get\<^bsub>x\<^esub> v\<^sub>0 = c\<^sub>1 then 1::\<real> else (0::\<real>)) = (1::\<real>)"
+    by presburger
+qed
+
+lemma rvfun_seqcomp_ibracket_onepoint':
+  assumes "vwb_lens x"
+  shows "((\<lbrakk>$x\<^sup>< = \<guillemotleft>c\<^sub>0\<guillemotright> \<and> (x := \<guillemotleft>c\<^sub>1\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e ;\<^sub>f \<lbrakk>$x\<^sup>< = \<guillemotleft>c\<^sub>1\<guillemotright> \<and> (x := \<guillemotleft>c\<^sub>2\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e) = \<lbrakk>$x\<^sup>< = \<guillemotleft>c\<^sub>0\<guillemotright> \<and> (x := \<guillemotleft>c\<^sub>2\<guillemotright>)\<rbrakk>\<^sub>\<I>\<^sub>e"
+proof -
+  have "\<forall>a. get\<^bsub>x\<^esub> (put\<^bsub>x\<^esub> a c\<^sub>1) = c\<^sub>1"
+    by (meson assms mwb_lens_weak vwb_lens_iff_mwb_UNIV_src weak_lens.put_get)
+  then have f1: "\<forall>a. \<forall>v\<^sub>0. (v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 \<and> get\<^bsub>x\<^esub> v\<^sub>0 = c\<^sub>1) = ( v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1)"
+    by (auto)
+  have f2: "\<forall>a. \<forall>v\<^sub>0. (v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 \<and> put\<^bsub>x\<^esub> a c\<^sub>2 = put\<^bsub>x\<^esub> v\<^sub>0 c\<^sub>2) = ( v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1)"
+    apply (auto)
+    by (metis assms mwb_lens.put_put vwb_lens_mwb)
+
+  show ?thesis
+    apply (simp add: rvfun_seqcomp_ibracket)
+    apply (pred_auto)
+    proof -
+      fix a
+      have f3: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. if v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 \<and> get\<^bsub>x\<^esub> v\<^sub>0 = c\<^sub>1 \<and> put\<^bsub>x\<^esub> a c\<^sub>2 = put\<^bsub>x\<^esub> v\<^sub>0 c\<^sub>2 then 1::\<real> else (0::\<real>)) = 
+            (\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. if v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 \<and> put\<^bsub>x\<^esub> a c\<^sub>2 = put\<^bsub>x\<^esub> v\<^sub>0 c\<^sub>2 then 1::\<real> else (0::\<real>))"
+        using f1 by meson
+      also have "... = 1"
+        apply (simp add: f2)
+        using infsum_singleton_1 by fastforce
+      finally show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. if v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 \<and> get\<^bsub>x\<^esub> v\<^sub>0 = c\<^sub>1 \<and> put\<^bsub>x\<^esub> a c\<^sub>2 = put\<^bsub>x\<^esub> v\<^sub>0 c\<^sub>2 then 
+        1::\<real> else (0::\<real>)) = (1::\<real>)"
+        by presburger
+    next
+      fix a b
+      assume a1: "\<not> b = put\<^bsub>x\<^esub> a c\<^sub>2"
+      show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. if get\<^bsub>x\<^esub> a = c\<^sub>0 \<and> v\<^sub>0 = put\<^bsub>x\<^esub> a c\<^sub>1 \<and> get\<^bsub>x\<^esub> v\<^sub>0 = c\<^sub>1 \<and> b = put\<^bsub>x\<^esub> v\<^sub>0 c\<^sub>2 then 1::\<real> else (0::\<real>)) = (0::\<real>)"
+        by (smt (verit, best) a1 f2 infsum_0)
+    qed
+qed
+    
 (*
 lemma rvfun_seqcomp_summable_is_prob: 
   assumes "\<forall>s\<^sub>1. ((curry p) s\<^sub>1) summable_on UNIV"
@@ -1485,15 +1566,15 @@ lemma rvfun_cond_prob_product_summable_on_UNIV_2:
   assumes "is_final_distribution p"
   assumes "is_final_distribution q"
   shows " (\<lambda>(s::'a, v\<^sub>0::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) summable_on UNIV \<times> UNIV"
-    apply (subst product_swap[symmetric])
-    apply (subst summable_on_reindex)
-    apply simp
-    proof -
-      have f0: "(\<lambda>(s::'a, v\<^sub>0::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<circ> prod.swap = (\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
-        by (simp add: comp_def)
-      show "(\<lambda>(s::'a, v\<^sub>0::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<circ> prod.swap summable_on UNIV \<times> UNIV"
-        using assms(1) assms(2) f0 rvfun_cond_prob_product_summable_on_UNIV by fastforce
-    qed
+  apply (subst product_swap[symmetric])
+  apply (subst summable_on_reindex)
+  apply simp
+  proof -
+    have f0: "(\<lambda>(s::'a, v\<^sub>0::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<circ> prod.swap = (\<lambda>(v\<^sub>0::'a, s::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s))"
+      by (simp add: comp_def)
+    show "(\<lambda>(s::'a, v\<^sub>0::'a). p (s\<^sub>1, v\<^sub>0) * q (v\<^sub>0, s)) \<circ> prod.swap summable_on UNIV \<times> UNIV"
+      using assms(1) assms(2) f0 rvfun_cond_prob_product_summable_on_UNIV by fastforce
+  qed
 
 lemma rvfun_cond_prob_infsum_pcomp_swap:
   assumes "is_final_distribution p"
@@ -2039,7 +2120,7 @@ proof -
 qed
 
 find_theorems "(?a + ?b) * ?c"
-theorem prfun_:
+theorem prfun_pcond_assign_dist:
   assumes "is_final_sub_dist (rvfun_of_prfun P)"
   assumes "is_final_sub_dist (rvfun_of_prfun Q)"
   shows "(if\<^sub>p r\<^sup>\<Up> then P else Q) ; x := e = (if\<^sub>p r\<^sup>\<Up> then (P ; x := e) else (Q; x := e))"
