@@ -73,9 +73,11 @@ lemma "(\<Squnion> v \<in> {}. x := \<guillemotleft>v\<guillemotright>) = false"
   by (pred_auto)
 
 subsection \<open> Laws \<close>
-lemma is_prob_ibracket:
-  "is_prob (\<lbrakk>p\<rbrakk>\<^sub>\<I>\<^sub>e)"
+lemma is_prob_ibracket: "is_prob (\<lbrakk>p\<rbrakk>\<^sub>\<I>\<^sub>e)"
   by (simp add: is_prob_def expr_defs)
+
+lemma is_dist_subdist: "\<lbrakk>is_dist p\<rbrakk> \<Longrightarrow> is_sub_dist p"
+  by (simp add: dist_defs)
 
 lemma is_final_distribution_prob:
   assumes "is_final_distribution f"
