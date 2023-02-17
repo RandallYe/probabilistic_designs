@@ -3484,13 +3484,12 @@ lemma max_bounded_e:
   shows "m \<le> n"
   by (meson Max.boundedE assms(1) assms(2) assms(3) assms(4))
 
-text \<open> \<close>
 theorem increasing_chain_limit_is_lub_all:
   fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "increasing_chain f"
   (* Suppose there are finite state pairs such that for each pair, it supreme is strictly larger than 
     its initial value. *)
-  assumes "finite {s. ureal2real (\<Squnion>n::\<nat>. f n s) > ureal2real (f 0 s)}"
+  assumes "\<F>\<S>\<^sup> f"
   shows "\<forall>r > 0::real. \<exists>no::nat. \<forall>n \<ge> no.
             \<forall>s s'. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
   apply (auto)
@@ -3812,7 +3811,7 @@ qed
 theorem decreasing_chain_limit_is_glb_all:
   fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "decreasing_chain f"
-  assumes "finite {s. ureal2real (\<Sqinter> n::\<nat>. f n s) < ureal2real (f 0 s)}"
+  assumes "\<F>\<S>\<^sub> f"
   shows "\<forall>r > 0::real. \<exists>no::nat. \<forall>n \<ge> no.
             \<forall>s s'. ureal2real (f n (s, s')) - ureal2real (\<Sqinter>n::\<nat>. f n (s, s')) < r"
   apply (auto)
@@ -4359,7 +4358,7 @@ next
 
 lemma sup_iterate_continuous_limit:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<F>\<S>\<^sup> (\<lambda>n. iterate n b P 0\<^sub>p)"
   shows "(\<lambda>n. ureal2real (\<F> b P (iterate n b P 0\<^sub>p) (s, s'))) \<longlonglongrightarrow> 
     ureal2real ((\<F> b P (\<Squnion>n::nat. iterate n b P 0\<^sub>p)) (s, s'))"
   apply (subst LIMSEQ_iff)
@@ -4556,7 +4555,7 @@ qed
 
 lemma sup_iterate_continuous':
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<F>\<S>\<^sup> (\<lambda>n. iterate n b P 0\<^sub>p)"
   (*
   shows "\<F>   b P (Sup {(iterate n b P 0\<^sub>p) | n::nat. True}) = 
          Sup (\<F> b P ` {(iterate n b P 0\<^sub>p) | n::nat. True})"
@@ -4604,9 +4603,11 @@ qed
 
 theorem sup_iterate_continuous:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<F>\<S>\<^sup> (\<lambda>n. iterate n b P 0\<^sub>p)"
   shows "\<F> b P (\<Squnion>n::nat. iterate n b P 0\<^sub>p) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
-  apply (simp add: assms sup_iterate_continuous')
+  apply (subst sup_iterate_continuous')
+  apply (simp add: assms(1)) 
+  using assms(2) apply auto[1]
   using sup_iterate_suc sup_iterate_subset_eq by metis
 
 subsubsection \<open> Infimum \<close>
@@ -4634,7 +4635,7 @@ next
 
 lemma inf_iterate_continuous_limit:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 1\<^sub>p s \<noteq> 1}"
+  assumes "\<F>\<S>\<^sub> (\<lambda>n. iterate n b P 1\<^sub>p)"
   shows "(\<lambda>n. ureal2real (\<F> b P (iterate n b P 1\<^sub>p) (s, s'))) \<longlonglongrightarrow> 
     ureal2real ((\<F> b P (\<Sqinter>n::nat. iterate n b P 1\<^sub>p)) (s, s'))"
   apply (subst LIMSEQ_iff)
@@ -4819,7 +4820,7 @@ qed
 
 lemma inf_iterate_continuous':
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 1\<^sub>p s \<noteq> 1}"
+  assumes "\<F>\<S>\<^sub> (\<lambda>n. iterate n b P 1\<^sub>p)"
   shows "\<F> b P (\<Sqinter>n::nat. iterate n b P 1\<^sub>p) = (\<Sqinter>x \<in> {(iterate n b P 1\<^sub>p) | n::nat. True}. (\<F> b P x))"
   apply (subst fun_eq_iff)
   apply (auto)
@@ -4859,9 +4860,11 @@ qed
 
 theorem inf_iterate_continuous:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 1\<^sub>p s \<noteq> 1}"
+  assumes "\<F>\<S>\<^sub> (\<lambda>n. iterate n b P 1\<^sub>p)"
   shows "\<F> b P (\<Sqinter>n::nat. iterate n b P 1\<^sub>p) = (\<Sqinter>n::nat. (iterate n b P 1\<^sub>p))"
-  apply (simp add: assms inf_iterate_continuous')
+  apply (subst inf_iterate_continuous')
+  apply (simp add: assms(1)) 
+  using assms(2) apply auto[1]
   using inf_iterate_suc inf_iterate_subset_eq by metis
 
 subsubsection \<open> Kleene fixed-point theorem \<close>
@@ -4904,36 +4907,36 @@ qed
 
 theorem sup_continuous_lfp_iteration:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<F>\<S>\<^sup> (\<lambda>n. iterate n b P 0\<^sub>p)"
   shows "while\<^sub>p b do P od = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
   apply (simp add: pwhile_def)
   apply (rule lfp_eqI)
   apply (simp add: loopfunc_mono assms)
-  apply (simp add: assms sup_iterate_continuous)
+  using assms sup_iterate_continuous apply blast
   by (simp add: assms(1) fp_between_lfp_gfp(1))
 
 theorem inf_continuous_gfp_iteration:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 1\<^sub>p s \<noteq> 1}"
+  assumes "\<F>\<S>\<^sub> (\<lambda>n. iterate n b P 1\<^sub>p)"
   shows "while\<^sub>p\<^sup>\<top> b do P od = (\<Sqinter>n::nat. (iterate n b P 1\<^sub>p))"
   apply (simp add: pwhile_top_def)
   apply (rule gfp_eqI)
   apply (simp add: loopfunc_mono assms)
-  apply (simp add: assms inf_iterate_continuous)
+  using assms inf_iterate_continuous apply blast
   by (simp add: assms(1) fp_between_lfp_gfp(2))
 
 subsubsection \<open> Unique fixed point \<close>
 
 lemma unique_fixed_point:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<F>\<S>\<^sup> (\<lambda>n. iterate n b P 0\<^sub>p)"
   assumes "(\<Sqinter>n::nat. (iterate n b P 1\<^sub>p)) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
   (* assumes "while\<^sub>p b do P od = while\<^sub>p\<^sup>\<top> b do P od" *)
   shows "\<exists>! fp. \<F> b P fp = fp"
   apply (simp add: Ex1_def)
   apply (rule_tac x = "(\<Squnion>n::nat. (iterate n b P 0\<^sub>p))" in exI)
   apply (rule conjI)
-  apply (simp add: assms sup_iterate_continuous)
+  using assms sup_iterate_continuous apply blast
 proof (auto)
   fix y :: "'s \<times> 's \<Rightarrow> ureal"
   assume a1: "\<F> b P y = y"
@@ -4947,7 +4950,7 @@ qed
 
 theorem unique_fixed_point_lfp_gfp:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<F>\<S>\<^sup> (\<lambda>n. iterate n b P 0\<^sub>p)"
   assumes "(\<Sqinter>n::nat. (iterate n b P 1\<^sub>p)) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
   assumes "\<F> b P fp = fp"
   shows "while\<^sub>p b do P od = fp"
@@ -5242,7 +5245,7 @@ qed
 
 lemma iterate_sup_inf_eq:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<F>\<S>\<^sup> (\<lambda>n. iterate n b P 0\<^sub>p)"
   assumes "\<forall>s. (\<lambda>n. ureal2real ((iterdiff n b P 1\<^sub>p) s)) \<longlonglongrightarrow> 0"
   shows "(\<Sqinter>n::nat. (iterate n b P 1\<^sub>p)) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
 proof -
@@ -5294,12 +5297,12 @@ qed
 
 theorem unique_fixed_point_lfp_gfp':
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
-  assumes "finite {s::'s \<times> 's. \<exists>n. iterate n b P 0\<^sub>p s \<noteq> 0}"
+  assumes "\<F>\<S>\<^sup> (\<lambda>n. iterate n b P 0\<^sub>p)"
   assumes "\<forall>s. (\<lambda>n. ureal2real ((iterdiff n b P 1\<^sub>p) s)) \<longlonglongrightarrow> 0"
   assumes "\<F> b P fp = fp"
   shows "while\<^sub>p b do P od = fp"
         "while\<^sub>p\<^sup>\<top> b do P od = fp"
-  apply (simp add: iterate_sup_inf_eq assms unique_fixed_point_lfp_gfp(1))
-  by (simp add: iterate_sup_inf_eq assms unique_fixed_point_lfp_gfp(2))
+  using assms iterate_sup_inf_eq unique_fixed_point_lfp_gfp(1) apply blast
+  using assms iterate_sup_inf_eq unique_fixed_point_lfp_gfp(2) by blast
 
 end

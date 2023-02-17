@@ -392,6 +392,12 @@ definition increasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Right
 definition decreasing_chain :: "(nat \<Rightarrow> 'a::complete_lattice) \<Rightarrow> bool" where
 [chains_defs]: "decreasing_chain f = (\<forall>m. \<forall>n. m \<le> n \<longrightarrow> f m \<ge> f n)"
 
+abbreviation finite_state_incseq ("\<F>\<S>\<^sup>") where 
+"finite_state_incseq f \<equiv> finite {s. ureal2real (\<Squnion>n::\<nat>. f n s) > ureal2real (f 0 s)}"
+
+abbreviation finite_state_decseq ("\<F>\<S>\<^sub>") where 
+"finite_state_decseq f \<equiv> finite {s. ureal2real (\<Sqinter> n::\<nat>. f n s) < ureal2real (f 0 s)}"
+
 subsection \<open> While loops \<close>
 definition loopfunc :: "('a \<times> 'a) pred \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun \<Rightarrow> 'a prhfun" ("\<F>") where
 [pfun_defs]: "loopfunc b P X  \<equiv> (if\<^sub>c b then (P ; X) else II)"
