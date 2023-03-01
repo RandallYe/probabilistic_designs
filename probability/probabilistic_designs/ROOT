@@ -1,5 +1,5 @@
 (* Probability *)
-session "UTP-Prob-Designs" in "probability" = "UTP-Hybrid-Imports" + 
+session "UTP-Prob-Designs" = "UTP-Hybrid-Imports" + 
   options [document  = pdf, document_output = "output", timeout = 1000]
   sessions
     "UTP-Calculi"

@@ -2,7 +2,7 @@ section \<open> Example of probabilistic relation programming: parallel composit
 
 theory utp_prob_rel_lattice_parallel_examples
   imports 
-    "../utp_prob_rel_lattice_laws" 
+    "UTP_prob_relations.utp_prob_rel"
 begin 
 
 unbundle UTP_Syntax

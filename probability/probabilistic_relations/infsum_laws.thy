@@ -1,4 +1,4 @@
-section \<open> Probabilistic relation programming laws \<close>
+section \<open> Laws related to @{text "infsum"} \<close>
 
 theory infsum_laws
   imports 
@@ -9,11 +9,11 @@ theory infsum_laws
     (* "utp_distribution" *)
 begin 
 unbundle UTP_Syntax
+(*
 print_bundles
-
 declare [[show_types]]
-
-subsection \<open> Useful lemmas  \<close>
+*)
+subsection \<open> Useful lemmas \<close>
 lemma finite_image_set2':
   assumes "finite A" "finite B"
   shows "finite {(a, b). a \<in> A \<and> b \<in> B}"
@@ -42,12 +42,14 @@ lemma card_0_false:
   shows "card {x. False} = (0::\<real>)"
   by simp
 
-lemma conditional_conds_conj: "\<forall>s. (if b\<^sub>1 s then (1::\<real>) else (0::\<real>)) * (if b\<^sub>2 s then (1::\<real>) else (0::\<real>)) = 
+lemma conditional_conds_conj: 
+  "\<forall>s. (if b\<^sub>1 s then (1::\<real>) else (0::\<real>)) * (if b\<^sub>2 s then (1::\<real>) else (0::\<real>)) = 
     (if b\<^sub>1 s \<and> b\<^sub>2 s then 1 else 0)"
   apply (rule allI)
   by force
 
-lemma conditional_conds_conj': "\<forall>s. (if b\<^sub>1 s then (m::\<real>) else (0::\<real>)) * (if b\<^sub>2 s then (p::\<real>) else (0::\<real>)) = 
+lemma conditional_conds_conj': 
+  "\<forall>s. (if b\<^sub>1 s then (m::\<real>) else (0::\<real>)) * (if b\<^sub>2 s then (p::\<real>) else (0::\<real>)) = 
     (if b\<^sub>1 s \<and> b\<^sub>2 s then m * p else 0)"
   apply (rule allI)
   by simp
@@ -62,7 +64,7 @@ lemma conditional_cmult_1: "\<forall>s. (if b\<^sub>1 s then (1::\<real>) else (
   apply (rule allI)
   by force
 
-subsection \<open> Laws of @{text infsum} \<close>
+subsection \<open> Laws of @{term infsum} \<close>
 lemma infset_0_not_summable_or_sum_to_zero:
   assumes "infsum f A = 0"
   shows "(f summable_on A \<and> has_sum f A 0) \<or> \<not> f summable_on A"

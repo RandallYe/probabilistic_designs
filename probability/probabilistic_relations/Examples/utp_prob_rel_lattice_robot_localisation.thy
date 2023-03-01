@@ -1,8 +1,8 @@
-section \<open> Example of probabilistic relation programming: Robot localisation \<close>
+section \<open> Robot localisation \<close>
 
 theory utp_prob_rel_lattice_robot_localisation
   imports 
-    "../utp_prob_rel" 
+    "UTP_prob_relations.utp_prob_rel"
 begin 
 
 unbundle UTP_Syntax
@@ -11,6 +11,7 @@ declare [[show_types]]
 
 named_theorems robot_local_defs
 
+subsection \<open> Definitions \<close>
 alphabet robot_local_state = 
   bel :: nat
 
@@ -47,6 +48,7 @@ definition move_right_2::"robot_local_state rvhfun" where
 definition believe_3::"robot_local_state rvhfun" where 
 "believe_3 \<equiv> (1/18 * \<lbrakk>bel\<^sup>> = 0\<rbrakk>\<^sub>\<I>\<^sub>e + 8/9 * \<lbrakk>bel\<^sup>> = 1\<rbrakk>\<^sub>\<I>\<^sub>e + 1/18 * \<lbrakk>bel\<^sup>> = 2\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
 
+subsection \<open> First sensor reading \<close>
 lemma init_knowledge_sum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
        (if v\<^sub>0 = \<lparr>bel\<^sub>v = 0::\<nat>\<rparr> \<or> v\<^sub>0 = \<lparr>bel\<^sub>v = Suc (0::\<nat>)\<rparr> \<or> v\<^sub>0 = \<lparr>bel\<^sub>v = 2::\<nat>\<rparr> then 1::\<real> else (0::\<real>)) *
        ((3::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>)) + (1::\<real>)) /
@@ -88,7 +90,7 @@ qed
 
 lemma believe_1_simp: "(init \<parallel> scale_door) = prfun_of_rvfun believe_1"
   apply (simp add: pparallel_def init_def scale_door_def believe_1_def)
-  apply (simp add: dist_norm_def)
+  apply (simp add: dist_norm_final_def)
   apply (simp add: rvfun_uniform_dist_altdef)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (simp add: door_def)
@@ -110,9 +112,10 @@ lemma believe_1_simp': "(init \<parallel> scale_door) = prfun_of_rvfun believe_1
   apply (simp add: expr_defs)
   by (pred_auto)
 
+subsection \<open> First move \<close>
 lemma move_right_1_simp: "(init \<parallel> scale_door) ; move_right = prfun_of_rvfun move_right_1"
   apply (simp add: pseqcomp_def move_right_1_def)
-  (* apply (simp add: pparallel_def dist_norm_def) *)
+  (* apply (simp add: pparallel_def dist_norm_final_def) *)
   apply (simp add: init_def)
   apply (subst prfun_parallel_uniform_dist')
   apply (simp)+
@@ -120,7 +123,7 @@ lemma move_right_1_simp: "(init \<parallel> scale_door) ; move_right = prfun_of_
   apply (expr_auto)
   apply (simp add: scale_door_def door_def)
    apply (expr_auto)
-  apply (simp add: pfun_defs dist_norm_def move_right_def scale_door_def door_def )
+  apply (simp add: pfun_defs dist_norm_final_def move_right_def scale_door_def door_def )
   apply (subst rvfun_assignment_inverse)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (expr_auto add: rel assigns_r_def)
@@ -320,6 +323,7 @@ have sum_2: "(\<Sum>\<^sub>\<infinity>s::robot_local_state. (4::\<real>) * (if b
     by simp
 qed
 
+subsection \<open> Second sensor reading \<close>
 lemma believe_2_sum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
          (4::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
          ((3::\<real>) * (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) \<or> bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>)) + (1::\<real>)) /
@@ -595,6 +599,7 @@ proof -
     by (simp)
 qed
 
+subsection \<open> Second move \<close>
 lemma move_right_2_simp: 
   "((((init \<parallel> scale_door) ; move_right) \<parallel> scale_door) ; move_right) = prfun_of_rvfun move_right_2"
   apply (simp add: believe_2_simp)
@@ -811,6 +816,7 @@ proof -
     by (simp)
 qed
 
+subsection \<open> Third sensor reading \<close>
 lemma believe_3_sum: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::robot_local_state.
           (if bel\<^sub>v v\<^sub>0 = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
           ((3::\<real>) * (if (0::\<nat>) < bel\<^sub>v v\<^sub>0 \<and> \<not> bel\<^sub>v v\<^sub>0 = (2::\<nat>) then 1::\<real> else (0::\<real>)) + (1::\<real>)) / (6::\<real>) 
