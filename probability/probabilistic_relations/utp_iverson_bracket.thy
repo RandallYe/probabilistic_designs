@@ -38,7 +38,7 @@ term "\<bottom>"
 unbundle lattice_syntax
 term "\<bottom>"
 
-(* declare [[show_types]] *)
+declare [[show_types]]
 
 subsection \<open> Iverson Bracket \<close>
 
