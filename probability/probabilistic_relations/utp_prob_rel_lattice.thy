@@ -198,6 +198,12 @@ abbreviation final_reachable2 :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> (
 "final_reachable2 p q \<equiv> (\<forall>s. \<exists>s'. p (s, s') > 0 \<and> q (s, s') > 0)"
 
 subsection \<open> Syntax \<close>
+(*
+abbreviation lift_fun where "lift_fun c \<equiv> (\<lambda>s. c)"
+notation lift_fun ("_\<^sup>\<up>")
+expr_constructor lift_fun
+*)
+
 abbreviation one_r ("1\<^sub>R") where
   "one_r \<equiv> (\<lambda>s. 1::real)"
 

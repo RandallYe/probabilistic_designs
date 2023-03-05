@@ -326,6 +326,13 @@ lemma ureal2real_inverse:
 lemma rvfun_of_prfun_simp: "rvfun_of_prfun [\<lambda>\<s>::'a \<times> 'a. u]\<^sub>e = (\<lambda>s. ureal2real u)"
   by (simp add: SEXP_def rvfun_of_prfun_def)
 
+lemma rvfun_of_prfun_const: 
+  assumes "r \<ge> 0" "r \<le> 1"
+  shows "rvfun_of_prfun [\<lambda>x::'a \<times> 'a. ereal2ureal (ereal (r))]\<^sub>e = (\<lambda>x::'a \<times> 'a. r)"
+  apply (simp add: rvfun_of_prfun_simp)
+  apply (simp add: ureal_defs)
+  by (metis assms(1) assms(2) ereal2ureal_def o_apply real2eureal_inverse ureal2real_def)
+
 lemma ureal2real_mult_dist: "ureal2real (a * b) = ureal2real a * ureal2real b"
   apply (simp add: ureal_defs)
   by (simp add: times_ureal.rep_eq)
@@ -1092,6 +1099,12 @@ lemma rvfun_pchoice_inverse_c'':
   apply (simp add: is_prob_def expr_defs, auto)
   apply (simp add: assms(1) assms(2) assms(3) is_prob)
   by (simp add: assms(1) assms(2) assms(3) convex_bound_le is_prob)
+
+lemma rvfun_pchoice_inverse_c''': 
+  assumes "is_prob P" "is_prob Q"
+  assumes "0 \<le> r \<and> r \<le> (1)"
+  shows "rvfun_of_prfun (prfun_of_rvfun (P \<oplus>\<^sub>f\<^bsub>(\<lambda>s. r)\<^esub> Q)) = (P \<oplus>\<^sub>f\<^bsub>(\<lambda>s. r)\<^esub> Q)"
+  using assms(1) assms(2) assms(3) rvfun_pchoice_inverse_c'' by auto
 
 theorem prfun_pchoice_altdef: 
   "if\<^sub>p r then P else Q 
