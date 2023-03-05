@@ -1,0 +1,112 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{isabelle,isabellesym}
+\usepackage{fullpage}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{graphicx}
+\usepackage{document}
+%\usepackage[color,cntbysection]{circus}
+
+\usepackage{utp}
+\usepackage{pdfpages}
+
+% further packages required for unusual symbols (see also
+% isabellesym.sty), use only when needed
+
+\usepackage{amssymb}
+  %for \<leadsto>, \<box>, \<diamond>, \<sqsupset>, \<mho>, \<Join>,
+  %\<lhd>, \<lesssim>, \<greatersim>, \<lessapprox>, \<greaterapprox>,
+  %\<triangleq>, \<yen>, \<lozenge>
+
+\usepackage[english]{babel}
+  %option greek for \<euro>
+  %option english (default language) for \<guillemotleft>, \<guillemotright>
+
+\usepackage[only,bigsqcap]{stmaryrd}
+  %for \<Sqinter>
+
+\usepackage{eufrak}
+  %for \<AA> ... \<ZZ>, \<aa> ... \<zz> (also included in amssymb)
+
+%\usepackage{textcomp}
+  %for \<onequarter>, \<onehalf>, \<threequarters>, \<degree>, \<cent>,
+  %\<currency>
+
+\usepackage{stmaryrd}
+
+% this should be the last package used
+\usepackage{pdfsetup}
+
+% urls in roman style, theory text in math-similar italics
+\urlstyle{rm}
+\isabellestyle{it}
+
+% for uniform font size
+%\renewcommand{\isastyle}{\isastyleminor}
+
+\newcommand{\dcomp}{;}%
+
+\setcounter{topnumber}{1}
+\setcounter{bottomnumber}{1}
+\setcounter{totalnumber}{1}
+
+\usepackage{subcaption}
+% tikz
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,trees,positioning,shadows}
+\usetikzlibrary{fit}					% fitting shapes to coordinates
+\usetikzlibrary{backgrounds}	        % drawing the background after the foreground
+\usetikzlibrary{calc}	                % for coordination calculation 
+\usetikzlibrary{fadings}                % fading shadow
+\usetikzlibrary{decorations.text}
+\usetikzlibrary[intersections]			% name path
+
+\pgfdeclarelayer{bg}    % declare background layer
+\pgfdeclarelayer{fg}    % declare background layer
+\pgfsetlayers{bg,main,fg}  % set the order of the layers (main is the standard layer)
+
+\tikzset{
+block/.style = {draw, fill=white, rectangle, minimum height=3em, minimum width=3em},
+tmp/.style  = {coordinate}, 
+sum/.style= {draw, fill=white, circle, node distance=1cm},
+input/.style = {coordinate},
+output/.style= {coordinate},
+pinstyle/.style = {pin edge={to-,thin,black}
+}
+}
+
+\newcommand{\isactrlU}{\textit{\textbf{U}}}
+
+\begin{document}
+
+\title{Probabilistic Relations Programming Examples - Machine Learning}
+
+\author{Kangfeng Ye \and Simon Foster \and Jim Woodcock \\[.5ex] University of York, UK \\[2ex] \texttt{\small $\{$kangfeng.ye,simon.foster,jim.woodcock$\}$@york.ac.uk}}
+
+\maketitle
+
+\begin{abstract}
+  This document lists some examples that use our probabilistic relations, based on Hehner's predicative probabilistic programming~\cite{Hehner2011}, for reasoning.
+\end{abstract}
+
+\tableofcontents
+
+% sane default for proof documents
+\parindent 0pt\parskip 0.5ex
+
+% generated text for the theories
+\input{utp_prob_rel_cancer_diagnosis}
+
+\vspace{4ex}
+% Acknowledgments 
+\noindent\textbf{Acknowledgements}. 
+
+\appendix
+
+\vspace{4ex}
+
+\pagebreak 
+% optional bibliography
+\bibliographystyle{IEEEtran}
+\bibliography{root}
+
+\end{document}

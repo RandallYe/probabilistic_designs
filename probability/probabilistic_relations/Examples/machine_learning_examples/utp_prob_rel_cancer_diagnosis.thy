@@ -1,7 +1,16 @@
 section \<open> Example of probabilistic relation programming: cancer diagnosis \<close>
 
-text \<open> If a randomly selected patient has a lab test for cancer, such as breast cancer, and 
-the result is positive. Then what's the probability that the patient has cancer? \<close>
+text \<open> This example is developed based on the machine learning exercise that Dr. Thomas Gabel delivered 
+and could be found at \url{https://ml.informatik.uni-freiburg.de/former/_media/teaching/ss11/ml_ex07_solution.pdf}.
+We also refer to Jason Brownlee's ``A Gentle Introduction to Bayes Theorem for Machine Learning'' at 
+\url{https://machinelearningmastery.com/bayes-theorem-for-machine-learning/} for some used terminologies.
+
+If a randomly selected patient has a laboratory test for cancer, such as breast cancer, and 
+the result is positive. Then what's the probability that the patient has cancer? 
+
+If the patient has the second laboratory test, would it be helpful to determine if the patient has 
+cancer or not? How much could it contribute? This example aims to answer these questions.
+\<close>
 
 theory utp_prob_rel_cancer_diagnosis
   imports 
@@ -20,8 +29,8 @@ alphabet state =
   lt :: LabTest
 
 (*
-definition Init :: "ureal \<Rightarrow> ureal \<Rightarrow> ureal \<Rightarrow> state prhfun" where
-"Init p\<^sub>1 p\<^sub>2 p\<^sub>3 = (if\<^sub>p p\<^sub>1 then (c := True) else (c := False)) ; 
+definition FirstTest :: "ureal \<Rightarrow> ureal \<Rightarrow> ureal \<Rightarrow> state prhfun" where
+"FirstTest p\<^sub>1 p\<^sub>2 p\<^sub>3 = (if\<^sub>p p\<^sub>1 then (c := True) else (c := False)) ; 
        (if\<^sub>c (c\<^sup><) then 
           (if\<^sub>p p\<^sub>2 then (lt := Pos) else (lt := Neg)) 
         else 
@@ -29,38 +38,34 @@ definition Init :: "ureal \<Rightarrow> ureal \<Rightarrow> ureal \<Rightarrow> 
   )"
 
 definition T:: "state prhfun \<Rightarrow> state prhfun \<Rightarrow> state prhfun \<Rightarrow> state prhfun" where
-"T p\<^sub>1 p\<^sub>2 p\<^sub>3 \<equiv> (Init p\<^sub>1 p\<^sub>2 p\<^sub>3) \<parallel> ((lt := Pos)::state prhfun)"
+"T p\<^sub>1 p\<^sub>2 p\<^sub>3 \<equiv> (FirstTest p\<^sub>1 p\<^sub>2 p\<^sub>3) \<parallel> ((lt := Pos)::state prhfun)"
 
-definition FirstTest:: "state prhfun \<Rightarrow> state prhfun \<Rightarrow> state prhfun \<Rightarrow> state prhfun" where
-"FirstTest p\<^sub>1 p\<^sub>2 p\<^sub>3 \<equiv> (Init p\<^sub>1 p\<^sub>2 p\<^sub>3) \<parallel> \<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e"
+definition FirstTestPos:: "state prhfun \<Rightarrow> state prhfun \<Rightarrow> state prhfun \<Rightarrow> state prhfun" where
+"FirstTestPos p\<^sub>1 p\<^sub>2 p\<^sub>3 \<equiv> (FirstTest p\<^sub>1 p\<^sub>2 p\<^sub>3) \<parallel> \<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e"
 
 lemma 
   assumes "p\<^sub>1 = 0.002" "p\<^sub>2 = 0.86" "p\<^sub>3 = 0.05"
-  shows "Init p\<^sub>1 p\<^sub>2 p\<^sub>3 = (\<lbrakk>lt\<^sup>> = Pos \<and> c\<^sup>> = True\<rbrakk>\<^sub>\<I>\<^sub>e * 0.002 * 0.86)\<^sub>e"
+  shows "FirstTest p\<^sub>1 p\<^sub>2 p\<^sub>3 = (\<lbrakk>lt\<^sup>> = Pos \<and> c\<^sup>> = True\<rbrakk>\<^sub>\<I>\<^sub>e * 0.002 * 0.86)\<^sub>e"
 *)
 
 text \<open> The probability of a randomly selected patient has a cancer. It is the base rate or the prior. \<close>
 abbreviation "p\<^sub>1 \<equiv> 0.002"
-text \<open> The sensitivity of the lab test or the true positive rate. \<close>
+text \<open> The sensitivity of the laboratory test or the true positive rate. \<close>
 abbreviation "p\<^sub>2 \<equiv> 0.89"
-text \<open> The false negative rate and the specificity of the lab test or the true negative rate: @{text "1 - p\<^sub>3"}. \<close>
+text \<open> The false negative rate. The specificity of the laboratory test or the true negative rate: @{text "1 - p\<^sub>3"}. \<close>
 abbreviation "p\<^sub>3 \<equiv> 0.05"
 
 definition TestAction :: "state prhfun" where
-" TestAction = (if\<^sub>c (c\<^sup><) then 
+"TestAction = (if\<^sub>c (c\<^sup><) then 
     (if\<^sub>p p\<^sub>2 then (lt := Pos) else (lt := Neg))
   else 
     (if\<^sub>p p\<^sub>3 then (lt := Pos) else (lt := Neg))
   )
 "
 
-definition TestResultPos :: "state prhfun" where
-" TestResultPos = (if\<^sub>c (c\<^sup><) then 
-    (if\<^sub>p p\<^sub>2 then (lt := Pos) else (lt := Neg))
-  else 
-    (if\<^sub>p p\<^sub>3 then (lt := Pos) else (lt := Neg))
-  )
-"
+text \<open> New knowledge or data learned: the test result is positive. \<close>
+definition TestResultPos where
+" TestResultPos = \<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e"
 
 definition TestAction_altdef :: "state rvhfun" where
 "TestAction_altdef = (
@@ -90,42 +95,45 @@ So,
   P(Cancer | Test=Pos) = p\<^sub>2 * p\<^sub>1 / (p\<^sub>2 * p\<^sub>1 + p\<^sub>3 * (1 - p\<^sub>1))
 *)
 text \<open> Initial knowledge, or prior. \<close>
-definition Init :: "state prhfun" where
-"Init = (if\<^sub>p p\<^sub>1 then (c := True) else (c := False)) ; TestAction"
+definition FirstTest :: "state prhfun" where
+"FirstTest = (if\<^sub>p p\<^sub>1 then (c := True) else (c := False)) ; TestAction"
 
-definition Init_altdef :: "state rvhfun" where
-"Init_altdef = (
+definition FirstTest_altdef :: "state rvhfun" where
+"FirstTest_altdef = (
     (\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * p\<^sub>1 * p\<^sub>2) + 
     (\<lbrakk>lt\<^sup>> = Neg\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * p\<^sub>1 * (1 - p\<^sub>2)) + 
     (\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>\<not>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * (1-p\<^sub>1) * p\<^sub>3) + 
     (\<lbrakk>lt\<^sup>> = Neg\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>\<not>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * (1-p\<^sub>1) * (1 - p\<^sub>3))
 )\<^sub>e"
 
-text \<open> The result of the first lab test is positive. \<close>
-definition FirstTest :: "state prhfun" where
-"FirstTest = (Init \<parallel> \<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e)"
+text \<open> The result of the first laboratory test is positive. \<close>
+definition FirstTestPos :: "state prhfun" where
+"FirstTestPos = (FirstTest \<parallel> TestResultPos)"
 
-definition FirstTest_altdef :: "state rvhfun" where
-"FirstTest_altdef = (
+definition FirstTestPos_altdef :: "state rvhfun" where
+"FirstTestPos_altdef = (
     ((\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * p\<^sub>1 * p\<^sub>2) + (\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>\<not>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * (1 - p\<^sub>1) * p\<^sub>3)) / 
     (p\<^sub>1 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3)
 )\<^sub>e"
 
-text \<open> The result of the second lab test (which is independent to the first one) is also positive. \<close>
+text \<open> The result of the second laboratory test (which is independent to the first one) is also positive. \<close>
 definition SecondTest :: "state prhfun" where
-"SecondTest = ((FirstTest ; TestAction) \<parallel> \<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e)"
+"SecondTest = (FirstTestPos ; TestAction)"
 
 definition SecondTest_altdef :: "state rvhfun" where
-"SecondTest_altdef = (
-    ((\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * p\<^sub>1 * p\<^sub>2 * p\<^sub>2) + (\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>\<not>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * (1 - p\<^sub>1) * p\<^sub>3 * p\<^sub>3)) / 
-    (p\<^sub>1 * p\<^sub>2 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3 * p\<^sub>3)
+"SecondTest_altdef = ((
+     (\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * p\<^sub>1 * p\<^sub>2 * p\<^sub>2) + 
+     (\<lbrakk>lt\<^sup>> = Neg\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * p\<^sub>1 * p\<^sub>2 * (1 - p\<^sub>2)) +
+     (\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>\<not>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * (1 - p\<^sub>1) * p\<^sub>3 * p\<^sub>3) + 
+     (\<lbrakk>lt\<^sup>> = Neg\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>\<not>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * (1 - p\<^sub>1) * p\<^sub>3 * (1 - p\<^sub>3))
+    ) / (p\<^sub>1 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3)
 )\<^sub>e"
 
-definition SecondTest_pos :: "state prhfun" where
-"SecondTest_pos = ((FirstTest ; TestAction) \<parallel> \<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e)"
+definition SecondTestPos :: "state prhfun" where
+"SecondTestPos = (SecondTest \<parallel> TestResultPos)"
 
-definition SecondTest_pos_altdef :: "state rvhfun" where
-"SecondTest_pos_altdef = (
+definition SecondTestPos_altdef :: "state rvhfun" where
+"SecondTestPos_altdef = (
     ((\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * p\<^sub>1 * p\<^sub>2 * p\<^sub>2) + (\<lbrakk>lt\<^sup>> = Pos\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>\<not>c\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * (1 - p\<^sub>1) * p\<^sub>3 * p\<^sub>3)) / 
     (p\<^sub>1 * p\<^sub>2 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3 * p\<^sub>3)
 )\<^sub>e"
@@ -264,9 +272,9 @@ next
     using calculation by presburger
 qed
 
-lemma Init_simp:
-  shows "Init = prfun_of_rvfun Init_altdef"
-  apply (simp only: Init_def Init_altdef_def)
+lemma FirstTest_simp:
+  shows "FirstTest = prfun_of_rvfun FirstTest_altdef"
+  apply (simp only: FirstTest_def FirstTest_altdef_def)
   apply (simp add: TestAction)
   apply (simp only: pseqcomp_def)
   apply (subst rvfun_inverse) 
@@ -379,16 +387,16 @@ next
     using calculation by force
 qed
 
-lemma FirstTest: "FirstTest = prfun_of_rvfun FirstTest_altdef"
-  apply (simp add: FirstTest_def FirstTest_altdef_def)
-  apply (simp add: Init_simp)
+lemma FirstTestPos: "FirstTestPos = prfun_of_rvfun FirstTestPos_altdef"
+  apply (simp add: FirstTestPos_def FirstTestPos_altdef_def)
+  apply (simp add: FirstTest_simp TestResultPos_def)
   apply (simp add: pfun_defs)
   apply (subst rvfun_inverse)
-  apply (simp add: Init_altdef_def)
+  apply (simp add: FirstTest_altdef_def)
   apply (expr_simp_1 add: dist_defs)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (subst fun_eq_iff)
-  apply (simp add: Init_altdef_def dist_defs)
+  apply (simp add: FirstTest_altdef_def dist_defs)
   apply (pred_auto) 
 proof -
   fix c
@@ -471,8 +479,9 @@ next
 qed
 
 text \<open> What's the probability that the patient has cancer, given a positive test? @{text "P(Cancer | Test=Pos)"} \<close>
-lemma "rvfun_of_prfun FirstTest ; \<lbrakk>c\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = ((p\<^sub>1 * p\<^sub>2) / (p\<^sub>1 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3))\<^sub>e"
-  apply (simp add: FirstTest_altdef_def FirstTest)
+lemma FirstTestPos_Cancer: 
+  "rvfun_of_prfun FirstTestPos ; \<lbrakk>c\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = ((p\<^sub>1 * p\<^sub>2) / (p\<^sub>1 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3))\<^sub>e"
+  apply (simp add: FirstTestPos_altdef_def FirstTestPos)
   apply (subst rvfun_inverse)
   apply (expr_simp_1 add: dist_defs)
   apply (pred_auto)
@@ -499,8 +508,9 @@ proof -
 qed
 
 text \<open> What's the probability that the patient has no cancer, given a positive test? @{text "P(\<not>Cancer | Test=Pos)"} \<close>
-lemma "rvfun_of_prfun FirstTest ; \<lbrakk>\<not>c\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = ((1 - p\<^sub>1) * p\<^sub>3 / (p\<^sub>1 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3))\<^sub>e"
-  apply (simp add: FirstTest_altdef_def FirstTest)
+lemma FirstTestPos_NotCancer:
+  "rvfun_of_prfun FirstTestPos ; \<lbrakk>\<not>c\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = ((1 - p\<^sub>1) * p\<^sub>3 / (p\<^sub>1 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3))\<^sub>e"
+  apply (simp add: FirstTestPos_altdef_def FirstTestPos)
   apply (subst rvfun_inverse)
   apply (expr_simp_1 add: dist_defs)
   apply (pred_auto)
@@ -526,40 +536,153 @@ proof -
     using f1 f2 by linarith
 qed
 
-lemma SecondTest: "(FirstTest ; TestAction) = prfun_of_rvfun SecondTest_altdef"
+lemma SecondTest: "SecondTest = prfun_of_rvfun SecondTest_altdef"
   apply (simp add: SecondTest_def SecondTest_altdef_def)
-  apply (simp add: FirstTest TestAction)
+  apply (simp add: FirstTestPos TestAction)
   apply (simp add: pseqcomp_def)
   apply (subst rvfun_inverse)
-  apply (simp add: FirstTest_altdef_def)
-   apply (expr_simp_1 add: dist_defs)
+  apply (simp add: FirstTestPos_altdef_def)
+  apply (expr_simp_1 add: dist_defs)
   apply (subst rvfun_inverse)
   apply (simp add: TestAction_altdef_def)
   apply (expr_simp_1 add: dist_defs)
-  
-lemma SecondTest: "SecondTest = prfun_of_rvfun SecondTest_altdef"
-  apply (simp add: SecondTest_def SecondTest_altdef_def)
-  apply (simp add: FirstTest)
-  apply (simp add: pfun_defs)
-  apply (subst rvfun_inverse)
-  apply (simp add: FirstTest_altdef_def)
-  apply (expr_simp_1 add: dist_defs)
+  apply (simp add: FirstTestPos_altdef_def TestAction_altdef_def)
   apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
   apply (subst fun_eq_iff)
   apply (simp add: FirstTest_altdef_def dist_defs)
+  apply (pred_auto)
+proof -
+  fix c
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
+           (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
+          ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (89::\<real>) / (100::\<real>) +
+           (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (20::\<real>)) / (323::\<real>)) 
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((if \<not> c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) * ((2495::\<real>) / ((8::\<real>) * (20::\<real>)*(323::\<real>)))))"
+    apply (rule infsum_cong)
+    by simp
+  also have f2: "... = ((2495::\<real>) / ((8::\<real>) * (20::\<real>)*(323::\<real>)))"
+    apply (subst infsum_cmult_left)
+    apply (smt (verit) summable_on_cong summable_pos_false)
+    apply (simp)
+    apply (subst infsum_constant_finite_states)
+    using finite.simps pos_false apply auto[1]
+    by (smt (verit, best) Collect_cong One_nat_def card.empty card.insert empty_iff finite.emptyI of_nat_1_eq_iff pos_false)
+  show "(10336::\<real>) *
+       (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
+           (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
+          ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (89::\<real>) / (100::\<real>) +
+           (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (20::\<real>)) /
+          (323::\<real>)) = (499::\<real>)"
+    using f1 f2 by linarith
+next
+  fix c
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
+           (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
+          ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (11::\<real>) / (100::\<real>) +
+           (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (19::\<real>) / (20::\<real>)) /
+          (323::\<real>)) 
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((if \<not> c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) * ((2495::\<real>)*19 / ((8::\<real>) * (20::\<real>)*(323::\<real>)))))"
+    apply (rule infsum_cong)
+    by simp
+  also have f2: "... = ((2495::\<real>)*19 / ((8::\<real>) * (20::\<real>)*(323::\<real>)))"
+    apply (subst infsum_cmult_left)
+    apply (smt (verit) summable_on_cong summable_pos_false)
+    apply (simp)
+    apply (subst infsum_constant_finite_states)
+    using finite.simps pos_false apply auto[1]
+    by (smt (verit, best) Collect_cong One_nat_def card.empty card.insert empty_iff finite.emptyI of_nat_1_eq_iff pos_false)
+  show "(544::\<real>) *
+       (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
+           (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
+          ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (11::\<real>) / (100::\<real>) +
+           (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (19::\<real>) / (20::\<real>)) /
+          (323::\<real>)) = (499::\<real>)"
+    using f1 f2 by linarith
+next
+  fix c
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
+           (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
+          ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (89::\<real>) / (100::\<real>) +
+           (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (20::\<real>)) / (323::\<real>))
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          (((if c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) * (89 * (89::\<real>) / ((100::\<real>) * (323::\<real>) * (8::\<real>)))))"
+    apply (rule infsum_cong)
+    by simp
+  have f2: "... = (89 * (89::\<real>) / ((100::\<real>) * (323::\<real>) * (8::\<real>)))"
+    apply (subst infsum_cmult_left)
+    apply (smt (verit) summable_on_cong summable_pos_true)
+    apply (simp)
+    apply (subst infsum_constant_finite_states)
+    using finite.simps pos_true apply auto[1]
+    by (smt (verit, best) Collect_cong One_nat_def card.empty card.insert empty_iff finite.emptyI of_nat_1_eq_iff pos_true)
+  show "(258400::\<real>) *
+       (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
+           (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
+          ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (89::\<real>) / (100::\<real>) +
+           (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (20::\<real>)) / (323::\<real>)) =
+       (7921::\<real>)"
+    using f1 f2 by linarith
+next
+  fix c
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
+           (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
+          ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (11::\<real>) / (100::\<real>) +
+           (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (19::\<real>) / (20::\<real>)) / (323::\<real>))
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          (((if c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) * (89 * (11::\<real>) / ((100::\<real>) * (323::\<real>) * (8::\<real>)))))"
+    apply (rule infsum_cong)
+    by simp
+  have f2: "... = (89 * (11::\<real>) / ((100::\<real>) * (323::\<real>) * (8::\<real>)))"
+    apply (subst infsum_cmult_left)
+    apply (smt (verit) summable_on_cong summable_pos_true)
+    apply (simp)
+    apply (subst infsum_constant_finite_states)
+    using finite.simps pos_true apply auto[1]
+    by (smt (verit, best) Collect_cong One_nat_def card.empty card.insert empty_iff finite.emptyI of_nat_1_eq_iff pos_true)
+  show "(258400::\<real>) *
+       (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
+           (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
+          ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (11::\<real>) / (100::\<real>) +
+           (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (19::\<real>) / (20::\<real>)) / (323::\<real>)) =
+       (979::\<real>)"
+    using f1 f2 by linarith
+qed
+  
+lemma SecondTestPos: "SecondTestPos = prfun_of_rvfun SecondTestPos_altdef"
+  apply (simp add: SecondTestPos_def SecondTestPos_altdef_def)
+  apply (simp add: SecondTest)
+  apply (simp add: pfun_defs)
+  apply (subst rvfun_inverse)
+  apply (simp add: SecondTest_altdef_def)
+  apply (expr_simp_1 add: dist_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (subst fun_eq_iff)
+  apply (simp add: SecondTest_altdef_def TestResultPos_def dist_defs)
   apply (pred_auto) 
 proof -
   fix c
   have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
-           ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
-            (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
+           ((7921::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (800::\<real>) +
+            (979::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>))) / (800::\<real>) +
+            (499::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (32::\<real>) +
+            (9481::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>))) / (32::\<real>)) *
            (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) / (323::\<real>)) = 
         (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
-           (((if c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) * ((89::\<real>) / (8::\<real>)  / (323::\<real>)) +
-            ((if \<not> c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) * ((2495::\<real>) / (8::\<real>) / (323::\<real>))))"
+           (((if c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) * ((7921::\<real>) / ((800::\<real>) * 323)) +
+            ((if \<not> c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) * ((499::\<real>) / ((32::\<real>) * (323::\<real>)))))"
     apply (rule infsum_cong)
     by simp
-  also have f2: "... = ((89::\<real>) / (8::\<real>)  / (323::\<real>)) + ((2495::\<real>) / (8::\<real>) / (323::\<real>))"
+  also have f2: "... = ((7921::\<real>) / ((800::\<real>) * 323)) + ((499::\<real>) / ((32::\<real>) * (323::\<real>)))"
     apply (subst infsum_add)
     apply (subst summable_on_cmult_left)
     apply (smt (verit) summable_on_cong summable_pos_true)
@@ -576,27 +699,29 @@ proof -
     apply (subst infsum_constant_finite_states)
     using finite.simps pos_false apply auto[1]
     by (metis (no_types, lifting) Collect_cong One_nat_def card.empty card.insert equals0D finite.emptyI mult_cancel_right2 of_nat_1 pos_false pos_true)
-  show "(12722005::\<real>) / ((646::\<real>) *
+  show "(2544401::\<real>) / ((2584::\<real>) *
         (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
-           ((89::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>) +
-            (2495::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (8::\<real>)) *
-           (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) /
-           (323::\<real>))) = (12475::\<real>)"
+           ((7921::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (800::\<real>) +
+            (979::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>))) / (800::\<real>) +
+            (499::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (32::\<real>) +
+            (9481::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>))) / (32::\<real>)) *
+           (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) / (323::\<real>))) = (12475::\<real>)"
     apply (simp only: f1 f2)
+    by auto
 next
   fix c
   have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
-           ((if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (89::\<real>) / (50000::\<real>) +
-            (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (11::\<real>) / (50000::\<real>) +
-            (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (499::\<real>) / (10000::\<real>) +
-            (9481::\<real>) * ((if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>))) / (10000::\<real>)) *
-           (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) =
+           ((7921::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (800::\<real>) +
+            (979::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>))) / (800::\<real>) +
+            (499::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (32::\<real>) +
+            (9481::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>))) / (32::\<real>)) *
+           (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) / (323::\<real>)) =
       (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
-           ((if lt\<^sub>v v\<^sub>0 = Pos \<and> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (89::\<real>) / (50000::\<real>) +
-            (if lt\<^sub>v v\<^sub>0 = Pos \<and> \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (499::\<real>) / (10000::\<real>)))"
+           ((if lt\<^sub>v v\<^sub>0 = Pos \<and> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (7921::\<real>) / ((800::\<real>)*(323::\<real>)) +
+            (if lt\<^sub>v v\<^sub>0 = Pos \<and> \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (499::\<real>) / ((32::\<real>)*(323::\<real>))))"
     apply (rule infsum_cong)
     by simp
-  have f2: "... = (89::\<real>) / (50000::\<real>) + (499::\<real>) / (10000::\<real>)"
+  have f2: "... = (7921::\<real>) / ((800::\<real>)*(323::\<real>)) + (499::\<real>) / ((32::\<real>)*(323::\<real>))"
     apply (subst infsum_add)
     apply (simp add: summable_on_cdiv_left summable_on_cmult_left summable_pos_true)
     apply (simp add: summable_on_cdiv_left summable_on_cmult_left summable_pos_false)
@@ -613,15 +738,73 @@ next
     apply (subst infsum_constant_finite_states)
     using pos_false apply force
     using pos_false pos_true by force
-  show "(28747::\<real>) /
-       ((6250::\<real>) *
+  show "(40389179::\<real>) / ((64600::\<real>) *
         (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
-           ((if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (89::\<real>) / (50000::\<real>) +
-            (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>)) * (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (11::\<real>) / (50000::\<real>) +
-            (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (499::\<real>) / (10000::\<real>) +
-            (9481::\<real>) * ((if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>)) * (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>))) / (10000::\<real>)) *
-           (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)))) = (89::\<real>)"
-    by (simp add: f1 f2)
+           ((7921::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (800::\<real>) +
+            (979::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>))) / (800::\<real>) +
+            (499::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (32::\<real>) +
+            (9481::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Neg then 1::\<real> else (0::\<real>))) / (32::\<real>)) *
+           (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>)) / (323::\<real>))) = (7921::\<real>)"
+    apply (simp only: f1 f2)
+    by auto
+qed
+
+text \<open> What's the probability that the patient has cancer, given a positive test? @{text "P(Cancer | Test=Pos)"} \<close>
+lemma SecondTestPos_Cancer: 
+  "rvfun_of_prfun SecondTestPos ; \<lbrakk>c\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = ((p\<^sub>1 * p\<^sub>2 * p\<^sub>2) / (p\<^sub>1 * p\<^sub>2 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3 * p\<^sub>3))\<^sub>e"
+  apply (simp add: SecondTestPos_altdef_def SecondTestPos)
+  apply (subst rvfun_inverse)
+  apply (expr_simp_1 add: dist_defs)
+  apply (pred_auto)
+proof -
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+       ((7921::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (4::\<real>) +
+        (12475::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (4::\<real>)) *
+       (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (5099::\<real>)) = 
+    (\<Sum>\<^sub>\<infinity>v\<^sub>0::state. (((if c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) * ((7921::\<real>) / (4::\<real>) / (5099::\<real>))))"
+    apply (rule infsum_cong)
+    by simp
+  also have f2: "... = ((7921::\<real>) / (4::\<real>) / (5099::\<real>))"
+    apply (subst infsum_cmult_left)
+    apply (smt (verit) summable_on_cong summable_pos_true)
+    apply (simp)
+    apply (subst infsum_constant_finite_states)
+    using finite.simps pos_true apply auto[1]
+    by (smt (verit) Collect_cong One_nat_def card.empty card.insert empty_iff finite.emptyI of_nat_1 pos_true)
+  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+       ((7921::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (4::\<real>) +
+        (12475::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (4::\<real>)) *
+       (if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (5099::\<real>)) * (20396::\<real>) = (7921::\<real>)"
+    using f1 f2 by linarith
+qed
+
+text \<open> What's the probability that the patient has no cancer, given a positive test? @{text "P(\<not>Cancer | Test=Pos)"} \<close>
+lemma SecondTestPos_NotCancer:
+  "rvfun_of_prfun SecondTestPos ; \<lbrakk>\<not>c\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = ((1 - p\<^sub>1) * p\<^sub>3 * p\<^sub>3 / (p\<^sub>1 * p\<^sub>2 * p\<^sub>2 + (1 - p\<^sub>1) * p\<^sub>3 * p\<^sub>3))\<^sub>e"
+  apply (simp add: SecondTestPos_altdef_def SecondTestPos)
+  apply (subst rvfun_inverse)
+  apply (expr_simp_1 add: dist_defs)
+  apply (pred_auto)
+proof -
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+       ((7921::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (4::\<real>) +
+        (12475::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (4::\<real>)) *
+       (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (5099::\<real>)) = 
+    (\<Sum>\<^sub>\<infinity>v\<^sub>0::state. (((if \<not> c\<^sub>v v\<^sub>0 \<and> lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) * ((12475::\<real>) / (4::\<real>) / (5099::\<real>))))"
+    apply (rule infsum_cong)
+    by simp
+  also have f2: "... = ((12475::\<real>) / (4::\<real>) / (5099::\<real>))"
+    apply (subst infsum_cmult_left)
+    apply (smt (verit) summable_on_cong summable_pos_false)
+    apply (simp)
+    apply (subst infsum_constant_finite_states)
+    using finite.simps pos_false apply auto[1]
+    by (smt (verit) Collect_cong One_nat_def card.empty card.insert empty_iff finite.emptyI of_nat_1 pos_false)
+  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+       ((7921::\<real>) * ((if c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (4::\<real>) +
+        (12475::\<real>) * ((if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if lt\<^sub>v v\<^sub>0 = Pos then 1::\<real> else (0::\<real>))) / (4::\<real>)) *
+       (if \<not> c\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) / (5099::\<real>)) * (20396::\<real>) = (12475::\<real>)"
+    using f1 f2 by linarith
 qed
 
 end
