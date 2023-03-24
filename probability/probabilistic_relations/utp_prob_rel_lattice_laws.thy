@@ -402,6 +402,19 @@ lemma rvfun_prob_sum1_summable':
   apply (simp add: assms rvfun_prob_sum1_summable(3))
   by (simp add: assms rvfun_prob_sum1_summable(4))
 
+lemma prfun_final_reachable:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  shows "\<forall>s. \<exists>s'. P (s, s') > 0"
+proof
+  fix s
+  have "\<exists>s'. ((rvfun_of_prfun (P::('s, 's) prfun))) (s, s') > 0"
+    apply (rule rvfun_prob_sum1_summable(4))
+    by (simp add: assms)
+  then show "\<exists>s'::'s. (0::ureal) < P (s, s')"
+    by (smt (verit) SEXP_def linorder_not_less nle_le real2eureal_inverse rvfun_of_prfun_def 
+            ureal2real_mono ureal_minus_larger_zero ureal_minus_larger_zero_unit)
+qed
+    
 lemma rvfun_prob_sum_leq_1_summable:
   assumes "is_final_sub_dist p"
   shows "\<forall>s. 0 \<le> p s \<and> p s \<le> 1" 
@@ -3530,6 +3543,66 @@ lemma max_bounded_e:
   shows "m \<le> n"
   by (meson Max.boundedE assms(1) assms(2) assms(3) assms(4))
 
+(*
+lemma inc_f_larger_supreme_unique_no:
+  fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
+  assumes f_inc: "increasing_chain f"
+  assumes r_pos: "0 < (r::\<real>)"
+  shows "\<forall>s s'. ((ureal2real (\<Squnion>n::\<nat>. f n (s, s')) > ureal2real (f 0 (s, s'))) \<and> 
+          (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f 0 (s, s'))) \<ge> r) \<longrightarrow> 
+          (\<exists>!no::nat. (ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no+1) (s, s')) < r \<and> 
+          ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) \<ge> r))"
+    apply (auto)
+    defer
+    apply (smt (verit, best) assms(1) increasing_chain_mono le_fun_def nle_le not_less_eq_eq ureal2real_mono)
+  proof -
+    fix s s'
+    assume a11: "ureal2real (f (0::\<nat>) (s, s')) < ureal2real (\<Squnion>n::\<nat>. f n (s, s'))"
+    assume a12: "r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (0::\<nat>) (s, s'))"
+    have sup_upper: "\<forall>s s'. \<forall>n. ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s')) \<le> 0"
+      apply (auto)
+      apply (rule ureal2real_mono)
+      by (meson SUP_upper UNIV_I)
+    then have dist_equal: "\<forall>s s'. \<forall>n. \<bar>ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s'))\<bar> = 
+        ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s'))"
+      by auto
+    have limit_is_lub: "\<forall>s s'. (\<lambda>n. ureal2real (f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n (s, s')))"
+      by (simp add: assms(1) increasing_chain_limit_is_lub)
+    then have limit_is_lub_def: "\<forall>s s'. (\<exists>no::\<nat>. \<forall>n\<ge>no. norm (ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s'))) < r)"
+      using LIMSEQ_iff by (metis r_pos)
+    then have limit_is_lub_def': "\<forall>s s'. \<exists>no::nat. \<forall>n \<ge> no. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
+      by (simp add: dist_equal)
+
+    show "\<exists>no::\<nat>.
+          ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (Suc no) (s, s')) < r \<and>
+          r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s'))"
+      apply (rule ccontr, auto)
+    proof -
+      assume a110: "\<forall>no::\<nat>.
+       ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (Suc no) (s, s')) < r \<longrightarrow>
+       \<not> r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s'))"
+      then have f110: "\<forall>no::\<nat>.
+       ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (Suc no) (s, s')) < r \<longrightarrow>
+       ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r"
+        by auto
+      have f111: "\<exists>no::nat. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r"
+        using limit_is_lub_def' by blast
+      obtain no where P_no: "ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r"
+        using f111 by blast
+      have "\<forall>m::nat. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no - m) (s, s')) < r"
+        apply (auto)
+        apply (induct_tac m)
+        using P_no minus_nat.diff_0 apply presburger
+        by (smt (verit, best) Suc_diff_Suc a12 bot_nat_0.extremum f110 linorder_not_less nless_le 
+              zero_less_diff)
+      then have "ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no - no) (s, s')) < r"
+        by blast
+      then show "False"
+        using a12 by force
+    qed
+  qed
+*)
+
 theorem increasing_chain_limit_is_lub_all:
   fixes f :: "nat \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun"
   assumes "increasing_chain f"
@@ -4845,7 +4918,7 @@ proof -
       apply (subst abs_of_nonneg)
       apply (auto)
       apply (rule ureal2real_mono)
-      using loopfunc_monoE by (metis SUP_upper UNIV_I assms le_fun_def)
+      using loopfunc_monoE by (metis SUP_upper UNIV_I assms(1) le_fun_def)
     have norm_3: "\<forall>n. ureal2real (\<F> b P (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (a, ba)) - ureal2real (\<F> b P (iter\<^sub>p n b P 0\<^sub>p) (a, ba)) 
       = (\<lbrakk>b\<rbrakk>\<^sub>\<I>) (a, ba) * ureal2real ((P ; (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) - iter\<^sub>p n b P 0\<^sub>p) (a, ba))"
       apply (subst loopfunc_minus_distr')
@@ -4869,15 +4942,12 @@ proof -
       then have f1: "(\<lbrakk>b\<rbrakk>\<^sub>\<I>) (a, ba) = 1"
         by (smt (verit, best) SEXP_def iverson_bracket_def)
 
-      have "\<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. \<forall>v\<^sub>0. rvfun_of_prfun ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) - iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba) < \<epsilon>"
-        sorry
-
       have lim: "\<forall>v\<^sub>0. (\<lambda>n. ureal2real (iter\<^sub>p n b P 0\<^sub>p (v\<^sub>0, ba))) \<longlonglongrightarrow> ureal2real ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba))"
         apply (auto)              
         proof -
           fix v\<^sub>0 :: 's
           show "(\<lambda>n. ureal2real (iter\<^sub>p n b P 0\<^sub>p (v\<^sub>0, ba))) \<longlonglongrightarrow> ureal2real (\<Squnion>f\<in>range (\<lambda>n. iter\<^sub>p n b P 0\<^sub>p). f (v\<^sub>0, ba))"
-            by (metis (no_types) SUP_apply Sup_apply assms increasing_chain_limit_is_lub'' iterate_increasing_chain)
+            by (metis (no_types) SUP_apply Sup_apply assms(1) increasing_chain_limit_is_lub'' iterate_increasing_chain)
         qed
 
       have epsilon_def: "\<forall>v\<^sub>0. \<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. norm( (ureal2real (iter\<^sub>p n b P 0\<^sub>p (v\<^sub>0, ba)) - ureal2real ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba)))) < \<epsilon>"
@@ -4891,10 +4961,121 @@ proof -
       have epsilon_def': "\<forall>v\<^sub>0. \<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. ureal2real ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba)) - ureal2real (iter\<^sub>p n b P 0\<^sub>p (v\<^sub>0, ba)) < \<epsilon>"
         using epsilon_def abs_minus_commute by (smt (verit, del_insts) abs_ge_self real_norm_def)
 
-      have epsilon_def'': "\<forall>v\<^sub>0. \<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. ureal2real (((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba) - (iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba))) < \<epsilon>"
+      let ?fdiff = "\<lambda>n v\<^sub>0::'s. ureal2real (((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba) - (iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba)))"
+      have epsilon_def'': "\<forall>v\<^sub>0. \<forall>\<epsilon>>0. \<exists>N. \<forall>n \<ge> N. ?fdiff n v\<^sub>0 < \<epsilon>"
         apply (subst ureal2real_distr)
         apply (meson SUP_upper UNIV_I le_fun_def)
         using epsilon_def' by blast
+
+      have P_final_reachable: "\<exists>s'. P (a, s') > 0"
+        by (simp add: prfun_final_reachable assms) 
+
+      have P_card: "\<exists>N. N > 0 \<and> N = card {s'. (P (a, s') > 0)}"
+        apply (rule_tac x = "card {s'. (P (a, s') > 0)}" in exI)
+        apply (auto)
+        using P_final_reachable P_finite_fin card_gt_0_iff by blast
+
+      obtain card_P where P_N: "card_P > 0 \<and> card_P = card {s'. (P (a, s') > 0)}" 
+        using P_finite_fin P_card by blast
+
+      (* ?mu_no_set *)
+(*
+      have exist_NN: "\<exists>no::nat. \<forall>n \<ge> no. \<forall>s\<in>{s'. P (a, s') > 0}. ?fdiff n s < r/card_P"
+        apply (rule_tac x = 
+            "Max {N | s N. (P (a, s) > 0) \<and> N = (SOME N. \<forall>n \<ge> N. ?fdiff n s < r/card_P)}" in exI)
+        apply (rule allI, rule impI)
+      proof -
+        fix n
+        assume a1: "Max {N | s N. (P (a, s) > 0) \<and> N = (SOME N. \<forall>n \<ge> N. ?fdiff n s < r/card_P)} \<le> n"
+
+        have "\<forall>nn \<in> {N | s N. (P (a, s) > 0) \<and> N = (SOME N. \<forall>n \<ge> N. ?fdiff n s < r/card_P)}. nn \<le> n"
+          using a1 Max_le_iff sledgehammer
+
+        have "\<forall>s. (P (a, s) > 0) \<longrightarrow> ?fdiff n s < r/card_P"
+          apply (rule allI, rule impI)
+          using a1 apply (simp add: Max_eq_iff)
+        show "\<forall>s::'s\<in>{s'::'s. (0::ureal) < P (a, s')}. ureal2real ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, ba) - iter\<^sub>p n b P 0\<^sub>p (s, ba)) < r / real card_P"
+      qed
+*)
+  have inc: "increasing_chain (\<lambda>n. iter\<^sub>p n b P 0\<^sub>p)"
+    using assms(1) iterate_increasing_chain by blast
+(*
+  let ?P_larger_sup = "\<lambda>s. ((ureal2real ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, ba)) > ureal2real ((iter\<^sub>p 0 b P 0\<^sub>p) (s, ba))) \<and> 
+      (ureal2real ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, ba)) - ureal2real ((iter\<^sub>p 0 b P 0\<^sub>p) (s, ba))) \<ge> r)"
+  let ?P_mu_no = "\<lambda>s. \<lambda>no. (ureal2real ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, ba)) - ureal2real ((iter\<^sub>p (no+1) b P 0\<^sub>p) (s, ba)) < r \<and> 
+      (ureal2real ((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s, ba)) - ureal2real ((iter\<^sub>p (no) b P 0\<^sub>p) (s, ba))) \<ge> r)"
+    have  "\<forall>s. ?P_larger_sup s \<longrightarrow> (\<exists>!no::nat. ?P_mu_no s no)"
+    apply (auto)
+       defer
+      using inc increasing_chain_mono le_fun_def nle_le not_less_eq_eq ureal2real_mono sledgehammer
+    apply (smt (verit, best) inc increasing_chain_mono le_fun_def nle_le not_less_eq_eq ureal2real_mono)
+  proof -
+    fix s
+    assume a11: "ureal2real (0\<^sub>p (s, ba)) < ureal2real (\<Squnion>f::'s \<times> 's \<Rightarrow> ureal\<in>range (\<lambda>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p). f (s, ba))"
+    assume a12: "r \<le> ureal2real (\<Squnion>f::'s \<times> 's \<Rightarrow> ureal\<in>range (\<lambda>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p). f (s, ba)) - ureal2real (0\<^sub>p (s, ba))"
+    have sup_upper: "\<forall>s s'. \<forall>n. ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s')) \<le> 0"
+      apply (auto)
+      apply (rule ureal2real_mono)
+      by (meson SUP_upper UNIV_I)
+    then have dist_equal: "\<forall>s s'. \<forall>n. \<bar>ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s'))\<bar> = 
+        ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s'))"
+      by auto
+    have limit_is_lub: "\<forall>s s'. (\<lambda>n. ureal2real (f n (s, s'))) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. f n (s, s')))"
+      by (simp add: assms(1) increasing_chain_limit_is_lub)
+    then have limit_is_lub_def: "\<forall>s s'. (\<exists>no::\<nat>. \<forall>n\<ge>no. norm (ureal2real (f n (s, s')) - ureal2real (\<Squnion>n::\<nat>. f n (s, s'))) < r)"
+      using LIMSEQ_iff by (metis r_pos)
+    then have limit_is_lub_def': "\<forall>s s'. \<exists>no::nat. \<forall>n \<ge> no. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f n (s, s')) < r"
+      by (simp add: dist_equal)
+
+    show "\<exists>no::\<nat>.
+          ureal2real (\<Squnion>f::'s \<times> 's \<Rightarrow> ureal\<in>range (\<lambda>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p). f (s, ba)) - ureal2real (\<F> b P (iter\<^sub>p no b P 0\<^sub>p) (s, ba)) < r \<and>
+          r \<le> ureal2real (\<Squnion>f::'s \<times> 's \<Rightarrow> ureal\<in>range (\<lambda>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p). f (s, ba)) - ureal2real (\<F> b P (iter\<^sub>p no b P 0\<^sub>p) (s, ba))"
+      apply (rule ccontr, auto)
+    proof -
+      assume a110: "\<forall>no::\<nat>.
+       ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (Suc no) (s, s')) < r \<longrightarrow>
+       \<not> r \<le> ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s'))"
+      then have f110: "\<forall>no::\<nat>.
+       ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (Suc no) (s, s')) < r \<longrightarrow>
+       ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r"
+        by auto
+      have f111: "\<exists>no::nat. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r"
+        using limit_is_lub_def' by blast
+      obtain no where P_no: "ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f no (s, s')) < r"
+        using f111 by blast
+      have "\<forall>m::nat. ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no - m) (s, s')) < r"
+        apply (auto)
+        apply (induct_tac m)
+        using P_no minus_nat.diff_0 apply presburger
+        by (smt (verit, best) Suc_diff_Suc a12 bot_nat_0.extremum f110 linorder_not_less nless_le 
+              zero_less_diff)
+      then have "ureal2real (\<Squnion>n::\<nat>. f n (s, s')) - ureal2real (f (no - no) (s, s')) < r"
+        by blast
+      then show "False"
+        using a12 by force
+    qed
+  qed
+
+      let ?mu_no_set = "{THE no. ?P_mu_no s s' no | s s'. ?P_larger_sup s s'}"
+*)
+  have r_card_P: "r/card_P > 0"
+    using P_N a1 divide_pos_pos of_nat_0_less_iff by blast
+
+  have exist_NN: "\<forall>s. \<exists>no::nat. \<forall>n \<ge> no. ?fdiff n s < r/card_P"
+    apply auto
+    sledgehammer
+
+      obtain NN where "\<forall>n \<ge> NN. \<forall>s'. ureal2real (((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (s', ba) - (iter\<^sub>p n b P 0\<^sub>p) (s', ba))) < r/card_P"
+        using exist_NN sorry
+
+      let ?f = "\<lambda>n v\<^sub>0::'s. ureal2real (P (a, v\<^sub>0)) * ureal2real (((\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba) - (iter\<^sub>p n b P 0\<^sub>p) (v\<^sub>0, ba)))"
+
+      have discard_impossible: "\<forall>n. (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s. ?f n v\<^sub>0) = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'s\<in>{s'. P (a, s') > 0}. ?f n v\<^sub>0)"
+        apply (rule allI)
+        apply (subst infsum_cong_neutral[where T = "UNIV" and S = "{s'. P (a, s') > 0}" and f = "?f n" and g = "?f n"])
+        apply (metis Diff_iff diff_self linorder_not_le mem_Collect_eq mult_zero_left nle_le ureal2real_distr ureal2real_mono_strict ureal_lower_bound ureal_minus_larger_zero)
+        apply blast
+        by (simp)+
         
       show "\<exists>no::\<nat>. \<forall>n::\<nat>. no \<le> n \<longrightarrow> (\<lbrakk>b\<rbrakk>\<^sub>\<I>) (a, ba) * ureal2real ((P ; (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) - iter\<^sub>p n b P 0\<^sub>p) (a, ba)) < r" 
         apply (simp add: f1)
