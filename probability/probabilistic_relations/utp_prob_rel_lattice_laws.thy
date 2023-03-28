@@ -333,6 +333,12 @@ lemma ureal2real_inverse:
   by (metis abs_ereal_ge0 atLeastAtMost_iff ereal_less_eq(1) ereal_real ereal_times(1) max.absorb2 
       min.commute min.orderE ureal2ereal ureal2ereal_inverse)
 
+lemma real2ureal_eq:
+  assumes "real2ureal a = real2ureal b"
+  assumes "0 \<le> a" "a \<le> 1" "0 \<le> b" "b \<le> 1"
+  shows "a = b"
+  by (metis assms(1) assms(2) assms(3) assms(4) assms(5) real2ureal_inverse)
+
 lemma rvfun_of_prfun_simp: "rvfun_of_prfun [\<lambda>\<s>::'a \<times> 'a. u]\<^sub>e = (\<lambda>s. ureal2real u)"
   by (simp add: SEXP_def rvfun_of_prfun_def)
 
@@ -886,6 +892,12 @@ lemma prfun_minus_distribution:
   by (smt (verit, del_insts) abs_ereal_ge0 assms atLeastAtMost_iff ereal_diff_positive 
       ereal_less_eq(1) ereal_times(1) le_fun_def less_eq_ureal.rep_eq max_def minus_ureal.rep_eq 
       nle_le real_of_ereal_minus ureal2ereal)
+
+lemma rvfun_ge_zero: "\<forall>s s'. (0::ureal) < prfun_of_rvfun p (s, s') \<longleftrightarrow> (0::real) < p (s, s')"
+  apply (simp add: prfun_of_rvfun_def)
+  apply auto
+  apply (metis linorder_not_less real2ureal_def real2ureal_mono zero_ereal_def zero_ureal_def)
+  using ureal_gt_zero by blast
 
 subsection \<open> Probabilistic programs \<close>
 subsubsection \<open> Bottom and Top \<close>
@@ -5923,7 +5935,7 @@ theorem inf_continuous_gfp_iteration_finite_final:
   using assms inf_iterate_continuous_finite_final apply blast
   by (simp add: assms(1) fp_between_lfp_gfp(2))
 
-subsubsection \<open> Unique fixed point \<close>
+subsubsection \<open> Unique fixed point (finite states having strictly increasing chains) \<close>
 
 lemma unique_fixed_point:
   assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
@@ -6302,5 +6314,101 @@ theorem unique_fixed_point_lfp_gfp':
         "while\<^sub>p\<^sup>\<top> b do P od = fp"
   using assms iterate_sup_inf_eq unique_fixed_point_lfp_gfp(1) apply blast
   using assms iterate_sup_inf_eq unique_fixed_point_lfp_gfp(2) by blast
+
+subsubsection \<open> Unique fixed point (finite final states) \<close>
+
+lemma unique_fixed_point_finite_final:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes P_finite_fin: "\<forall>s. finite {s'. (P (s, s') > 0)}"
+  assumes "(\<Sqinter>n::nat. (iterate n b P 1\<^sub>p)) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
+  shows "\<exists>! fp. \<F> b P fp = fp"
+  apply (simp add: Ex1_def)
+  apply (rule_tac x = "(\<Squnion>n::nat. (iterate n b P 0\<^sub>p))" in exI)
+  apply (rule conjI)
+  using assms sup_iterate_continuous_finite_final apply blast
+proof (auto)
+  fix y :: "'s \<times> 's \<Rightarrow> ureal"
+  assume a1: "\<F> b P y = y"
+  from a1 have f1: "(\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p) \<le> y"
+    by (metis assms(1) fp_between_lfp_gfp(1))
+  from a1 have f2: "y \<le> (\<Sqinter>n::nat. (iterate n b P 1\<^sub>p))"
+    by (metis assms(1) fp_between_lfp_gfp(2))
+  then show "y = (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p)"
+    by (simp add: assms(3) f1 order_antisym)
+qed
+
+theorem unique_fixed_point_lfp_gfp_finite_final:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes P_finite_fin: "\<forall>s. finite {s'. (P (s, s') > 0)}"
+  assumes "(\<Sqinter>n::nat. (iterate n b P 1\<^sub>p)) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
+  assumes "\<F> b P fp = fp"
+  shows "while\<^sub>p b do P od = fp"
+        "while\<^sub>p\<^sup>\<top> b do P od = fp"
+  apply (smt (z3) Collect_cong P_finite_fin Sup.SUP_cong assms(1) assms(3) assms(4) 
+      sup_continuous_lfp_iteration_finite_final sup_iterate_continuous_finite_final unique_fixed_point_finite_final)
+  by (smt (z3) Collect_cong loopfunc_mono Sup.SUP_cong assms(1) assms(2) assms(3) assms(4) gfp_unfold 
+      pwhile_top_def unique_fixed_point_finite_final)
+
+lemma iterate_sup_inf_eq_finite_final:
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes P_finite_fin: "\<forall>s. finite {s'. (P (s, s') > 0)}"
+  assumes "\<forall>s. (\<lambda>n. ureal2real ((iterdiff n b P 1\<^sub>p) s)) \<longlonglongrightarrow> 0"
+  shows "(\<Sqinter>n::nat. (iterate n b P 1\<^sub>p)) = (\<Squnion>n::nat. (iterate n b P 0\<^sub>p))"
+proof -
+  let ?f1 = "\<lambda>n. (iterate n b P 0\<^sub>p)"
+  let ?f2 = "\<lambda>n. (iterate n b P 1\<^sub>p)"
+  have f1: "\<forall>s. (\<lambda>n. ureal2real (?f1 n s)) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. ?f1 n s))"
+    apply (auto, rule increasing_chain_limit_is_lub)
+    using assms(1) iterate_increasing_chain by blast
+
+  have f2: "\<forall>s. (\<lambda>n. ureal2real (?f2 n s)) \<longlonglongrightarrow> (ureal2real (\<Sqinter>n::\<nat>. ?f2 n s))"
+    apply (auto, rule decreasing_chain_limit_is_glb)
+    using assms(1) iterate_decreasing_chain by blast
+
+  have f3: "\<forall>n. ?f2 n = (@(?f1 n) + @(iterdiff n b P 1\<^sub>p))\<^sub>e"
+    using assms(1) iterate_top_eq_bot_plus by blast
+
+  have f4: "\<forall>s. (\<lambda>n. ureal2real (?f2 n s)) = (\<lambda>n. ureal2real (?f1 n s + (iterdiff n b P 1\<^sub>p) s))"
+    using f3 by simp
+
+  have f5: "\<forall>s. (\<lambda>n. ureal2real (?f1 n s + (iterdiff n b P 1\<^sub>p) s)) = (\<lambda>n. ureal2real (?f1 n s) + ureal2real ((iterdiff n b P 1\<^sub>p) s))"
+    apply (subst fun_eq_iff)
+    apply (auto)
+    apply (rule ureal2real_add_dist)
+    using iterate_top_is_prob' by (metis assms(1) order_antisym ureal_bottom_least 
+        ureal_bottom_least' ureal_top_greatest ureal_top_greatest')
+
+  have f6: "\<forall>s. (\<lambda>n. ureal2real (?f2 n s)) \<longlonglongrightarrow> (ureal2real (\<Squnion>n::\<nat>. ?f1 n s)) + 0"
+    apply (rule allI)
+    apply (simp only: f4 f5)
+    apply (rule tendsto_add)
+    using f1 apply blast
+    by (simp add: assms(3))
+
+  have "\<forall>s. (ureal2real (\<Squnion>n::\<nat>. ?f1 n s)) = (ureal2real (\<Sqinter>n::\<nat>. ?f2 n s))"
+  proof 
+    fix s
+    show "ureal2real (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p s) = ureal2real (\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p s)"
+    apply (rule LIMSEQ_unique[where X = "(\<lambda>n. ureal2real (?f2 n s))"])
+    using f6 apply fastforce
+    using f2 by blast
+  qed
+  then have "\<forall>s. (\<Squnion>n::\<nat>. ?f1 n s) = (\<Sqinter>n::\<nat>. ?f2 n s)"
+    using ureal2real_eq by blast
+  then show "(\<Sqinter>n::\<nat>. iter\<^sub>p n b P 1\<^sub>p) = (\<Squnion>n::\<nat>. iter\<^sub>p n b P 0\<^sub>p)"
+    apply (subst fun_eq_iff)
+    apply (rule allI)
+    by (metis INF_apply SUP_apply)
+qed
+
+theorem unique_fixed_point_lfp_gfp_finite_final':
+  assumes "is_final_distribution (rvfun_of_prfun (P::('s, 's) prfun))"
+  assumes P_finite_fin: "\<forall>s. finite {s'. (P (s, s') > 0)}"
+  assumes "\<forall>s. (\<lambda>n. ureal2real ((iterdiff n b P 1\<^sub>p) s)) \<longlonglongrightarrow> 0"
+  assumes "\<F> b P fp = fp"
+  shows "while\<^sub>p b do P od = fp"
+        "while\<^sub>p\<^sup>\<top> b do P od = fp"
+  using assms iterate_sup_inf_eq_finite_final unique_fixed_point_lfp_gfp_finite_final(1) apply blast
+  using assms iterate_sup_inf_eq_finite_final unique_fixed_point_lfp_gfp_finite_final(2) by blast
 
 end

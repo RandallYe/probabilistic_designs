@@ -362,7 +362,7 @@ term "([] \<parallel> [a])"
 
 subsubsection \<open> Recursion \<close>
 alphabet time = 
-  t :: enat
+  t :: \<nat>
 
 text \<open>In UTP, @{text "\<mu>"} and @{text "\<nu>"} are the weakest and strongest fix point, but there are 
 @{term "gfp"} and @{term "lfp"} in Isabelle (see @{text "utp_pred.thy"}).

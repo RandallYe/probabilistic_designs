@@ -291,6 +291,25 @@ proof -
     using a1 by presburger
 qed
 
+lemma infsum_constant_finite_states_subset:
+  assumes "finite {s. b s \<and> s \<in> A}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> A. (if b v\<^sub>0 then (m::\<real>) else 0)) = m * card ({s. b s \<and> s \<in> A})"
+proof -
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> A. (if b v\<^sub>0 then (m::\<real>) else 0)) = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> {s. b s \<and> s \<in> A}. (m::\<real>))"
+    apply (rule infsum_cong_neutral)
+    apply simp
+    apply auto[1]
+    by simp
+  then show ?thesis
+    by simp
+qed
+
+lemma infsum_constant_finite_states_subset':
+  assumes "finite {s. b s}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> A. (if b v\<^sub>0 then (m::\<real>) else 0)) = m * card ({s. b s \<and> s \<in> A})"
+  apply (rule infsum_constant_finite_states_subset)
+  using assms by force
+
 lemma infsum_constant_finite_states_summable_2:
   assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}"
   shows "(\<lambda>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) + 
@@ -572,4 +591,9 @@ proof -
     using f1 nless_le by blast
 qed
 
+subsection \<open> Series \<close>
+
+(*
+lemma "sum "
+*)
 end
