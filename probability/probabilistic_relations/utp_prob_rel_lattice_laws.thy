@@ -1918,6 +1918,16 @@ theorem prfun_seqcomp_left_one_point: "x := e ; P = prfun_of_rvfun (([ x\<^sup><
   apply (pred_auto)
   by (simp add: infsum_mult_singleton_left)
 
+(*
+theorem prfun_seqcomp_right_one_point: "P; x := e  = prfun_of_rvfun (([ x\<^sup>> \<leadsto> e\<^sup>< ] \<dagger> @(rvfun_of_prfun P)))\<^sub>e"
+  apply (simp add: pfun_defs expr_defs)
+  apply (subst rvfun_inverse)
+  apply (simp add: dist_defs expr_defs)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (pred_auto)
+  apply (subst infsum_mult_singleton_right)
+*)
+
 lemma prfun_infsum_over_pair_subset_1:
   assumes "is_final_distribution (rvfun_of_prfun (P::'a prhfun))"
   shows "(\<Sum>\<^sub>\<infinity> (s::'a, v\<^sub>0::'a). rvfun_of_prfun P (s\<^sub>1, v\<^sub>0) * (if put\<^bsub>x\<^esub> v\<^sub>0 (e v\<^sub>0) = s then 1::\<real> else (0::\<real>))) = 1"
