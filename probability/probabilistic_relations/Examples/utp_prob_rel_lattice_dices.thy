@@ -2044,19 +2044,20 @@ proof -
           then show ?thesis
             using f21 f20 by linarith
         qed
-      have f3: "\<not>(fd2\<^sub>v x) = (fd2\<^sub>v y) \<Longrightarrow> \<not>(6::\<nat>) * (td2nat (fd1\<^sub>v x) - (1::\<nat>)) + td2nat (fd2\<^sub>v x) = 
-                  (6::\<nat>) * (td2nat (fd1\<^sub>v y) - (1::\<nat>)) + td2nat (fd2\<^sub>v y)"
-        proof (cases "(fd1\<^sub>v x) = (fd1\<^sub>v y)")
+      have f3: "\<not>(d2\<^sub>v x) = (d2\<^sub>v y) \<Longrightarrow> \<not>(6::\<nat>) * (td2nat (d1\<^sub>v x) - (1::\<nat>)) + td2nat (d2\<^sub>v x) = 
+                  (6::\<nat>) * (td2nat (d1\<^sub>v y) - (1::\<nat>)) + td2nat (d2\<^sub>v y)"
+        proof (cases "(d1\<^sub>v x) = (d1\<^sub>v y)")
           case True
           then show ?thesis 
-            using f1 td2nat_inject by force
+            using f1 td2nat_inject
+            by (smt (verit, best) a1 a2 add.commute diff_add_inverse2 mem_Collect_eq state_t_set_eq)
         next
           case False
           then show ?thesis 
             using f2 by blast
         qed
       show "False"
-        using f1 f2 f3 a3 by blast 
+        using f1 f2 f3 a3 by (smt (verit, best) a1 a2 mem_Collect_eq state_t_set_eq)
     qed
 
   have inj_set: "?f ` (state_t_set t\<^sub>0) = {(1::\<nat>)..36}"
@@ -2082,8 +2083,8 @@ definition dice_throw_loop where
 "dice_throw_loop = while\<^sub>p\<^sub>t (d1\<^sup>< \<noteq> d2\<^sup><)\<^sub>e do dice_throw od"
 
 definition Ht:: "state_t rvhfun" where 
-"Ht = ((\<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d1\<^sup>< \<and> d2\<^sup>> = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) + 
-  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (1/6)^(($t\<^sup>> - $t\<^sup>< - 1)) * (5/6))\<^sub>e"
+"Ht = ((\<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< \<and> d1\<^sup>> = d1\<^sup>< \<and> d2\<^sup>> = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) + 
+      \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6))\<^sub>e"
 
 subsubsection \<open> Theorems \<close>
 lemma d1_uni_is_dist: 
@@ -2278,12 +2279,23 @@ qed
 definition dice_throw_t_alt :: "state_t rvhfun" where
 "dice_throw_t_alt \<equiv> (\<lbrakk>d1\<^sup>> \<in> outcomes1\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d2\<^sup>> \<in> outcomes1\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36)\<^sub>e"
 
+lemma dice_throw_t_alt_eq: "dice_throw_t_alt = (\<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36)\<^sub>e"
+  apply (simp add: dice_throw_t_alt_def)
+  apply (pred_auto)
+  using Tdice_mem apply auto[1]
+  using Tdice_mem apply auto[1]
+  using Tdice_mem apply auto[1]
+  using Tdice_mem apply auto[1]
+  using Tdice_mem apply auto[1]
+  using Tdice_mem apply auto[1]
+  using Tdice_mem by auto[1]
+
 lemma state_t_add_1: "(rvfun_of_prfun ((t := $t + 1)::state_t prhfun)) = 
   (\<lbrakk>d1\<^sup>> = d1\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d2\<^sup>> = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e)\<^sub>e"
   apply (simp add: pfun_defs rvfun_assignment_inverse)
   by (pred_auto)
 
-lemma state_t_set_eq_1: "{s::state_t. t\<^sub>v s = a \<and> b = d1\<^sub>v s \<and> c = d2\<^sub>v s} = {\<lparr>t\<^sub>v = a, d1\<^sub>v = b, d2\<^sub>v = c\<rparr>}"
+lemma state_t_set_eq_1: "{s::state_t. t\<^sub>v s = a \<and> d1\<^sub>v s = b \<and> d2\<^sub>v s = c} = {\<lparr>t\<^sub>v = a, d1\<^sub>v = b, d2\<^sub>v = c\<rparr>}"
   apply (simp add: set_eq_iff)
   by auto
 
@@ -2309,7 +2321,10 @@ proof -
   also have "... = 1/36"
     apply (subst infsum_constant_finite_states)
     apply (simp add: state_t_finite)
-    by (simp add: state_t_set_eq_1)
+    apply (subgoal_tac "{s::state_t. t\<^sub>v s = t\<^sub>v a \<and> d1\<^sub>v b = d1\<^sub>v s \<and> d2\<^sub>v b = d2\<^sub>v s} = 
+                        {s::state_t. t\<^sub>v s = t\<^sub>v a \<and> d1\<^sub>v s = d1\<^sub>v b \<and> d2\<^sub>v s = d2\<^sub>v b}")
+    apply (simp add: state_t_set_eq_1)
+    by auto
   then show "?lhs * 36 = 1"
     by (simp add: calculation)
 next
@@ -2332,46 +2347,44 @@ lemma dice_throw_t_is_dist: "is_final_distribution dice_throw_t_alt"
   apply (subst infsum_constant_finite_states)
   using state_t_finite apply blast
   by (metis card_state_t_set lambda_one of_nat_numeral state_t_set_eq)
-(*
-lemma H_is_dist: "is_final_distribution Ht"
-  apply (simp add: dist_defs H_def)
-  apply (simp add: expr_defs)
-  apply (auto)
-  apply (smt (verit, best) field_sum_of_halves power_le_one)
-  apply (simp add: lens_defs)
-proof -
-  fix s\<^sub>1::"coin_t_state"
-  let ?lhs = "(\<Sum>\<^sub>\<infinity>s::coin_t_state.
-          (if coin\<^sub>v s = chead \<and> Suc (t\<^sub>v s\<^sub>1) \<le> t\<^sub>v s then 1::\<real> else (0::\<real>)) *
-          ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1)) / (2::\<real>))"
-  let ?set = "{s::coin_t_state. coin\<^sub>v s = chead \<and> Suc (t\<^sub>v s\<^sub>1) \<le> t\<^sub>v s}"
 
-  (*
-  thm "infsum_reindex"
-  have "(\<Sum>\<^sub>\<infinity>t::nat \<in> {t. t \<ge> Suc (t\<^sub>v s\<^sub>1)}. ((1::\<real>) / (2::\<real>)) ^ (t - Suc (t\<^sub>v s\<^sub>1) + 1)) = 1"
-    apply (subst infsum_reindex[where h = "\<lambda>s::coin_t_state. t\<^sub>v s" and A = "?set"])
-*)
-  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>s::coin_t_state \<in> ?set \<union> -?set.
-          (if coin\<^sub>v s = chead \<and> Suc (t\<^sub>v s\<^sub>1) \<le> t\<^sub>v s then 1::\<real> else (0::\<real>)) *
-          ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1)) / (2::\<real>))"
-    by auto
-  moreover have "... = (\<Sum>\<^sub>\<infinity>s::coin_t_state \<in> ?set.
-          (if coin\<^sub>v s = chead \<and> Suc (t\<^sub>v s\<^sub>1) \<le> t\<^sub>v s then 1::\<real> else (0::\<real>)) *
-          ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1)) / (2::\<real>))"
+(*
+lemma Ht_is_dist: "is_final_distribution Ht"
+  apply (simp add: dist_defs Ht_def)
+  apply (simp add: expr_defs)
+  apply (pred_auto)
+  apply (subst infsum_constant_finite_states)
+  apply (simp add: state_t_finite)
+  apply (subst state_t_set_eq_1)
+  apply (simp)
+  apply (subgoal_tac "((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc t)  \<le> 1")
+  apply linarith
+  apply (simp add: power_le_one_iff)
+proof -
+  fix t::\<nat> and d1::Tdice and d2::Tdice
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>s::state_t. (if d1\<^sub>v s = d2\<^sub>v s then 1::\<real> else (0::\<real>)) * 
+          (if Suc t \<le> t\<^sub>v s then 1::\<real> else (0::\<real>)) *
+          ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v s - Suc t) / (6::\<real>))"
+  let ?set = "{s::state_t. d1\<^sub>v s = d2\<^sub>v s \<and> Suc t \<le> t\<^sub>v s}"
+
+  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>s::state_t \<in> ?set \<union> -?set.
+    (if d1\<^sub>v s = d2\<^sub>v s \<and> Suc t \<le> t\<^sub>v s then (((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v s - Suc t) / (6::\<real>)) else (0::\<real>)))"
+    by (smt (verit, best) boolean_algebra.disj_cancel_right div_0 infsum_cong mult_cancel_right2 mult_eq_0_iff)
+  moreover have "... = (\<Sum>\<^sub>\<infinity>s::state_t \<in> ?set. (if d1\<^sub>v s = d2\<^sub>v s \<and> Suc t \<le> t\<^sub>v s then 
+            (((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v s - Suc t) / (6::\<real>)) else (0::\<real>)))"
     apply (rule infsum_cong_neutral)
     apply force
     apply simp
     by blast
-  moreover have "... = (\<Sum>\<^sub>\<infinity>s::coin_t_state \<in> ?set. ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1)) / (2::\<real>))"
+  moreover have "... = (\<Sum>\<^sub>\<infinity>s::state_t \<in> ?set. (((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v s - Suc t) / (6::\<real>)))"
     by (smt (verit) infsum_cong mem_Collect_eq mult_cancel_right2)
-  moreover have "... = (\<Sum>\<^sub>\<infinity>s::coin_t_state \<in> ?set. ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1) + 1))"
-    by auto
-  moreover have "... = (\<Sum>\<^sub>\<infinity>t::nat \<in> {t. t \<ge> Suc (t\<^sub>v s\<^sub>1)}. ((1::\<real>) / (2::\<real>)) ^ (t - Suc (t\<^sub>v s\<^sub>1) + 1))"
-    apply (subst infsum_reindex_bij_betw[symmetric, where g = "\<lambda>s::coin_t_state. t\<^sub>v s" and A = "?set"])
+  moreover have "... = (\<Sum>\<^sub>\<infinity>tt::nat \<in> {tt. tt \<ge> Suc t}. (((5::\<real>) / (6::\<real>)) ^ (tt - Suc t) / (6::\<real>)))"
+    apply (subst infsum_reindex_bij_betw[symmetric, where g = "\<lambda>s::state_t. t\<^sub>v s" and A = "?set"])
     apply (simp add: bij_betw_def)
     apply (rule conjI)
     apply (simp add: inj_on_def)
     apply auto
+    sledgehammer
     apply (simp add: image_def)
     apply (rule_tac x = "\<lparr>t\<^sub>v = x, coin\<^sub>v = chead\<rparr>" in exI)
     by simp
@@ -2401,83 +2414,91 @@ proof -
 qed
 *)
 
+(*
+((\<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< \<and> d1\<^sup>> = d1\<^sup>< \<and> d2\<^sup>> = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) + 
+      \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6))\<^sub>e"
+
+if (d1\<^sup>< \<noteq> d2\<^sup><)\<^sub>e then ((Pt dice_throw) ; Ht) else II = Ht
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* ((\<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36)\<^sub>e ; Ht) 
+= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t. \<lbrakk>t\<^sub>v v\<^sub>0 = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36 * (
+    (\<lbrakk>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sub>v v\<^sub>0 \<and> d1\<^sup>> = d1\<^sub>v v\<^sub>0 \<and> d2\<^sup>> = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e) +
+    \<lbrakk>\<not>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> t\<^sup>> \<ge> t\<^sub>v v\<^sub>0 + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^(t\<^sup>> - t\<^sub>v v\<^sub>0 - 1) * (1/6)
+  )
+= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t. \<lbrakk>t\<^sub>v v\<^sub>0 = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e *\<lbrakk>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sub>v v\<^sub>0 \<and> d1\<^sup>> = d1\<^sub>v v\<^sub>0 \<and> d2\<^sup>> = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e)/36 +
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t. \<lbrakk>t\<^sub>v v\<^sub>0 = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e *\<lbrakk>\<not>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> t\<^sup>> \<ge> t\<^sub>v v\<^sub>0 + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^(t\<^sup>> - t\<^sub>v v\<^sub>0 - 1) * (1/6) /36)
+= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 6 +
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> t\<^sup>> \<ge> t\<^sup>< + 2\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^(t\<^sup>> - t\<^sup>< - 1) * (1/6))
+= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6)
+*)
+
 lemma Ht_is_fp: "\<F> (d1\<^sup>< \<noteq> d2\<^sup><)\<^sub>e (Pt dice_throw) (prfun_of_rvfun (Ht)) = prfun_of_rvfun (Ht)"
   apply (simp add: Ht_def loopfunc_def)
-  apply (simp add: pfun_defs flip_t)
-  apply (subst flip_t_alt_def)
+  apply (simp add: pfun_defs dice_throw_t)
+  (* apply (subst dice_throw_t_alt_def) *)
   apply (subst rvfun_skip_inverse)
   apply (subst rvfun_skip\<^sub>_f_simp)
   apply (subst rvfun_seqcomp_inverse)
-  using flip_t_alt_def flip_t_is_dist rvfun_inverse rvfun_prob_sum1_summable'(1) apply force
+  apply (simp add: dice_throw_t_is_dist rvfun_inverse rvfun_prob_sum1_summable'(1))
   using ureal_is_prob apply blast
   apply (subst rvfun_inverse)
-  apply (expr_auto add: dist_defs)
+   apply (simp add: dice_throw_t_is_dist rvfun_prob_sum1_summable'(1))
   apply (subst rvfun_inverse)
   apply (expr_auto add: dist_defs)
-  apply (smt (verit, del_insts) One_nat_def add.commute plus_1_eq_Suc power_0 power_le_one_iff power_one_over power_one_right sum_1_2 sum_geometric_series')
-  apply (expr_auto add: prfun_of_rvfun_def skip_def)
-  using Tcoin.exhaust apply blast
-  using Tcoin.exhaust apply blast
+  apply (subgoal_tac "((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc t)  \<le> 1")
+  apply linarith
+  apply (simp add: power_le_one_iff)
+  apply (simp only: dice_throw_t_alt_def)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (pred_auto)
+  apply (simp only: d1_if_simp d2_if_simp)
+  defer
+  apply (smt (verit, best) divide_eq_0_iff infsum_0 mult_not_zero)
+  apply (smt (verit, best) Suc_leD divide_eq_0_iff infsum_0 mult_eq_0_iff not_less_eq_eq)
+  apply (simp add: infsum_0)
+  apply (auto)
 proof -
-  fix t t\<^sub>v'
+  fix d1::Tdice and d2::Tdice and t::\<nat> and t\<^sub>v'::\<nat> and d2\<^sub>v'::Tdice
+  assume a0: "\<not> d1 = d2"
   assume a1: "Suc t \<le> t\<^sub>v'"
-  let ?f1 = "\<lambda>v\<^sub>0::coin_t_state. (if (coin\<^sub>v v\<^sub>0 = chead \<or> coin\<^sub>v v\<^sub>0 = ctail) \<and> t\<^sub>v v\<^sub>0 = Suc t then 1::\<real> else (0::\<real>))"
-  let ?f2 = "\<lambda>v\<^sub>0::coin_t_state. ((if coin\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * (if Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 1::\<real> else (0::\<real>)) *
-            ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc (t\<^sub>v v\<^sub>0)) / (2::\<real>) +
-            (if \<not> coin\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * (if t\<^sub>v' = t\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)))"
-  have set_eq_1: "{s::coin_t_state. coin\<^sub>v s = ctail \<and> t\<^sub>v s = Suc t \<and> Suc (t\<^sub>v s) \<le> t\<^sub>v'} = 
-        (if Suc (Suc t) \<le> t\<^sub>v' then {\<lparr>t\<^sub>v = Suc t, coin\<^sub>v = ctail\<rparr>} else {})"
-    by auto
-
-  have set_eq_2: "{s::coin_t_state. coin\<^sub>v s = chead \<and> t\<^sub>v' = t\<^sub>v s \<and> t\<^sub>v s = Suc t} = 
-        (if (Suc t) = t\<^sub>v' then {\<lparr>t\<^sub>v = Suc t, coin\<^sub>v = chead\<rparr>} else {})"
-    apply (simp)
-    apply (rule impI)
-    apply (subst set_eq_iff)
-    by (smt (verit, best) coin_t_state.equality coin_t_state.select_convs(1) mem_Collect_eq old.unit.exhaust singleton_iff time.select_convs(1))
-  
-  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. ?f1 v\<^sub>0 * ?f2 v\<^sub>0 / (2::\<real>)) =
-        (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. (if coin\<^sub>v v\<^sub>0 = ctail \<and> t\<^sub>v v\<^sub>0 = Suc t \<and> Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 1 else 0) * 
-            ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc (t\<^sub>v v\<^sub>0)) / (2::\<real>) / 2  + 
-           (if coin\<^sub>v v\<^sub>0 = chead \<and> t\<^sub>v'  = t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 = Suc t then 1 else 0) / 2)"
-    apply (rule infsum_cong)
-    by (auto)
-  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. (if coin\<^sub>v v\<^sub>0 = ctail \<and> t\<^sub>v v\<^sub>0 = Suc t \<and> Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 
-                (((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc (Suc t)) / (2::\<real>) / 2) else 0) + 
-           (if coin\<^sub>v v\<^sub>0 = chead \<and> t\<^sub>v'  = t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 = Suc t then 1/2 else 0))"
-    apply (rule infsum_cong)
-    by (auto)
-  also have "... = (((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc t) / (2::\<real>))"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t.
+          (if t\<^sub>v v\<^sub>0 = Suc t then 1::\<real> else (0::\<real>)) *
+          ((if d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if t\<^sub>v' = t\<^sub>v v\<^sub>0 \<and> d2\<^sub>v' = d1\<^sub>v v\<^sub>0 \<and> d2\<^sub>v' = d2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) +
+           (if \<not> d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 1::\<real> else (0::\<real>)) *
+           ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (t\<^sub>v v\<^sub>0)) / (6::\<real>)) / (36::\<real>))"
+  have f0: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t.
+          ((if t\<^sub>v v\<^sub>0 = Suc t \<and> t\<^sub>v' = t\<^sub>v v\<^sub>0 \<and> d2\<^sub>v' = d1\<^sub>v v\<^sub>0 \<and> d2\<^sub>v' = d2\<^sub>v v\<^sub>0 then 1/36 else (0::\<real>)) +
+           (if t\<^sub>v v\<^sub>0 = Suc t \<and> \<not> d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 \<and> Suc (Suc t) \<le> t\<^sub>v' then ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (Suc t)) /
+           (6::\<real>) / 36 else (0::\<real>))))"
+    by (smt (verit, best) divide_eq_0_iff infsum_cong mult_cancel_right1 mult_not_zero)
+  moreover have f1: "... = (if Suc t = t\<^sub>v' then 1/36 else ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (Suc t)) / (6::\<real>) / 36)"
     apply (subst infsum_add)
-    apply (rule infsum_constant_finite_states_summable)
-    apply (simp add: set_eq_1)
-    apply (rule infsum_constant_finite_states_summable)
-    apply (smt (verit, best) finite.emptyI finite.intros(2) flip_t_set_eq mem_Collect_eq rev_finite_subset subset_eq)
-    apply (subst infsum_constant_finite_states)
-    apply (simp add: set_eq_1)
-    apply (subst infsum_constant_finite_states)
-    apply (simp add: set_eq_2)
-    apply (simp add: set_eq_1 set_eq_2)
-    by (smt (verit, ccfv_threshold) Suc_diff_le a1 add.commute diff_Suc_Suc divide_divide_eq_left le_antisym not_less_eq_eq plus_1_eq_Suc power_Suc2 power_one_over sum_1_2 sum_geometric_series')
-  then show "real2ureal
-        (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. ?f1 v\<^sub>0 * ?f2 v\<^sub>0 / (2::\<real>)) =
-       real2ureal (((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc t) / (2::\<real>))"
-    using calculation by presburger    
-next
-  fix t t\<^sub>v'
-  assume a1: "\<not> Suc t \<le> t\<^sub>v'"
-
-  show "real2ureal
-        (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state.
-           (if (coin\<^sub>v v\<^sub>0 = chead \<or> coin\<^sub>v v\<^sub>0 = ctail) \<and> t\<^sub>v v\<^sub>0 = Suc t then 1::\<real> else (0::\<real>)) *
-           ((if coin\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * (if Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 1::\<real> else (0::\<real>)) *
-            ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc (t\<^sub>v v\<^sub>0)) /
-            (2::\<real>) +
-            (if \<not> coin\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * (if t\<^sub>v' = t\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>))) /
-           (2::\<real>)) = real2ureal (0::\<real>)"
-    apply (subst infsum_0)
-    using a1 apply force
-    by simp
+    apply (simp add: infsum_constant_finite_states_summable state_t_finite)
+    apply (simp add: infsum_constant_finite_states_summable state_t_finite)
+    apply (subst infsum_constant_finite_states_subset)
+    apply (simp add: infsum_constant_finite_states_summable state_t_finite)
+    apply (subst infsum_constant_finite_states_subset)
+    apply (simp add: infsum_constant_finite_states_summable state_t_finite)
+    apply (auto)
+  proof -
+    assume a: "t\<^sub>v' = Suc t"
+    have f0: "{s::state_t. t\<^sub>v s = Suc t \<and> Suc t = t\<^sub>v s \<and> d2\<^sub>v' = d1\<^sub>v s \<and> d2\<^sub>v' = d2\<^sub>v s} = 
+          {s::state_t. t\<^sub>v s = Suc t \<and> d2\<^sub>v' = d1\<^sub>v s \<and> d2\<^sub>v' = d2\<^sub>v s}"
+      by fastforce
+    show "card {s::state_t. t\<^sub>v s = Suc t \<and> Suc t = t\<^sub>v s \<and> d2\<^sub>v' = d1\<^sub>v s \<and> d2\<^sub>v' = d2\<^sub>v s} = Suc (0::\<nat>)"
+      apply (simp add: f0)
+      by (smt (verit, ccfv_threshold) card_1_singleton old.unit.exhaust state_t.select_convs(1) 
+          state_t.select_convs(2) state_t.surjective time.select_convs(1))
+  next
+    assume a: "\<not> Suc t = t\<^sub>v'"
+    show "(6::\<real>) * real (card {s::state_t. t\<^sub>v s = Suc t \<and> t\<^sub>v' = t\<^sub>v s \<and> d2\<^sub>v' = d1\<^sub>v s \<and> d2\<^sub>v' = d2\<^sub>v s}) +
+    ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (Suc t)) * real (card {s::state_t. t\<^sub>v s = Suc t \<and> \<not> d1\<^sub>v s = d2\<^sub>v s \<and> Suc (Suc t) \<le> t\<^sub>v'}) =
+    ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (Suc t))"
+      sorry
+  qed
+  show "?lhs * (6::\<real>) =  ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc t)"
+    apply (simp only: f0 f1)
+    apply (auto)
+  qed
 qed
 
 lemma Pt_flip_finite: "\<forall>s. finite {s'::coin_t_state. (0::ureal) < Pt flip_t (s, s')}"
