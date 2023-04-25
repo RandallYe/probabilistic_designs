@@ -595,9 +595,10 @@ subsection \<open> Series \<close>
 
 lemma summable_n_2_power_n: 
   "summable (\<lambda>n::\<nat>. (n / (2::\<real>)^n))" (is "summable ?f")
-  (* n:           0, 1,   2,   3,   4 *)
-  (*              0, 1/2, 2/4, 3/8, 4/16 *)
-  (* (n+1)/(2*n): x, 1,   3/4, 4/6, 5/8, ... *)
+  (* n:                   0, 1,   2,   3,   4 *)
+  (* n/2^n                0, 1/2, 2/4, 3/8, 4/16 *)
+  (* (n+1)/(2^(n+1)):   1/2, 2/4, 3/8, 4/6, 5/8, ... *)
+  (* ratio ((n+1)/2*n):   x, 1,   3/4, 4/6, 5/8, ... *)
   apply (subst summable_ratio_test[where c="3/4" and N="3"])
   apply auto
 proof -
