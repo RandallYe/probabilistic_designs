@@ -1,8 +1,17 @@
+- [Mechanisation of probabilistic designs in Isabelle/UTP](#mechanisation-of-probabilistic-designs-in-isabelleutp)
+- [Installation/Set up instructions](#installationset-up-instructions)
+  - [Clone this repository](#clone-this-repository)
+  - [Isabelle/UTP distributions with prebuild heap images on Linux](#isabelleutp-distributions-with-prebuild-heap-images-on-linux)
+  - [Standard](#standard)
+
 # Mechanisation of probabilistic designs in Isabelle/UTP
 This folder (`probabilistic_relations`) contains our mechanisation of the theory of probabilistic relations in [Isabelle/UTP](https://isabelle-utp.york.ac.uk/), a UTP proof framework in Isabelle/HOL.
 
 # Installation/Set up instructions
 This instruction is based on Ubuntu/Linux. It would be similar on other operation systems.
+The first step is to [Clone this repository](#clone-this-repository), and then you can use 
+- [Isabelle/UTP distributions with prebuild heap images on Linux](#isabelleutp-distributions-with-prebuild-heap-images-on-linux) or 
+- [Standard](#standard) procedure to install Isabelle/HOL.
 
 ## Clone this repository
 1. Clone and enter the folder of this probabilistic relations

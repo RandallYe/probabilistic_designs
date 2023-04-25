@@ -1,15 +1,16 @@
-section \<open> (Parametric) Coin flip \<close>
+section \<open> (Parametric) Coin flip_t \<close>
 
 theory utp_prob_rel_lattice_coin
   imports 
     "UTP_prob_relations.utp_prob_rel" 
+    "HOL-Analysis.Infinite_Set_Sum"
 begin 
 
 unbundle UTP_Syntax
 
 declare [[show_types]]
 
-subsection \<open> Single coin flip without time\<close>
+subsection \<open> Single coin flip_t without time\<close>
 
 datatype Tcoin = chead | ctail
 thm "Tcoin.exhaust"
@@ -471,7 +472,7 @@ proof -
     by force
 qed
 
-subsection \<open> Single coin flip (variable probability)\<close>
+subsection \<open> Single coin flip_t (variable probability)\<close>
 definition cpflip :: "ureal \<Rightarrow> cstate prhfun" where
 "cpflip p = if\<^sub>p \<guillemotleft>p\<guillemotright> then (c := chead) else (c := ctail)"
 
@@ -656,39 +657,44 @@ lemma cpflip_loop:
   using cpH_is_fp apply blast
   by simp
 
-(*
-subsection \<open> Coin flip with time \<close>
-alphabet coin_state = time +
+
+subsection \<open> Coin flip_t with time \<close>
+alphabet coin_t_state = time +
   coin :: Tcoin
 
-thm "coin_state.simps"
-definition flip:: "coin_state prhfun" where
-"flip = (prfun_of_rvfun (coin \<^bold>\<U> {chead, ctail}))"
+thm "coin_t_state.simps"
+definition flip_t:: "coin_t_state prhfun" where
+"flip_t = (prfun_of_rvfun (coin \<^bold>\<U> {chead, ctail}))"
 
-definition flip_loop where
-"flip_loop = while\<^sub>p\<^sub>t (coin\<^sup>< = ctail)\<^sub>e do flip od"
+definition flip_t_loop where
+"flip_t_loop = while\<^sub>p\<^sub>t (coin\<^sup>< = ctail)\<^sub>e do flip_t od"
 
-definition H:: "coin_state \<times> coin_state \<Rightarrow> \<real>" where 
-"H = (\<lbrakk>coin\<^sup>> = chead \<and> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(($t\<^sup>> - $t\<^sup>< - 1)) * (1/2))\<^sub>e"
+(*
+definition Ht:: "coin_t_state rvhfun" where 
+"Ht = (\<lbrakk>coin\<^sup>> = chead \<and> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(($t\<^sup>> - $t\<^sup>< - 1)) * (1/2))\<^sub>e"
+*)
+definition Ht:: "coin_t_state rvhfun" where 
+"Ht = (\<lbrakk>coin\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>coin\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^(($t\<^sup>> - $t\<^sup>< - 1)) * (1/2) + 
+      \<lbrakk>\<not>coin\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>coin\<^sup>> = chead\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>$t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e )\<^sub>e"
 
-lemma flip_is_dist: "is_final_distribution (rvfun_of_prfun flip)"
-  apply (simp add: flip_def)
+lemma flip_is_dist: "is_final_distribution (rvfun_of_prfun flip_t)"
+  apply (simp add: flip_t_def)
   apply (subst rvfun_uniform_dist_inverse)
   apply (simp)+
   using rvfun_uniform_dist_is_dist
   by (metis coin_vwb_lens finite.emptyI finite.insertI insert_not_empty)
 
-lemma flip_altdef: "rvfun_of_prfun flip = (\<lbrakk>\<Squnion> v \<in> {ctail, chead}. coin := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
-  apply (simp add: flip_def)
+lemma flip_t_altdef: "rvfun_of_prfun flip_t = (\<lbrakk>\<Squnion> v \<in> {ctail, chead}. coin := \<guillemotleft>v\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
+  apply (simp add: flip_t_def)
   apply (subst prfun_uniform_dist_altdef')
   apply simp+
   by (pred_auto)
 
-definition flip_t_alt :: "coin_state rvhfun" where
+definition flip_t_alt :: "coin_t_state rvhfun" where
 "flip_t_alt \<equiv> (\<lbrakk>coin\<^sup>> \<in> {chead, ctail} \<and> $t\<^sup>> = $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 2)\<^sub>e"
 
-lemma flip_t: "(Pt flip) = prfun_of_rvfun flip_t_alt"
-  apply (simp add: flip_def Pt_def flip_t_alt_def)
+lemma flip_t: "(Pt flip_t) = prfun_of_rvfun flip_t_alt"
+  apply (simp add: flip_t_def Pt_def flip_t_alt_def)
   apply (simp add: prfun_uniform_dist_left)
   apply (simp add: pfun_defs)
   apply (simp add: rvfun_assignment_inverse)
@@ -698,9 +704,23 @@ lemma flip_t: "(Pt flip) = prfun_of_rvfun flip_t_alt"
   by (expr_auto add: rel assigns_r_def)
 
 lemma flip_t_set_eq: 
-  "\<forall>t. {s::coin_state. (coin\<^sub>v s = chead \<or> coin\<^sub>v s = ctail) \<and> t\<^sub>v s = Suc t} = 
-  {\<lparr>t\<^sub>v = Suc t, coin\<^sub>v = chead\<rparr>, \<lparr>t\<^sub>v = Suc t, coin\<^sub>v = ctail\<rparr>}"
+  "\<forall>t. {s::coin_t_state. (coin\<^sub>v s = chead \<or> coin\<^sub>v s = ctail) \<and> t\<^sub>v s = Suc t} = 
+       {\<lparr>t\<^sub>v = Suc t, coin\<^sub>v = chead\<rparr>, \<lparr>t\<^sub>v = Suc t, coin\<^sub>v = ctail\<rparr>}"
   by (auto)
+
+lemma flip_t_set_eq': 
+  "\<forall>t. {s::coin_t_state. coin\<^sub>v s = ctail \<and> s \<in> {v\<^sub>0::coin_t_state. t\<^sub>v v\<^sub>0 = Suc t}} = 
+       {\<lparr>t\<^sub>v = Suc t, coin\<^sub>v = ctail\<rparr>}"
+  by auto
+
+lemma flip_t_set_eq'': "\<forall>t. {s::coin_t_state. coin\<^sub>v s = chead \<and> t\<^sub>v s = t} = {\<lparr>t\<^sub>v = t, coin\<^sub>v = chead\<rparr>}"
+  by auto
+
+lemma flip_t_set_eq''': 
+  "\<forall>t. ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc t + n, coin\<^sub>v = chead\<rparr>) ` UNIV) = {v\<^sub>0. coin\<^sub>v v\<^sub>0 = chead \<and> Suc t \<le> t\<^sub>v v\<^sub>0}"
+    apply auto
+    by (smt (verit, ccfv_threshold) UNIV_I add_Suc coin_t_state.surjective image_iff nat_le_iff_add old.unit.exhaust)
+
 
 lemma flip_t_is_dist: "is_final_distribution flip_t_alt"
   apply (simp add: dist_defs flip_t_alt_def)
@@ -712,151 +732,45 @@ lemma flip_t_is_dist: "is_final_distribution flip_t_alt"
   using flip_t_set_eq apply (metis finite.simps)
   using flip_t_set_eq 
   by (smt (verit, best) Collect_cong One_nat_def Suc_1 Tcoin.distinct(1) card.empty card.insert 
-      coin_state.ext_inject field_sum_of_halves finite.emptyI finite.insertI insert_absorb 
+      coin_t_state.ext_inject field_sum_of_halves finite.emptyI finite.insertI insert_absorb 
       insert_not_empty of_nat_1 of_nat_add one_add_one singletonD time.ext_inject)
 
-lemma iterate_tflip_bottom_simp:
-  shows "iter\<^sub>p 0 (coin\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = 0\<^sub>p"
-        "iter\<^sub>p (Suc 0) (coinc\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = (\<lbrakk>$coin\<^sup>< = chead \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e)"
-        "iter\<^sub>p (n+2) (coin\<^sup>< = ctail)\<^sub>e (Pt flip) 0\<^sub>p = 
-              (\<lbrakk>$coin\<^sup>< = chead \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e + 
-               \<lbrakk>$coin\<^sup>< = ctail \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> \<ge> $t\<^sup>< + 1 \<and> $t\<^sup>> \<le> $t\<^sup>< + \<guillemotleft>n\<guillemotright> + 1\<rbrakk>\<^sub>\<I>\<^sub>e 
-                * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
-  sorry
-  (*apply (auto)
-  apply (simp add: loopfunc_def)
-  apply (simp add: prfun_zero_right')
-  apply (simp add: pfun_defs)
-  apply (subst rvfun_skip_inverse)
-  apply (subst ureal_zero)
-  apply (simp add: ureal_defs)
-  apply (subst fun_eq_iff)
-  apply (expr_auto)
-  apply (meson Tcoin.exhaust)
-  apply (induct_tac n)
-  apply (simp)
-  apply (simp add: loopfunc_def)
-  apply (simp add: prfun_zero_right')
-  apply (simp add: pfun_defs)
-  apply (subst rvfun_skip_inverse)+
-  apply (subst ureal_zero)
-  apply (subst rvfun_pcond_inverse)
-  apply (metis ureal_is_prob ureal_zero)
-  apply (simp add: rvfun_skip_f_is_prob)
-  apply (subst cflip_altdef)
-  apply (subst rvfun_inverse)
-  apply (simp add: dist_defs)
-  apply (expr_auto)
-  apply (simp add: infsum_nonneg iverson_bracket_def)
-  apply (pred_auto)
-  apply (simp add: cstate_UNIV_set)
-  apply (smt (verit, ccfv_SIG) prfun_in_0_1' rvfun_skip_inverse)
-  apply (simp add: prfun_of_rvfun_def)
-  apply (expr_auto)
-  apply (simp add: real2ureal_def)
-  apply (simp add: infsum_0 iverson_bracket_def real2ureal_def rel_skip)
-  apply (meson Tcoin.exhaust)
-  apply (simp add: cstate_UNIV_set)
-  apply (pred_auto)
-  apply (simp add: real2ureal_def)
-  using real2ureal_def apply blast+
-  apply (simp add: cstate_UNIV_set)
-  apply (pred_auto)
-  using real2ureal_def apply blast+
-  apply (simp add: cstate_UNIV_set)
-  apply (pred_auto)
-  using real2ureal_def apply blast+
-  (* *)
-  apply (simp)
-  apply (subst loopfunc_def)
-  apply (subst pseqcomp_def)
-  apply (subst pcond_def)
-  apply (subst cflip_altdef)
-  apply (subst rvfun_inverse)
-  apply (simp add: dist_defs)
-  apply (expr_auto)
-  apply (simp add: infsum_nonneg  prfun_in_0_1')
-  apply (pred_auto)
-  apply (simp add: cstate_UNIV_set)
-  apply (simp add: rvfun_of_prfun_def)
-  apply (auto)
-  apply (smt (verit, best) field_sum_of_halves ureal_upper_bound)
-  using ureal_upper_bound apply blast
-  apply (subst prfun_of_rvfun_def)
-  apply (subst rvfun_of_prfun_def)+
-  apply (expr_auto)
-  apply (simp add: cstate_UNIV_set)
-  apply (pred_auto)
-  defer
-  apply (subst prfun_skip_id)
-  apply (simp add: one_ureal.rep_eq real2ureal_def ureal2real_def)
-  using Tcoin.exhaust apply blast
-  apply (metis (full_types) Tcoin.exhaust cstate.select_convs(1) ereal_real o_def prfun_skip_not_id real2ureal_def ureal2real_def zero_ereal_def zero_ureal.rep_eq)
-  apply (subst infsum_0)
-  apply (subst ureal_defs)
-  apply (smt (verit, best) divide_eq_0_iff ereal_max min.absorb2 min.commute mult_eq_0_iff o_apply real_of_ereal_0 ureal2ereal_inverse ureal2real_def zero_ereal_def zero_less_one_ereal zero_ureal.rep_eq)
-  using real2ureal_def apply presburger
-  using Tcoin.exhaust apply blast
-  apply (subst infsum_0)
-  apply (subst ureal_defs)
-  apply (smt (verit, best) divide_eq_0_iff ereal_max min.absorb2 min.commute mult_eq_0_iff o_apply real_of_ereal_0 ureal2ereal_inverse ureal2real_def zero_ereal_def zero_less_one_ereal zero_ureal.rep_eq)
-  using real2ureal_def apply blast
-  apply (metis (full_types) Tcoin.exhaust cstate.ext_inject o_def prfun_skip_not_id real2ureal_def real_of_ereal_0 ureal2real_def zero_ureal.rep_eq)
-  apply (subst ureal2real_1_2)
-  apply (subst sum_1_2)
-  apply (subst sum_geometric_series_ureal)
-  apply (subst sum_geometric_series')
-  apply (subst ureal_defs)+
-proof -
-  fix n
-  have f1: "((1::\<real>) / (2::\<real>) + ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ (n + (1::\<nat>))) / (2::\<real>)) = 
-        ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ (n + 2))"
-    by (simp add: add.assoc diff_divide_distrib)
-  have f2: "((3::\<real>) * ((1::\<real>) / (2::\<real>)) ^ n / (4::\<real>) + ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ n)) =  
-          ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ (n+2))"
-    apply (auto)
-    by (simp add: power_one_over)
-  show "ereal2ureal' (min (max (0::ereal) (ereal ((1::\<real>) / (2::\<real>) + ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ (n + (1::\<nat>))) / (2::\<real>)))) (1::ereal)) =
-       ereal2ureal' (min (max (0::ereal) (ereal ((3::\<real>) * ((1::\<real>) / (2::\<real>)) ^ n / (4::\<real>) + ((1::\<real>) - (1::\<real>) / (2::\<real>) ^ n)))) (1::ereal))"
-    using f1 f2 by presburger
-qed
-*)
-
-lemma H_is_dist: "is_final_distribution H"
+(*
+lemma H_is_dist: "is_final_distribution Ht"
   apply (simp add: dist_defs H_def)
   apply (simp add: expr_defs)
   apply (auto)
   apply (smt (verit, best) field_sum_of_halves power_le_one)
   apply (simp add: lens_defs)
 proof -
-  fix s\<^sub>1::"coin_state"
-  let ?lhs = "(\<Sum>\<^sub>\<infinity>s::coin_state.
+  fix s\<^sub>1::"coin_t_state"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>s::coin_t_state.
           (if coin\<^sub>v s = chead \<and> Suc (t\<^sub>v s\<^sub>1) \<le> t\<^sub>v s then 1::\<real> else (0::\<real>)) *
           ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1)) / (2::\<real>))"
-  let ?set = "{s::coin_state. coin\<^sub>v s = chead \<and> Suc (t\<^sub>v s\<^sub>1) \<le> t\<^sub>v s}"
+  let ?set = "{s::coin_t_state. coin\<^sub>v s = chead \<and> Suc (t\<^sub>v s\<^sub>1) \<le> t\<^sub>v s}"
 
   (*
   thm "infsum_reindex"
   have "(\<Sum>\<^sub>\<infinity>t::nat \<in> {t. t \<ge> Suc (t\<^sub>v s\<^sub>1)}. ((1::\<real>) / (2::\<real>)) ^ (t - Suc (t\<^sub>v s\<^sub>1) + 1)) = 1"
-    apply (subst infsum_reindex[where h = "\<lambda>s::coin_state. t\<^sub>v s" and A = "?set"])
+    apply (subst infsum_reindex[where h = "\<lambda>s::coin_t_state. t\<^sub>v s" and A = "?set"])
 *)
-  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>s::coin_state \<in> ?set \<union> -?set.
+  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>s::coin_t_state \<in> ?set \<union> -?set.
           (if coin\<^sub>v s = chead \<and> Suc (t\<^sub>v s\<^sub>1) \<le> t\<^sub>v s then 1::\<real> else (0::\<real>)) *
           ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1)) / (2::\<real>))"
     by auto
-  moreover have "... = (\<Sum>\<^sub>\<infinity>s::coin_state \<in> ?set.
+  moreover have "... = (\<Sum>\<^sub>\<infinity>s::coin_t_state \<in> ?set.
           (if coin\<^sub>v s = chead \<and> Suc (t\<^sub>v s\<^sub>1) \<le> t\<^sub>v s then 1::\<real> else (0::\<real>)) *
           ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1)) / (2::\<real>))"
     apply (rule infsum_cong_neutral)
     apply force
     apply simp
     by blast
-  moreover have "... = (\<Sum>\<^sub>\<infinity>s::coin_state \<in> ?set. ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1)) / (2::\<real>))"
+  moreover have "... = (\<Sum>\<^sub>\<infinity>s::coin_t_state \<in> ?set. ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1)) / (2::\<real>))"
     by (smt (verit) infsum_cong mem_Collect_eq mult_cancel_right2)
-  moreover have "... = (\<Sum>\<^sub>\<infinity>s::coin_state \<in> ?set. ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1) + 1))"
+  moreover have "... = (\<Sum>\<^sub>\<infinity>s::coin_t_state \<in> ?set. ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v s - Suc (t\<^sub>v s\<^sub>1) + 1))"
     by auto
   moreover have "... = (\<Sum>\<^sub>\<infinity>t::nat \<in> {t. t \<ge> Suc (t\<^sub>v s\<^sub>1)}. ((1::\<real>) / (2::\<real>)) ^ (t - Suc (t\<^sub>v s\<^sub>1) + 1))"
-    apply (subst infsum_reindex_bij_betw[symmetric, where g = "\<lambda>s::coin_state. t\<^sub>v s" and A = "?set"])
+    apply (subst infsum_reindex_bij_betw[symmetric, where g = "\<lambda>s::coin_t_state. t\<^sub>v s" and A = "?set"])
     apply (simp add: bij_betw_def)
     apply (rule conjI)
     apply (simp add: inj_on_def)
@@ -888,89 +802,394 @@ proof -
   ultimately show "?lhs = (1::\<real>)"
     by presburger
 qed
-
-lemma "finite {s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t n (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}"
-proof -
-  have f0: "iterate\<^sub>t (n + 2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p = 
-          (\<lbrakk>$coin\<^sup>< = chead \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> = $t\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e + 
-           \<lbrakk>$coin\<^sup>< = ctail \<and> $coin\<^sup>> = chead \<and> $t\<^sup>> \<ge> $t\<^sup>< + 1 \<and> $t\<^sup>> \<le> $t\<^sup>< + \<guillemotleft>n\<guillemotright> + 1\<rbrakk>\<^sub>\<I>\<^sub>e 
-           * (\<Sum>i\<in>{1..\<guillemotleft>n+1\<guillemotright>}. (1/2)^i))\<^sub>e"
-    by (simp only: iterate_tflip_bottom_simp)
-
-  have "\<not> (iterate\<^sub>t (n + 2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p (\<lparr>t\<^sub>v = tt, coin\<^sub>v = chead\<rparr>, \<lparr>t\<^sub>v = tt, coin\<^sub>v = chead\<rparr>) 
-        = (0::ureal))"
-    apply (subst f0)
-    apply (expr_auto)
-    using one_ereal_def one_ureal_def by auto
-
-  have "(iterate\<^sub>t (n + 2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p (\<lparr>t\<^sub>v = x, coin\<^sub>v = ctail\<rparr>, \<lparr>t\<^sub>v = y, coin\<^sub>v = ctail\<rparr>) 
-        = (0::ureal))"
-    apply (subst f0)
-    apply (expr_auto)
-    by (simp add: zero_ereal_def zero_ureal_def)
-
-  have "{s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t (n) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}
-    = {s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t (n+2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}"
-    apply (subst set_eq_iff)
-    apply (rule allI)+
-    apply (rule iffI)
-    apply (simp add: expr_defs lens_defs)
-    using iterate_increasing2
-    apply (smt (z3) Suc_eq_plus1 flip_t flip_t_is_dist is_final_distribution_prob is_final_prob_prob 
-        iterate_increasing1 le_funD nle_le pzero_def rvfun_inverse ureal_bottom_least' iterate.simps(2))
-    apply (simp add: expr_defs lens_defs)
-    by (metis utp_prob_rel_lattice.iterate.simps(2))
-
-  text \<open> From the formula above and below, we can see this set is not finite because there are infinite 
-    number of states to satisfy @{text "t\<^sub>v (fst s) = t\<^sub>v (snd s)"} where @{text "t"} could be any natural number. \<close>
-  have "{s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t (n+2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}
-    = {s::coin_state \<times> coin_state. (coin\<^sub>v (fst s) = chead \<and> coin\<^sub>v (snd s) = chead \<and> t\<^sub>v (fst s) = t\<^sub>v (snd s))
-      \<or> (coin\<^sub>v (fst s) = ctail \<and> coin\<^sub>v (snd s) = chead \<and> t\<^sub>v (snd s) \<ge> t\<^sub>v (fst s) + 1)}"
-    apply (simp only: iterate_tflip_bottom_simp)
-    apply (subst set_eq_iff)
-    apply (simp add: expr_defs lens_defs)
-    apply (rule allI)+
-    apply (rule conjI)
-    apply (metis one_ereal_def one_ureal_def zero_neq_one)
-    apply (rule impI)
-    apply (rule iffI)
-    apply (metis zero_ereal_def zero_ureal_def)
-    apply (auto)
-    apply (smt (verit, best) Suc_eq_plus1 add_Suc_shift field_sum_of_halves nat_le_iff_add power_one_over real2eureal_inverse sum_1_2 sum_geometric_series sum_geometric_series_ureal ureal_lower_bound zero_ereal_def zero_ureal_def)
-    by (smt (verit, best) Suc_eq_plus1 add_Suc_shift field_sum_of_halves nat_le_iff_add power_one_over real2eureal_inverse sum_1_2 sum_geometric_series sum_geometric_series_ureal ureal_lower_bound zero_ereal_def zero_ureal_def)
-
-  have "finite {s::coin_state \<times> coin_state. \<exists>n::\<nat>. \<not> iterate\<^sub>t (n+2) (coin\<^sup>< = ctail)\<^sub>e flip 0\<^sub>p s = (0::ureal)}"
-    apply (simp only: iterate_tflip_bottom_simp)
-  qed 
-
-lemma "flip_loop = H"
-  apply (simp add: flip_loop_def H_def)
-  apply (simp add: ptwhile_def)
-  apply (subst sup_continuous_lfp_iteration)
-  apply (metis flip_t flip_t_is_dist is_dist_def is_final_prob_prob rvfun_inverse)
-  apply (simp)
-  apply (subst rvfun_inverse)
-  apply (simp add: is_prob_def iverson_bracket_def)
-  using H_is_dist H_def 
-  apply (simp add: dist_defs expr_defs, auto)
-  apply (simp add: )
-  apply (simp add: pseqcomp_def)
-  apply (subst rvfun_seqcomp_inverse)
-  apply (simp add: flip_is_dist)
-  using ureal_is_prob apply blast
-  apply (subst rvfun_seqcomp_is_dist)
-  apply (simp add: flip_is_dist)
-  apply (expr_auto)
-  apply (simp add: passigns_def rvfun_assignment_inverse rvfun_assignment_is_dist)
-  apply (simp)
-  apply (simp add: pfun_defs)
-  apply (simp add: flip_altdef)
-  apply (expr_auto)
-  apply (subst rvfun_inverse)
-  apply (simp add: is_prob_def)
-   apply (rel_simp)
-  sorry
-
-lemma "H ; ($t\<^sup><)\<^sub>e = "
 *)
+
+lemma Ht_is_fp: "\<F> (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) (prfun_of_rvfun (Ht)) = prfun_of_rvfun (Ht)"
+  apply (simp add: Ht_def loopfunc_def)
+  apply (simp add: pfun_defs flip_t)
+  apply (subst flip_t_alt_def)
+  apply (subst rvfun_skip_inverse)
+  apply (subst rvfun_skip\<^sub>_f_simp)
+  apply (subst rvfun_seqcomp_inverse)
+  using flip_t_alt_def flip_t_is_dist rvfun_inverse rvfun_prob_sum1_summable'(1) apply force
+  using ureal_is_prob apply blast
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (smt (verit, del_insts) One_nat_def add.commute plus_1_eq_Suc power_0 power_le_one_iff power_one_over power_one_right sum_1_2 sum_geometric_series')
+  apply (expr_auto add: prfun_of_rvfun_def skip_def)
+  using Tcoin.exhaust apply blast
+  using Tcoin.exhaust apply blast
+proof -
+  fix t t\<^sub>v'
+  assume a1: "Suc t \<le> t\<^sub>v'"
+  let ?f1 = "\<lambda>v\<^sub>0::coin_t_state. (if (coin\<^sub>v v\<^sub>0 = chead \<or> coin\<^sub>v v\<^sub>0 = ctail) \<and> t\<^sub>v v\<^sub>0 = Suc t then 1::\<real> else (0::\<real>))"
+  let ?f2 = "\<lambda>v\<^sub>0::coin_t_state. ((if coin\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * (if Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 1::\<real> else (0::\<real>)) *
+            ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc (t\<^sub>v v\<^sub>0)) / (2::\<real>) +
+            (if \<not> coin\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * (if t\<^sub>v' = t\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)))"
+  have set_eq_1: "{s::coin_t_state. coin\<^sub>v s = ctail \<and> t\<^sub>v s = Suc t \<and> Suc (t\<^sub>v s) \<le> t\<^sub>v'} = 
+        (if Suc (Suc t) \<le> t\<^sub>v' then {\<lparr>t\<^sub>v = Suc t, coin\<^sub>v = ctail\<rparr>} else {})"
+    by auto
+
+  have set_eq_2: "{s::coin_t_state. coin\<^sub>v s = chead \<and> t\<^sub>v' = t\<^sub>v s \<and> t\<^sub>v s = Suc t} = 
+        (if (Suc t) = t\<^sub>v' then {\<lparr>t\<^sub>v = Suc t, coin\<^sub>v = chead\<rparr>} else {})"
+    apply (simp)
+    apply (rule impI)
+    apply (subst set_eq_iff)
+    by (smt (verit, best) coin_t_state.equality coin_t_state.select_convs(1) mem_Collect_eq old.unit.exhaust singleton_iff time.select_convs(1))
+  
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. ?f1 v\<^sub>0 * ?f2 v\<^sub>0 / (2::\<real>)) =
+        (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. (if coin\<^sub>v v\<^sub>0 = ctail \<and> t\<^sub>v v\<^sub>0 = Suc t \<and> Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 1 else 0) * 
+            ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc (t\<^sub>v v\<^sub>0)) / (2::\<real>) / 2  + 
+           (if coin\<^sub>v v\<^sub>0 = chead \<and> t\<^sub>v'  = t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 = Suc t then 1 else 0) / 2)"
+    apply (rule infsum_cong)
+    by (auto)
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. (if coin\<^sub>v v\<^sub>0 = ctail \<and> t\<^sub>v v\<^sub>0 = Suc t \<and> Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 
+                (((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc (Suc t)) / (2::\<real>) / 2) else 0) + 
+           (if coin\<^sub>v v\<^sub>0 = chead \<and> t\<^sub>v'  = t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 = Suc t then 1/2 else 0))"
+    apply (rule infsum_cong)
+    by (auto)
+  also have "... = (((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc t) / (2::\<real>))"
+    apply (subst infsum_add)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (simp add: set_eq_1)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (smt (verit, best) finite.emptyI finite.intros(2) flip_t_set_eq mem_Collect_eq rev_finite_subset subset_eq)
+    apply (subst infsum_constant_finite_states)
+    apply (simp add: set_eq_1)
+    apply (subst infsum_constant_finite_states)
+    apply (simp add: set_eq_2)
+    apply (simp add: set_eq_1 set_eq_2)
+    by (smt (verit, ccfv_threshold) Suc_diff_le a1 add.commute diff_Suc_Suc divide_divide_eq_left le_antisym not_less_eq_eq plus_1_eq_Suc power_Suc2 power_one_over sum_1_2 sum_geometric_series')
+  then show "real2ureal
+        (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. ?f1 v\<^sub>0 * ?f2 v\<^sub>0 / (2::\<real>)) =
+       real2ureal (((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc t) / (2::\<real>))"
+    using calculation by presburger    
+next
+  fix t t\<^sub>v'
+  assume a1: "\<not> Suc t \<le> t\<^sub>v'"
+
+  show "real2ureal
+        (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state.
+           (if (coin\<^sub>v v\<^sub>0 = chead \<or> coin\<^sub>v v\<^sub>0 = ctail) \<and> t\<^sub>v v\<^sub>0 = Suc t then 1::\<real> else (0::\<real>)) *
+           ((if coin\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * (if Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 1::\<real> else (0::\<real>)) *
+            ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v' - Suc (t\<^sub>v v\<^sub>0)) /
+            (2::\<real>) +
+            (if \<not> coin\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * (if t\<^sub>v' = t\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>))) /
+           (2::\<real>)) = real2ureal (0::\<real>)"
+    apply (subst infsum_0)
+    using a1 apply force
+    by simp
+qed
+
+lemma Pt_flip_finite: "\<forall>s. finite {s'::coin_t_state. (0::ureal) < Pt flip_t (s, s')}"
+proof
+  fix s 
+  show "finite {s'::coin_t_state. (0::ureal) < Pt flip_t (s, s')} "
+    apply (simp add: flip_t)
+    apply (simp add: rvfun_ge_zero)
+    apply (simp add: flip_t_alt_def)
+    apply (pred_auto)
+    by (simp add: flip_t_set_eq)
+qed
+
+(* * \<lbrakk>$t\<^sup>> = $t\<^sup>< + 1 + \<guillemotleft>n\<guillemotright>\<rbrakk>\<^sub>\<I>\<^sub>e  *)
+(*
+[coin'=ctail]*[t'=t+1]/2 + [coin'=chead]*[t'=t+1]/2
+  iterdiff (n+1) (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) 1\<^sub>p 
+= [coin=ctail] * (
+    ([coin'=ctail]*[t'=t+1]/2 + [coin'=chead]*[t'=t+1]/2) ; 
+    (iterdiff (n+1) (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) 1\<^sub>p)
+  ) + [\<not>coin' = ctail] * 0
+= [coin=ctail] * (
+    ([coin'=ctail]*[t'=t+1]/2 + [coin'=chead]*[t'=t+1]/2) ; 
+    [coin=ctail]*[t'=t+n]*(1/2)^n
+  )
+ = [coin=ctail] * [t'=t+n+1]*(1/2)^(n+1)
+*)
+lemma flip_iterdiff_simp:
+  shows "(iterdiff 0 (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) 1\<^sub>p) = 1\<^sub>p"
+        "(iterdiff (n+1) (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) 1\<^sub>p) = 
+            prfun_of_rvfun ((\<lbrakk>coin\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+proof -
+  show "(iterdiff 0 (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) 1\<^sub>p) = 1\<^sub>p"
+    by (auto)
+
+  show "(iterdiff (n+1) (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) 1\<^sub>p) = 
+            prfun_of_rvfun ((\<lbrakk>coin\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (1/2)^\<guillemotleft>n\<guillemotright>)\<^sub>e)"
+    apply (induction n)
+    apply (simp add: pfun_defs)
+    apply (subst flip_t)
+    apply (subst ureal_zero)
+    apply (subst ureal_one)
+    apply (subst rvfun_seqcomp_inverse)
+    apply (simp add: flip_t_is_dist rvfun_inverse rvfun_prob_sum1_summable'(1))
+    apply (metis ureal_is_prob ureal_one)
+    apply (subst rvfun_inverse)
+    apply (simp add: flip_t_is_dist rvfun_prob_sum1_summable'(1))
+    apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+    apply (expr_auto add: rel assigns_r_def)
+    apply (simp add: flip_t_alt_def)
+    apply (pred_auto)
+    apply (subst infsum_cdiv_left)
+    apply (rule infsum_constant_finite_states_summable)
+    apply (simp add: flip_t_set_eq)
+    apply (subst infsum_constant_finite_states)
+    apply (simp add: flip_t_set_eq)
+     apply (simp add: flip_t_set_eq)
+    apply (simp only: add_Suc)
+    apply (simp only: iterdiff.simps(2))
+    apply (simp only: pcond_def)
+    apply (simp only: pseqcomp_def)
+    apply (subst rvfun_seqcomp_inverse)
+    apply (simp add: flip_t flip_t_is_dist rvfun_inverse rvfun_prob_sum1_summable'(1))
+    apply (simp add: ureal_is_prob)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (subst rvfun_inverse)
+    apply (expr_auto add: dist_defs)
+    apply (simp add: power_le_one)
+    apply (subst flip_t)
+    apply (expr_auto add: rel assigns_r_def)  
+    defer
+    apply (simp add: pfun_defs)
+    apply (subst ureal_zero)
+    apply simp
+    apply (subst rvfun_inverse)
+    using flip_t_is_dist rvfun_prob_sum1_summable'(1) apply blast
+    apply (simp add: flip_t_alt_def)
+    apply (expr_auto add: rel assigns_r_def)
+  proof -
+    fix n t
+    let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state.
+           (if (coin\<^sub>v v\<^sub>0 = chead \<or> coin\<^sub>v v\<^sub>0 = ctail) \<and> t\<^sub>v v\<^sub>0 = Suc t then 1::\<real> else (0::\<real>)) *
+           ((if coin\<^sub>v v\<^sub>0 = ctail then 1::\<real> else (0::\<real>)) * ((1::\<real>) / (2::\<real>)) ^ n) /
+           (2::\<real>))"
+    have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state \<in> {v\<^sub>0. t\<^sub>v v\<^sub>0 = Suc t}.
+           (if coin\<^sub>v v\<^sub>0 = ctail then ((1::\<real>) / (2::\<real>)) ^ n / 2 else (0::\<real>)))"
+      apply (rule infsum_cong_neutral)
+      apply blast
+      apply auto[1]
+      by simp
+    also have "... = (((1::\<real>) / (2::\<real>)) ^ n / (2::\<real>))"
+      apply (subst infsum_constant_finite_states_subset)
+      apply (smt (verit, del_insts) Collect_mono finite.emptyI finite_insert flip_t_set_eq mem_Collect_eq rev_finite_subset)
+      apply (simp only: flip_t_set_eq')
+      by simp
+
+    then show "real2ureal ?lhs = real2ureal (((1::\<real>) / (2::\<real>)) ^ n / (2::\<real>))"
+      using calculation by presburger
+  qed
+qed
+
+lemma flip_iterdiff_tendsto_0:
+  "\<forall>s. (\<lambda>n::\<nat>. ureal2real (iterdiff n (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+proof 
+  fix s
+  have "(\<lambda>n::\<nat>. ureal2real (iterdiff (n+1) (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    apply (subst flip_iterdiff_simp)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (expr_auto)
+    apply (subst real2ureal_inverse)
+    apply (simp)
+    apply (simp add: power_le_one)
+    apply (simp add: LIMSEQ_realpow_zero)
+    apply (subst real2ureal_inverse)
+    by (simp)+
+  then show "(\<lambda>n::\<nat>. ureal2real (iterdiff n (coin\<^sup>< = ctail)\<^sub>e (Pt flip_t) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    by (rule LIMSEQ_offset[where k = 1])
+qed
+
+lemma flip_t_loop: "flip_t_loop = prfun_of_rvfun Ht"
+  apply (simp add: flip_t_loop_def ptwhile_def)
+  apply (subst unique_fixed_point_lfp_gfp_finite_final'[where fp = "prfun_of_rvfun Ht"])
+  apply (simp add: flip_t flip_t_is_dist rvfun_inverse rvfun_prob_sum1_summable'(1))
+  using Pt_flip_finite apply blast
+  using flip_iterdiff_tendsto_0 apply (simp)
+  using Ht_is_fp apply blast
+  by simp
+
+subsubsection \<open> Termination and average termination time \<close>
+lemma coin_flip_t_termination_prob: "Ht ; \<lbrakk>coin\<^sup>< = chead\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
+  apply (simp add: Ht_def)
+apply (expr_auto)
+proof -
+  fix t coin
+  let ?lhs_f = "\<lambda>v\<^sub>0. (if coin\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>))"
+  let ?lhs_f2 = "\<lambda>v\<^sub>0. (if t\<^sub>v v\<^sub>0 = t then 1::\<real> else (0::\<real>))"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. ?lhs_f v\<^sub>0 * ?lhs_f2 v\<^sub>0 * ?lhs_f v\<^sub>0 )"
+  have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. if coin\<^sub>v v\<^sub>0 = chead \<and> t\<^sub>v v\<^sub>0 = t then 1::\<real> else (0::\<real>))"
+    apply (rule infsum_cong)
+    by (auto)
+  also have "... = 1"
+    apply (subst infsum_constant_finite_states)
+    by (simp add: flip_t_set_eq'')+
+  then show "?lhs = (1::\<real>)"
+    using calculation by presburger
+next
+  fix t
+  let ?lhs_f = "\<lambda>v\<^sub>0. (if coin\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>))"
+  let ?lhs_f2 = "\<lambda>v\<^sub>0. (if Suc t \<le> t\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>))"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. ?lhs_f v\<^sub>0 * ?lhs_f2 v\<^sub>0 *((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) * ?lhs_f v\<^sub>0 / 2)"
+
+  have reindex: "infsum (\<lambda>v\<^sub>0::coin_t_state. ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) / (2::\<real>))
+    ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc t + n, coin\<^sub>v = chead\<rparr>) ` UNIV)
+    = infsum (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n / (2::\<real>)) UNIV"
+    apply (subst infsum_reindex)
+    apply (simp add: inj_def)
+    by (simp add: infsum_cong)
+
+  have set_eq: "((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc t + n, coin\<^sub>v = chead\<rparr>) ` UNIV) = {v\<^sub>0. coin\<^sub>v v\<^sub>0 = chead \<and> Suc t \<le> t\<^sub>v v\<^sub>0}"
+    apply auto
+    by (smt (verit, ccfv_threshold) UNIV_I add_Suc coin_t_state.surjective image_iff nat_le_iff_add old.unit.exhaust)
+
+  have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. if coin\<^sub>v v\<^sub>0 = chead \<and> Suc t \<le> t\<^sub>v v\<^sub>0 then (((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t)/2) else (0::\<real>))"
+    apply (rule infsum_cong)
+    by (auto)
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state \<in> {v\<^sub>0. coin\<^sub>v v\<^sub>0 = chead \<and> Suc t \<le> t\<^sub>v v\<^sub>0}.
+       ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) / (2::\<real>))"
+    apply (rule infsum_cong_neutral)
+    by (auto)
+  also have "... = infsum (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n / (2::\<real>)) UNIV"
+    using reindex using set_eq by auto
+  thm "geometric_sum"
+  thm "eventually_sequentially"
+  also have "... = 1"
+    apply (subst infsetsum_infsum[symmetric])
+    apply (simp add: abs_summable_on_nat_iff')
+    apply (subst infsetsum_nat)
+    apply (simp add: abs_summable_on_nat_iff')
+    apply auto
+    using power_half_series sums_unique by fastforce
+  then show "?lhs = (1::\<real>)"
+    using calculation by presburger
+qed
+
+lemma coin_flip_t_expected_termination_time: 
+  "Ht ; (\<guillemotleft>real\<guillemotright> (t\<^sup><))\<^sub>e = (\<lbrakk>coin\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * (t\<^sup>< + 2)  + \<lbrakk>\<not>coin\<^sup>< = ctail\<rbrakk>\<^sub>\<I>\<^sub>e * t\<^sup>< )\<^sub>e"
+  apply (pred_auto add: Ht_def)
+proof -
+  fix t coint
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state.
+          (if coin\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>)) * (if t\<^sub>v v\<^sub>0 = t then 1::\<real> else (0::\<real>)) * real (t\<^sub>v v\<^sub>0)) 
+    = (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state. (if coin\<^sub>v v\<^sub>0 = chead \<and> t\<^sub>v v\<^sub>0 = t then real (t) else (0::\<real>)))"
+    apply (rule infsum_cong)
+    by (auto)
+  also have "... = real t"
+    apply (subst infsum_constant_finite_states)
+    apply (simp add: flip_t_set_eq'')
+    by (simp add: flip_t_set_eq'')
+  also show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state.
+          (if coin\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>)) * (if t\<^sub>v v\<^sub>0 = t then 1::\<real> else (0::\<real>)) * real (t\<^sub>v v\<^sub>0)) =
+       real t"
+    using calculation by blast
+next
+  fix t
+  let ?f = "(\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ (n) * ((real t + real n)))"
+  have reindex: "infsum (\<lambda>v\<^sub>0::coin_t_state. ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) * real (t\<^sub>v v\<^sub>0) / (2::\<real>))
+    ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc t + n, coin\<^sub>v = chead\<rparr>) ` UNIV)
+    = infsum (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * real (Suc t + n) / (2::\<real>)) UNIV"
+    apply (subst infsum_reindex)
+    apply (simp add: inj_def)
+    by (simp add: infsum_cong)
+
+  have summable_f: "summable ?f"
+    using summable_1_2_power_n_t_n by blast
+
+  have summable_f_1: "summable (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((1::\<real>) + (real t + real n)))"
+    proof -
+    have f1: "(\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((1::\<real>) + (real t + real n))) = 
+          (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((1::\<real>) + real t)  + ((1::\<real>) / (2::\<real>)) ^ n * (real n))"
+      by (metis (mono_tags, opaque_lifting) mult_of_nat_commute of_nat_Suc of_nat_add plus_nat.simps(2) ring_class.ring_distribs(2))
+
+    have f2: "(\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * real n) = (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * n)"
+      by simp
+    show "summable (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((1::\<real>) + (real t + real n)))"
+      apply (simp add: f1)
+      apply (subst summable_add)
+      apply (rule summable_mult2)
+      apply (rule summable_geometric)
+      apply simp
+      apply (subst summable_cong[where g = "(\<lambda>n::\<nat>. (n / (2::\<real>)^n))"])
+      apply (simp add: power_divide)
+      using summable_n_2_power_n apply blast
+      by simp
+  qed
+
+  have summable_f_suc_n: "summable (\<lambda>n. ?f (Suc n))"
+    apply (subst summable_Suc_iff)
+    using summable_f by auto
+  obtain l where P_l: "(\<lambda>n. ?f (Suc n)) sums l"
+    using summable_f_suc_n by blast
+
+  have sum_f0: "(\<lambda>n. ?f (Suc n)) sums l \<longleftrightarrow> ?f sums (l + ?f 0)"
+    apply (subst sums_Suc_iff)
+    by simp
+
+  have suminf_f_l: "?f sums (l + ?f 0)"
+    using P_l sum_f0 by blast
+
+  have suminf_f_l': "suminf ?f = l + real t"
+    using suminf_f_l sums_unique by force
+
+  have suminf_n_2_power_n: "(\<Sum>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((1::\<real>) + (real t + real n)) / (2::\<real>)) =  
+        (\<Sum>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n / 2 +  ((1::\<real>) / (2::\<real>)) ^ n * (real t + real n) / (2::\<real>))"
+    apply (rule suminf_cong)
+    by (simp add: ring_class.ring_distribs(1))
+  also have suminf_n_2_power_n': 
+    "... = (\<Sum>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n / 2) +  (\<Sum>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * (real t + real n) / (2::\<real>))"
+    apply (subst suminf_add)
+    using summable_2_power_n apply blast
+    apply (rule summable_comparison_test[where g = "(\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((1::\<real>) + (real t + real n)))"])
+    apply (auto)
+    using summable_f_1 by blast
+  also have suminf_n_2_power_n'': 
+    "... = (\<Sum>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n / 2) +  (\<Sum>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * (real t + real n)) / (2::\<real>)"
+    apply (subst suminf_divide[where f = "\<lambda>n. ((1::\<real>) / (2::\<real>)) ^ n * (real t + real n)"])
+    apply (rule summable_comparison_test[where g = "(\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((1::\<real>) + (real t + real n)))"])
+    apply (auto)
+    using summable_f_1 by blast
+  also have suminf_n_2_power_n''': "... = 1 + (\<Sum>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * (real t + real n)) / (2::\<real>)"
+    using power_half_series sums_unique by fastforce
+  also have suminf_n_2_power_n'''': "... = 1 + (l + real t) / 2"
+    using suminf_f_l' by presburger
+
+  have suminf_f_suc_n: "(\<Sum>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((1::\<real>) + (real t + real n)) / (2::\<real>)) = suminf (\<lambda>n. ?f (Suc n))"
+    by (metis (no_types, opaque_lifting) mult.commute mult_cancel_left2 nat_arith.suc1 of_nat_Suc of_nat_add power_Suc times_divide_eq_right)
+  have "l = 1 + (l + real t) / 2"
+    using P_l calculation suminf_f_l' suminf_f_suc_n sums_unique by auto
+  then have suminf_f_suc_n_l: "l = 2 + real t"
+    by (smt (z3) field_sum_of_halves)
+
+  have f0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state.
+          (if coin\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>)) * (if Suc t \<le> t\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+          ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) * real (t\<^sub>v v\<^sub>0) / (2::\<real>)) = 
+        (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state.
+          (if coin\<^sub>v v\<^sub>0 = chead \<and> Suc t \<le> t\<^sub>v v\<^sub>0 then (((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) *
+          real (t\<^sub>v v\<^sub>0) /  (2::\<real>)) else (0::\<real>)))"
+    apply (rule infsum_cong)
+    by (auto)
+  have f1: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state \<in> {v\<^sub>0. coin\<^sub>v v\<^sub>0 = chead \<and> Suc t \<le> t\<^sub>v v\<^sub>0}. 
+    (((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) * real (t\<^sub>v v\<^sub>0) /  (2::\<real>)))"
+    apply (rule infsum_cong_neutral)
+    by (auto)
+  have f2: "... = infsum (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * real (Suc t + n) / (2::\<real>)) UNIV"
+    using reindex flip_t_set_eq''' by force
+  have f3: "... = (2::\<real>) + real t"
+    apply (subst infsetsum_infsum[symmetric])
+    apply (simp add: abs_summable_on_nat_iff')
+    using summable_f_1 apply blast
+    apply (subst infsetsum_nat)
+    apply (simp add: abs_summable_on_nat_iff')
+    using summable_f_1 apply blast
+    apply auto
+    using calculation suminf_f_l' suminf_f_suc_n_l by linarith
+    
+  show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state.
+          (if coin\<^sub>v v\<^sub>0 = chead then 1::\<real> else (0::\<real>)) * (if Suc t \<le> t\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) *
+          ((1::\<real>) / (2::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) *
+          real (t\<^sub>v v\<^sub>0) / (2::\<real>)) = (2::\<real>) + real t "
+    using f0 f1 f2 f3 by presburger
+qed
+
 end

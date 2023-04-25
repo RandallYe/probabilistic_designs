@@ -291,6 +291,25 @@ proof -
     using a1 by presburger
 qed
 
+lemma infsum_constant_finite_states_subset:
+  assumes "finite {s. b s \<and> s \<in> A}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> A. (if b v\<^sub>0 then (m::\<real>) else 0)) = m * card ({s. b s \<and> s \<in> A})"
+proof -
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> A. (if b v\<^sub>0 then (m::\<real>) else 0)) = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> {s. b s \<and> s \<in> A}. (m::\<real>))"
+    apply (rule infsum_cong_neutral)
+    apply simp
+    apply auto[1]
+    by simp
+  then show ?thesis
+    by simp
+qed
+
+lemma infsum_constant_finite_states_subset':
+  assumes "finite {s. b s}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a \<in> A. (if b v\<^sub>0 then (m::\<real>) else 0)) = m * card ({s. b s \<and> s \<in> A})"
+  apply (rule infsum_constant_finite_states_subset)
+  using assms by force
+
 lemma infsum_constant_finite_states_summable_2:
   assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}"
   shows "(\<lambda>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) + 
@@ -570,6 +589,93 @@ proof -
     using f2 f3 by linarith
   then show "infsum f A < infsum g A"
     using f1 nless_le by blast
+qed
+
+subsection \<open> Series \<close>
+
+lemma summable_n_2_power_n: 
+  "summable (\<lambda>n::\<nat>. (n / (2::\<real>)^n))" (is "summable ?f")
+  (* n:                   0, 1,   2,   3,   4 *)
+  (* n/2^n                0, 1/2, 2/4, 3/8, 4/16 *)
+  (* (n+1)/(2^(n+1)):   1/2, 2/4, 3/8, 4/6, 5/8, ... *)
+  (* ratio ((n+1)/2*n):   x, 1,   3/4, 4/6, 5/8, ... *)
+  apply (subst summable_ratio_test[where c="3/4" and N="3"])
+  apply auto
+proof -
+  fix n::\<nat>
+  assume a1: "3 \<le> n"
+  have f1: "((1::\<real>) + real n) / ((2::\<real>) * (2::\<real>) ^ n) = ((n+1) / (2* n)) * (?f n)"
+    using a1 by auto
+  have f2: "((1::\<real>) + real n) / 1 \<le> (3::\<real>) * real n / ((2::\<real>))"
+    using a1 by force
+  have f3: "((1::\<real>) + real n) / ((2::\<real>) * (2::\<real>) ^ n) \<le> (3::\<real>) * real n / (2) / ((2::\<real>) * (2::\<real>) ^ n)"
+    apply (subst divide_right_mono[where c="((2::\<real>) * (2::\<real>) ^ n)"])
+    using f2 apply force
+    apply force
+    by simp
+  show "((1::\<real>) + real n) / ((2::\<real>) * (2::\<real>) ^ n) \<le> (3::\<real>) * real n / ((4::\<real>) * (2::\<real>) ^ n)"
+    apply (simp only: f1)
+    apply (auto)
+    using f3 by force
+qed
+
+lemma summable_2_power_n: "summable (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n / (2::\<real>))"
+  apply (rule summable_divide)
+  apply (rule summable_geometric)
+  by simp
+
+(*
+lemma summable_n_a_power_n: 
+  assumes "a \<ge> 2"
+  shows "summable (\<lambda>n::\<nat>. (n / (a::\<real>)^n))" (is "summable ?f")
+  (* n:           0, 1,   2,      3,    4 *)
+  (*              0, 1/a, 2/a^2, 3/a^3, 4/a^4 *)
+  (* (n+1)/(a*n): x, 2/a, 3/a*2, 4/a*3, 5/a*4, ... *)
+  apply (subst summable_ratio_test[where c="3/4" and N="3"])
+  apply auto
+proof -
+  fix n::\<nat>
+  assume a1: "3 \<le> n"
+  have f0: "\<bar>a * a ^ n\<bar> = a * a ^ n"
+    using assms by auto
+  have f1: "\<bar>a ^ n\<bar> = a ^ n"
+    using assms by auto
+  have f1: "((1::\<real>) + real n) / ((a::\<real>) * (a::\<real>) ^ n) = ((n+1) / (a* n)) * (?f n)"
+    using a1 by auto
+  have f2: "((1::\<real>) + real n) / 1 \<le> (3::\<real>) * real n / (4/a)"
+    apply auto
+  have f3: "((1::\<real>) + real n) / ((2::\<real>) * (2::\<real>) ^ n) \<le> (3::\<real>) * real n / (2) / ((2::\<real>) * (2::\<real>) ^ n)"
+    apply (subst divide_right_mono[where c="((2::\<real>) * (2::\<real>) ^ n)"])
+    using f2 apply force
+    apply force
+    by simp
+  show "((1::\<real>) + real n) / \<bar>a * a ^ n\<bar> \<le> (3::\<real>) * real n / ((4::\<real>) * \<bar>a ^ n\<bar>)"
+    apply (simp only: f0)
+    apply (simp only: f1)
+    apply (auto)
+    using f3 by force
+qed
+*)
+
+lemma summable_1_2_power_n_t_n: 
+  "summable (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ (n) * ((real (t::\<nat>) + real n)))" (is "summable ?f")
+proof -
+  have f1: "(\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((real t + real n))) = 
+        (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * (real t)  + ((1::\<real>) / (2::\<real>)) ^ n * (real n))"
+    by (metis (mono_tags, opaque_lifting) mult_of_nat_commute of_nat_add ring_class.ring_distribs(2))
+
+  have f2: "(\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * real n) = (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * n)"
+    by simp
+  show "summable ?f"
+    apply (simp add: f1)
+     apply (subst summable_add)
+    apply (rule summable_mult2)
+    apply (rule summable_geometric)
+    apply simp
+    apply (subst summable_cong[where g = "(\<lambda>n::\<nat>. (n / (2::\<real>)^n))"])
+    apply (simp add: power_divide)
+    using summable_n_2_power_n apply blast
+    by simp
 qed
 
 end
