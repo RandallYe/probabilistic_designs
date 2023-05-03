@@ -359,6 +359,9 @@ lemma ureal2real_power_dist: "ureal2real (u ^ n) = (ureal2real u) ^ n"
   apply (simp)
   using ureal2real_mult_dist by presburger
 
+lemma rvfun2ureal: "rvfun_of_prfun (\<guillemotleft>p\<guillemotright>)\<^sub>e = (ureal2real \<guillemotleft>p\<guillemotright>)\<^sub>e"
+  by (simp add: rvfun_of_prfun_def)
+
 (*
 lemma real2uereal_inverse:
   assumes "n \<ge> 0" "d \<ge> 0" "n \<le> d"
