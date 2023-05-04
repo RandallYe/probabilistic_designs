@@ -2815,7 +2815,7 @@ next
   let ?fs = "(\<lambda>v\<^sub>0::state_t. ?fs1 v\<^sub>0 / (36::\<real>))"
   \<comment> \<open> Reindexed functions over natural numbers \<close>
   let ?fn1 = "(\<lambda>n::\<nat>. (((5::\<real>) / (6::\<real>)) ^ n * real (Suc t + n)))"
-  let ?fn = "(\<lambda>n::\<nat>. (?fn1 n /  (36::\<real>)))"
+  let ?fn = "(\<lambda>n::\<nat>. (?fn1 n / (36::\<real>)))"
   \<comment> \<open> The set of states in which the outcomes of the pair of dice are the same: @{text "d1 = d2"} \<close>
   let ?h_d1d2_eq_set = "\<lambda>i. {v\<^sub>0::state_t. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc t \<le> t\<^sub>v v\<^sub>0}"
   
