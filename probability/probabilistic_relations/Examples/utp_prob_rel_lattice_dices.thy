@@ -1371,7 +1371,14 @@ lemma fdice_throw_loop': "fdice_throw_loop = prfun_of_rvfun fH"
   by simp
 
 subsubsection \<open> Termination \<close>
-lemma fdice_throw_termination_prob: "fH ; \<lbrakk>fd1\<^sup>< = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
+lemma fH_inverse: "rvfun_of_prfun (prfun_of_rvfun fH) = fH"
+  apply (subst rvfun_inverse)
+  apply (expr_simp_1 add: fH_def dist_defs)
+  by simp
+
+lemma fdice_throw_termination_prob: "rvfun_of_prfun fdice_throw_loop ; \<lbrakk>fd1\<^sup>< = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
+  apply (simp add: fdice_throw_loop')
+  apply (simp add: fH_inverse)
   apply (simp add: fH_def)
   apply (expr_auto)
 proof -
@@ -1410,7 +1417,9 @@ proof -
     using f1 by presburger
 qed
 
-lemma fdice_throw_nontermination_prob: "fH ; \<lbrakk>\<not>fd1\<^sup>< = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (0)\<^sub>e"
+lemma fdice_throw_nontermination_prob: "rvfun_of_prfun fdice_throw_loop ; \<lbrakk>\<not>fd1\<^sup>< = fd2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (0)\<^sub>e"
+  apply (simp add: fdice_throw_loop')
+  apply (simp add: fH_inverse)
   apply (simp add: fH_def)
   apply (expr_auto)
   apply (smt (verit) infsum_0 mult_not_zero)
@@ -2261,7 +2270,14 @@ lemma dice_throw_t_loop: "dice_throw_t_loop = prfun_of_rvfun Ht"
   by simp
 
 subsubsection \<open> Termination and average termination time \<close>
-lemma dice_throw_t_termination_prob: "Ht ; \<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
+lemma Ht_inverse: "rvfun_of_prfun (prfun_of_rvfun Ht) = Ht"
+  apply (subst rvfun_inverse)
+  using Ht_is_dist rvfun_prob_sum1_summable'(1) apply blast
+  by simp
+
+lemma dice_throw_t_termination_prob: "rvfun_of_prfun dice_throw_t_loop ; \<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
+  apply (simp add: dice_throw_t_loop)
+  apply (simp add: Ht_inverse)
   apply (simp add: Ht_def)
   apply (expr_auto)
 proof -
@@ -2296,7 +2312,9 @@ next
 qed
 
 lemma dice_throw_t_expected_termination_time:
-  "Ht ; (\<guillemotleft>real\<guillemotright> (t\<^sup><))\<^sub>e = (\<lbrakk>d1\<^sup>< \<noteq> d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * (t\<^sup>< + 6)  + \<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * t\<^sup>< )\<^sub>e"
+  "rvfun_of_prfun dice_throw_t_loop ; (\<guillemotleft>real\<guillemotright> (t\<^sup><))\<^sub>e = (\<lbrakk>d1\<^sup>< \<noteq> d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * (t\<^sup>< + 6)  + \<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * t\<^sup>< )\<^sub>e"
+  apply (simp add: dice_throw_t_loop)
+  apply (simp add: Ht_inverse)
   apply (pred_auto add: Ht_def)
 proof -
   fix t::\<nat> and d2::Tdice
