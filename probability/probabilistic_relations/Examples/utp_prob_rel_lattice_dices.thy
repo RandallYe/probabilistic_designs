@@ -2050,23 +2050,6 @@ proof -
     by presburger
 qed
 
-(*
-((\<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< \<and> d1\<^sup>> = d1\<^sup>< \<and> d2\<^sup>> = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) + 
-  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6))\<^sub>e"
-
-if (d1\<^sup>< \<noteq> d2\<^sup><)\<^sub>e then ((Pt dice_throw) ; Ht) else II = Ht
-= if (d1\<^sup>< \<noteq> d2\<^sup><)\<^sub>e then \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* ((\<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36)\<^sub>e ; Ht)  else II = Ht
-= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t. \<lbrakk>t\<^sub>v v\<^sub>0 = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36 * (
-    (\<lbrakk>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sub>v v\<^sub>0 \<and> d1\<^sup>> = d1\<^sub>v v\<^sub>0 \<and> d2\<^sup>> = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e) +
-    \<lbrakk>\<not>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> t\<^sup>> \<ge> t\<^sub>v v\<^sub>0 + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^(t\<^sup>> - t\<^sub>v v\<^sub>0 - 1) * (1/6)
-  )
-= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t. \<lbrakk>t\<^sub>v v\<^sub>0 = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e *\<lbrakk>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sub>v v\<^sub>0 \<and> d1\<^sup>> = d1\<^sub>v v\<^sub>0 \<and> d2\<^sup>> = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e)/36 +
-  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t. \<lbrakk>t\<^sub>v v\<^sub>0 = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e *\<lbrakk>\<not>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> t\<^sup>> \<ge> t\<^sub>v v\<^sub>0 + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^(t\<^sup>> - t\<^sub>v v\<^sub>0 - 1) * (1/6) /36)
-= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 6 +
-  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> t\<^sup>> \<ge> t\<^sup>< + 2\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^(t\<^sup>> - t\<^sup>< - 1) * (1/6))
-= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6)
-*)
-
 lemma Ht_is_fp: "\<F> (d1\<^sup>< \<noteq> d2\<^sup><)\<^sub>e (Pt dice_throw) (prfun_of_rvfun (Ht)) = prfun_of_rvfun (Ht)"
   apply (simp add: Ht_def loopfunc_def)
   apply (simp add: pfun_defs dice_throw_t)
@@ -2152,6 +2135,140 @@ proof -
       using f0 by auto
   qed
 qed
+
+(*
+(Ht' = (\<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< \<and> d1\<^sup>> = d1\<^sup>< \<and> d2\<^sup>> = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) +  (* Ht1 *)
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6))\<^sub>e" (* Ht2 *)
+
+Now try to prove Ht is a fixed point and actually it is not.
+
+if (d1\<^sup>< \<noteq> d2\<^sup><)\<^sub>e then ((Pt dice_throw) ; Ht') else II = Ht'
+= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * ((Pt dice_throw) ; Ht') + \<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * II = Ht'
+= \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * ((Pt dice_throw) ; Ht') + \<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * II = Ht1 + Ht2
+= { Remove equal parts on LHS and RHS }
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * ((Pt dice_throw) ; (Ht1 + Ht2)) = Ht2
+= { (Pt dice_throw) is simplified by dice_throw_t }
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* ((\<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36)\<^sub>e ; (Ht1 + Ht2)) = Ht2
+= { Sequential composition contributes through addition if summable }
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* ((\<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36)\<^sub>e ; Ht1) + \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* ((\<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36)\<^sub>e ; Ht2) = Ht2
+= { Ht1 and Ht2 definitions }
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* ((\<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36)\<^sub>e ; \<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>II\<rbrakk>\<^sub>\<I>\<^sub>e) + 
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* ((\<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36)\<^sub>e ; (\<lbrakk>\<not>d1\<^sup><=d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e*\<lbrakk>d1\<^sup>>=d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> \<ge> t\<^sup><+1\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^(t\<^sup>>-t\<^sup><-1) * (1/6))) 
+  = \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6))\<^sub>e
+= { Sequential composition }
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t. \<lbrakk>t\<^sub>v v\<^sub>0 = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36 * \<lbrakk>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sub>v v\<^sub>0 \<and> d1\<^sup>< = d1\<^sub>v v\<^sub>0 \<and> d2\<^sup>> = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e) + 
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e* (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t. \<lbrakk>t\<^sub>v v\<^sub>0 = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36 * \<lbrakk>\<not>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>>=d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> \<ge> t\<^sub>v v\<^sub>0+1\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^(t\<^sup>>-t\<^sub>v v\<^sub>0-1) * (1/6))) 
+  = \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6))\<^sub>e
+= { Summation }
+  (* Very easy to make a mistake where there is only one state v\<^sub>0 (not 6 states) satisfying 
+      \<lbrakk>t\<^sub>v v\<^sub>0 = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e / 36 * \<lbrakk>d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sub>v v\<^sub>0 \<and> d1\<^sup>< = d1\<^sub>v v\<^sub>0 \<and> d2\<^sup>> = d2\<^sub>v v\<^sub>0\<rbrakk>\<^sub>\<I>\<^sub>e 
+    The only state is: \<lparr>t\<^sub>v = t\<^sup>< + 1, d1\<^sub>v = d1\<^sup><, d2\<^sub>v = d1\<^sup><\<rparr>
+  *)
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< + 1 \<and> d1\<^sup>< = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * 1 / 36 +
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e*  \<lbrakk> d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> \<ge> t\<^sup><+2\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^(t\<^sup>>-t\<^sup><-2) * (1/6) * 30 / 36 
+  = \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6))\<^sub>e
+= { ... }
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e * 1 / 36 + 
+  \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e*  \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> \<ge> t\<^sup>< + 2\<rbrakk>\<^sub>\<I>\<^sub>e * (5/6)^(t\<^sup>>-t\<^sup><-1) * (1/6)
+  = \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6))\<^sub>e
+= { Not able to combination }
+    False
+
+Indeed, Ht is a fixed point where 
+  if (d1\<^sup>< \<noteq> d2\<^sup><)\<^sub>e then ((Pt dice_throw) ; Ht) else II = Ht
+*)
+
+(*
+definition Ht':: "state_t rvhfun" where 
+"Ht' = ((\<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< \<and> d1\<^sup>> = d1\<^sup>< \<and> d2\<^sup>> = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) + 
+        \<lbrakk>\<not>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>d1\<^sup>> = d2\<^sup>>\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk> $t\<^sup>> \<ge> $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e  * (5/6)^($t\<^sup>> - $t\<^sup>< - 1) * (1/6))\<^sub>e"
+
+lemma Ht_is_fp: "\<F> (d1\<^sup>< \<noteq> d2\<^sup><)\<^sub>e (Pt dice_throw) (prfun_of_rvfun (Ht')) = prfun_of_rvfun (Ht')"
+  apply (simp add: Ht'_def loopfunc_def)
+  apply (simp add: pfun_defs dice_throw_t)
+  (* apply (subst dice_throw_t_alt_def) *)
+  apply (subst rvfun_skip_inverse)
+  apply (subst rvfun_skip\<^sub>_f_simp)
+  apply (subst rvfun_seqcomp_inverse)
+  apply (simp add: dice_throw_t_is_dist rvfun_inverse rvfun_prob_sum1_summable'(1))
+  using ureal_is_prob apply blast
+  apply (subst rvfun_inverse)
+   apply (simp add: dice_throw_t_is_dist rvfun_prob_sum1_summable'(1))
+  apply (subst rvfun_inverse)
+  apply (expr_auto add: dist_defs)
+  apply (subgoal_tac "((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc t)  \<le> 1")
+  apply linarith
+  apply (simp add: power_le_one_iff)
+  apply (simp only: dice_throw_t_alt_def)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (expr_simp_1)
+  apply (pred_auto)
+  apply (simp only: d1_if_simp d2_if_simp)
+  defer
+  apply (smt (verit, best) divide_eq_0_iff infsum_0 mult_not_zero)
+  apply (smt (verit, best) Suc_leD divide_eq_0_iff infsum_0 mult_eq_0_iff not_less_eq_eq)
+  apply (simp add: infsum_0)
+  apply (auto)
+proof -
+  fix d1::Tdice and d2::Tdice and t::\<nat> and t\<^sub>v'::\<nat> and d2\<^sub>v'::Tdice
+  assume a0: "\<not> d1 = d2"
+  assume a1: "Suc t \<le> t\<^sub>v'"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t.
+          (if t\<^sub>v v\<^sub>0 = Suc t then 1::\<real> else (0::\<real>)) *
+          ((if d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if t\<^sub>v' = t\<^sub>v v\<^sub>0 \<and> d2\<^sub>v' = d1\<^sub>v v\<^sub>0 \<and> d2\<^sub>v' = d2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) +
+           (if \<not> d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * (if Suc (t\<^sub>v v\<^sub>0) \<le> t\<^sub>v' then 1::\<real> else (0::\<real>)) *
+           ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (t\<^sub>v v\<^sub>0)) / (6::\<real>)) / (36::\<real>))"
+  have f0: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t.
+          ((if t\<^sub>v v\<^sub>0 = Suc t \<and> t\<^sub>v' = t\<^sub>v v\<^sub>0 \<and> d2\<^sub>v' = d1\<^sub>v v\<^sub>0 \<and> d2\<^sub>v' = d2\<^sub>v v\<^sub>0 then 1/36 else (0::\<real>)) +
+           (if t\<^sub>v v\<^sub>0 = Suc t \<and> \<not> d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 \<and> Suc (Suc t) \<le> t\<^sub>v' then (((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (Suc t)) / (6::\<real>) / 36) else (0::\<real>))))"
+    using infsum_cong divide_eq_0_iff mult_cancel_right1 mult_not_zero by (smt (verit, ccfv_SIG))
+  moreover have f1: "... = (if Suc t = t\<^sub>v' then 1/36 else ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (Suc t)) * 30 / (6::\<real>) / 36)"
+    apply (subst infsum_add)
+    apply (simp add: infsum_constant_finite_states_summable state_t_finite)
+    apply (simp add: infsum_cond_finite_states_summable state_t_finite)
+    apply (subst infsum_constant_finite_states_subset)
+    apply (simp add: state_t_finite)
+    apply (subst infsum_constant_finite_states_subset)
+    using state_t_finite apply force
+    apply (auto)
+  proof -
+    assume a: "t\<^sub>v' = Suc t"
+    have f0: "{s::state_t. t\<^sub>v s = Suc t \<and> Suc t = t\<^sub>v s \<and> d2\<^sub>v' = d1\<^sub>v s \<and> d2\<^sub>v' = d2\<^sub>v s} = 
+          {s::state_t. t\<^sub>v s = Suc t \<and> d2\<^sub>v' = d1\<^sub>v s \<and> d2\<^sub>v' = d2\<^sub>v s}"
+      by fastforce
+    show "card {s::state_t. t\<^sub>v s = Suc t \<and> Suc t = t\<^sub>v s \<and> d2\<^sub>v' = d1\<^sub>v s \<and> d2\<^sub>v' = d2\<^sub>v s} = Suc (0::\<nat>)"
+      apply (simp add: f0)
+      by (smt (verit, ccfv_threshold) card_1_singleton old.unit.exhaust state_t.select_convs(1) 
+          state_t.select_convs(2) state_t.surjective time.select_convs(1))
+  next
+    assume a: "\<not> Suc t = t\<^sub>v'"
+    have f1: "real (card {s::state_t. t\<^sub>v s = Suc t \<and> t\<^sub>v' = t\<^sub>v s \<and> d2\<^sub>v' = d1\<^sub>v s \<and> d2\<^sub>v' = d2\<^sub>v s}) = 0"
+      using a by (simp add: card_0_singleton)
+    have f2: "(card {s::state_t. t\<^sub>v s = Suc t \<and> \<not> d1\<^sub>v s = d2\<^sub>v s \<and> Suc (Suc t) \<le> t\<^sub>v'}) = 
+      (card {s::state_t. t\<^sub>v s = Suc t \<and> \<not> d1\<^sub>v s = d2\<^sub>v s})"
+      by (metis a a1 le_antisym not_less_eq_eq)
+    also have "... = 30"
+      using state_t_set_d1d2_neq_card by blast
+    then show "real (card {s::state_t. t\<^sub>v s = Suc t \<and> t\<^sub>v' = t\<^sub>v s \<and> d2\<^sub>v' = d1\<^sub>v s \<and> d2\<^sub>v' = d2\<^sub>v s}) +
+      ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (Suc t)) * real (card {s::state_t. t\<^sub>v s = Suc t \<and> \<not> d1\<^sub>v s = d2\<^sub>v s \<and> Suc (Suc t) \<le> t\<^sub>v'}) /
+      (6::\<real>) = (5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (Suc t))"
+      apply (simp add: f1)
+      using f2 by linarith
+  qed
+  show "?lhs * (6::\<real>) =  ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc t)"
+    apply (simp only: f0 f1)
+    apply (auto)
+  proof -
+    assume aa: "\<not> Suc t = t\<^sub>v'"
+    have f0: "((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc t) * (6::\<real>) = ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc t - 1) * (5/6) * (6::\<real>)"
+      by (metis One_nat_def Suc_pred a1 aa bot_nat_0.not_eq_extremum cancel_comm_monoid_add_class.diff_zero diff_diff_cancel power_Suc2)
+    have f1: "(t\<^sub>v' - Suc (Suc t)) = (t\<^sub>v' - Suc t - 1)"
+      using diff_Suc_eq_diff_pred diff_commute by presburger
+    then show "(5::\<real>) * ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc (Suc t)) = ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v' - Suc t) * (6::\<real>)"
+      using f0 by auto
+  qed
+qed
+*)
 
 lemma Pt_dice_throw_finite: "\<forall>s. finite {s'::state_t. (0::ureal) < Pt dice_throw (s, s')}"
 proof
