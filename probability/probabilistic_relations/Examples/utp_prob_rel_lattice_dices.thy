@@ -1944,7 +1944,68 @@ lemma dice_throw_t_alt_inverse: "rvfun_of_prfun (prfun_of_rvfun dice_throw_t_alt
   apply (subst rvfun_inverse)
   apply (simp add: dice_throw_t_is_dist rvfun_prob_sum1_summable'(1))
   by simp
-(*
+
+lemma state_eq_set_Union: "{v\<^sub>0. d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 \<and> t\<^sub>0 \<le> t\<^sub>v v\<^sub>0} = 
+        (\<Union>i \<in> {1..6}. {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> t\<^sub>0 \<le> t\<^sub>v v\<^sub>0})"
+  apply (auto)
+  by (metis One_nat_def nat2td_cases)
+
+lemma geometry_series_sum: "(\<Sum>\<^sub>\<infinity>n::\<nat>. (((5::\<real>) / (6::\<real>)) ^ n /  (36::\<real>))) = 1 / 6"
+  apply (subst infsetsum_infsum[symmetric])
+  apply (simp add: abs_summable_on_nat_iff')
+  apply (subst infsetsum_nat)
+  apply (simp add: abs_summable_on_nat_iff')
+  apply auto
+  apply (subst suminf_divide)
+  apply (simp add: summable_geometric)
+  apply (subst suminf_geometric)
+  apply simp
+  by auto
+
+lemma sum_d1_d2_eq_tt_1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 \<and> Suc tt \<le> t\<^sub>v v\<^sub>0}. 
+          ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc tt) / (36::\<real>)) = 1" (is "?lhs = ?rhs")
+proof -
+  have reindex: "\<forall>i\<in>{1..6}. 
+    (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc tt \<le> t\<^sub>v v\<^sub>0}.
+       ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc tt) / (36::\<real>)) 
+    = (\<Sum>\<^sub>\<infinity>n::\<nat>. (((5::\<real>) / (6::\<real>)) ^ n /  (36::\<real>)))"
+  proof
+    fix i::\<nat>
+    have set_eq: "{v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc tt \<le> t\<^sub>v v\<^sub>0} = 
+                  range (\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc tt + n, d1\<^sub>v = nat2td i, d2\<^sub>v = nat2td i\<rparr>)"
+      apply (simp add: image_def, auto)
+      by (metis add_Suc le_Suc_ex state_t.select_convs(1) state_t.select_convs(2) state_t_neq time.select_convs(1))
+    have sum_eq: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc tt \<le> t\<^sub>v v\<^sub>0}.
+       ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc tt) /  (36::\<real>)) = 
+      infsum (\<lambda>v\<^sub>0::state_t. ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc tt) /  (36::\<real>))
+      ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc tt + n, d1\<^sub>v = nat2td i, d2\<^sub>v = nat2td i\<rparr>) ` UNIV)"
+      by (simp add: set_eq)
+    have reindex: "infsum (\<lambda>v\<^sub>0::state_t. ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc tt) /  (36::\<real>))
+      ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc tt + n, d1\<^sub>v = nat2td i, d2\<^sub>v = nat2td i\<rparr>) ` UNIV)
+      = infsum (\<lambda>n::\<nat>. ((5::\<real>) / (6::\<real>)) ^ n /  (36::\<real>)) UNIV"
+      apply (subst infsum_reindex)
+      apply (simp add: inj_def)
+      by (simp add: infsum_cong)
+    show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc tt \<le> t\<^sub>v v\<^sub>0}.
+       ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc tt) /  (36::\<real>)) 
+      = (\<Sum>\<^sub>\<infinity>n::\<nat>. (((5::\<real>) / (6::\<real>)) ^ n /  (36::\<real>)))"
+      by (simp only: sum_eq reindex)
+  qed
+
+  have "?lhs = sum (\<lambda>i. (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc tt \<le> t\<^sub>v v\<^sub>0}.
+       ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc tt) /  (36::\<real>))) {1..6}"
+    apply (simp add: state_eq_set_Union)
+    apply (subst sum_infsum)
+    apply blast
+    apply (smt (verit, best) One_nat_def divide_eq_0_iff infsum_not_exists reindex geometry_series_sum zero_neq_numeral)
+    apply (auto)
+    by (simp add: nat2td_inject)
+  moreover have "... = 1"
+    by (simp add: reindex geometry_series_sum)
+  then show "?lhs = (1::\<real>)"
+    using calculation by presburger
+qed
+
 lemma Ht_is_dist: "is_final_distribution Ht"
   apply (simp add: dist_defs Ht_def)
   apply (simp add: expr_defs)
@@ -1974,41 +2035,11 @@ proof -
     by blast
   moreover have "... = (\<Sum>\<^sub>\<infinity>s::state_t \<in> ?set. (((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v s - Suc t) / (36::\<real>)))"
     by (smt (verit) infsum_cong mem_Collect_eq mult_cancel_right2)
-  moreover have "... = (\<Sum>\<^sub>\<infinity>tt::nat \<in> {tt. tt \<ge> Suc t}. (((5::\<real>) / (6::\<real>)) ^ (tt - Suc t) / (6::\<real>)))"
-    apply (subst infsum_reindex_bij_betw[symmetric, where g = "\<lambda>s::state_t. t\<^sub>v s" and A = "?set"])
-    apply (simp add: bij_betw_def)
-    apply (rule conjI)
-    apply (simp add: inj_on_def)
-    apply auto
-    sledgehammer
-    apply (simp add: image_def)
-    apply (rule_tac x = "\<lparr>t\<^sub>v = x, coin\<^sub>v = chead\<rparr>" in exI)
-    by simp
-  moreover have "... = (\<Sum>\<^sub>\<infinity>t::nat. ((1::\<real>) / (2::\<real>)) ^ (t + 1))"
-    apply (subst infsum_reindex_bij_betw[symmetric, where g = "\<lambda>n. n + Suc (t\<^sub>v s\<^sub>1)" and A = "UNIV"])
-    apply auto
-    apply (simp add: bij_betw_def)
-    apply (rule conjI)
-    apply (simp add: inj_on_def)
-    apply (simp add: image_def)
-    apply (auto)
-    by (simp add: add.commute le_iff_add)
   moreover have "... = 1"
-    (* Intend to prove it as follows.
-      Use "HOL-Analysis.Infinite_Set_Sum.infsetsum_infsum" 
-          to turn infsum to infsetsum
-      also use HOL-Analysis.Infinite_Set_Sum.abs_summable_equivalent
-          to establish HOL-Analysis.Infinite_Set_Sum.abs_summable_on = abs_summable_on
-      Use "HOL-Analysis.Infinite_Set_Sum.infsetsum_nat"
-          to turn infsetsum to sums over series suminf
-      Use "HOL.Series.suminf_geometric"
-          to calculate geometric progression
-    *)
-    sorry
+    using sum_d1_d2_eq_tt_1 by presburger
   ultimately show "?lhs = (1::\<real>)"
     by presburger
 qed
-*)
 
 (*
 ((\<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e * \<lbrakk>t\<^sup>> = t\<^sup>< \<and> d1\<^sup>> = d1\<^sup>< \<and> d2\<^sup>> = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e) + 
@@ -2230,23 +2261,6 @@ lemma dice_throw_t_loop: "dice_throw_t_loop = prfun_of_rvfun Ht"
   by simp
 
 subsubsection \<open> Termination and average termination time \<close>
-lemma state_eq_set_Union: "{v\<^sub>0. d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 \<and> t\<^sub>0 \<le> t\<^sub>v v\<^sub>0} = 
-        (\<Union>i \<in> {1..6}. {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> t\<^sub>0 \<le> t\<^sub>v v\<^sub>0})"
-  apply (auto)
-  by (metis One_nat_def nat2td_cases)
-
-lemma geometry_series_sum: "(\<Sum>\<^sub>\<infinity>n::\<nat>. (((5::\<real>) / (6::\<real>)) ^ n /  (36::\<real>))) = 1 / 6"
-  apply (subst infsetsum_infsum[symmetric])
-  apply (simp add: abs_summable_on_nat_iff')
-  apply (subst infsetsum_nat)
-  apply (simp add: abs_summable_on_nat_iff')
-  apply auto
-  apply (subst suminf_divide)
-  apply (simp add: summable_geometric)
-  apply (subst suminf_geometric)
-  apply simp
-  by auto
-
 lemma dice_throw_t_termination_prob: "Ht ; \<lbrakk>d1\<^sup>< = d2\<^sup><\<rbrakk>\<^sub>\<I>\<^sub>e = (1)\<^sub>e"
   apply (simp add: Ht_def)
   apply (expr_auto)
@@ -2269,51 +2283,16 @@ next
           (if Suc t \<le> t\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) * ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) *
           (if d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 then 1::\<real> else (0::\<real>)) /  (36::\<real>))"
 
-  have reindex: "\<forall>i\<in>{1..6}. 
-    (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc t \<le> t\<^sub>v v\<^sub>0}.
-       ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) /  (36::\<real>)) 
-    = (\<Sum>\<^sub>\<infinity>n::\<nat>. (((5::\<real>) / (6::\<real>)) ^ n /  (36::\<real>)))"
-  proof
-    fix i::\<nat>
-    have set_eq: "{v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc t \<le> t\<^sub>v v\<^sub>0} = 
-                  range (\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc t + n, d1\<^sub>v = nat2td i, d2\<^sub>v = nat2td i\<rparr>)"
-      apply (simp add: image_def, auto)
-      by (metis add_Suc le_Suc_ex state_t.select_convs(1) state_t.select_convs(2) state_t_neq time.select_convs(1))
-    have sum_eq: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc t \<le> t\<^sub>v v\<^sub>0}.
-       ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) /  (36::\<real>)) = 
-      infsum (\<lambda>v\<^sub>0::state_t. ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) /  (36::\<real>))
-      ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc t + n, d1\<^sub>v = nat2td i, d2\<^sub>v = nat2td i\<rparr>) ` UNIV)"
-      by (simp add: set_eq)
-    have reindex: "infsum (\<lambda>v\<^sub>0::state_t. ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) /  (36::\<real>))
-      ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = Suc t + n, d1\<^sub>v = nat2td i, d2\<^sub>v = nat2td i\<rparr>) ` UNIV)
-      = infsum (\<lambda>n::\<nat>. ((5::\<real>) / (6::\<real>)) ^ n /  (36::\<real>)) UNIV"
-      apply (subst infsum_reindex)
-      apply (simp add: inj_def)
-      by (simp add: infsum_cong)
-    show "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc t \<le> t\<^sub>v v\<^sub>0}.
-       ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) /  (36::\<real>)) 
-      = (\<Sum>\<^sub>\<infinity>n::\<nat>. (((5::\<real>) / (6::\<real>)) ^ n /  (36::\<real>)))"
-      by (simp only: sum_eq reindex)
-  qed
-
   have f0: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t. (if d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 \<and> Suc t \<le> t\<^sub>v v\<^sub>0 then ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) /  (36::\<real>) else (0::\<real>)))"
     by (smt (verit, ccfv_SIG) div_0 infsum_cong mult_cancel_left2 mult_cancel_right2)
   moreover have f1: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = d2\<^sub>v v\<^sub>0 \<and> Suc t \<le> t\<^sub>v v\<^sub>0}.
        ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) /  (36::\<real>))"
     apply (rule infsum_cong_neutral)
     by (auto)
-  moreover have "... = sum (\<lambda>i. (\<Sum>\<^sub>\<infinity>v\<^sub>0::state_t \<in> {v\<^sub>0. d1\<^sub>v v\<^sub>0 = nat2td i \<and> d2\<^sub>v v\<^sub>0 = nat2td i \<and> Suc t \<le> t\<^sub>v v\<^sub>0}.
-       ((5::\<real>) / (6::\<real>)) ^ (t\<^sub>v v\<^sub>0 - Suc t) /  (36::\<real>))) {1..6}"
-    apply (simp add: state_eq_set_Union)
-    apply (subst sum_infsum)
-    apply blast
-    apply (smt (verit, best) One_nat_def divide_eq_0_iff infsum_not_exists reindex geometry_series_sum zero_neq_numeral)
-    apply (auto)
-    by (simp add: nat2td_inject)
   moreover have "... = 1"
-    by (simp add: reindex geometry_series_sum)
+    using sum_d1_d2_eq_tt_1 by blast
   then show "?lhs = (1::\<real>)"
-    using calculation(3) f0 f1 by presburger
+    using calculation f0 f1 by presburger
 qed
 
 lemma dice_throw_t_expected_termination_time:
