@@ -1,10 +1,10 @@
-- [Mechanisation of probabilistic designs in Isabelle/UTP](#mechanisation-of-probabilistic-designs-in-isabelleutp)
+- [Mechanisation of probabilistic relations in Isabelle/UTP](#mechanisation-of-probabilistic-designs-in-isabelleutp)
 - [Installation/Set up instructions](#installationset-up-instructions)
   - [Clone this repository](#clone-this-repository)
   - [Isabelle/UTP distributions with prebuild heap images on Linux](#isabelleutp-distributions-with-prebuild-heap-images-on-linux)
   - [Standard](#standard)
 
-# Mechanisation of probabilistic designs in Isabelle/UTP
+# Mechanisation of probabilistic relations in Isabelle/UTP
 This folder (`probabilistic_relations`) contains our mechanisation of the theory of probabilistic relations in [Isabelle/UTP](https://isabelle-utp.york.ac.uk/), a UTP proof framework in Isabelle/HOL.
 
 # Installation/Set up instructions
