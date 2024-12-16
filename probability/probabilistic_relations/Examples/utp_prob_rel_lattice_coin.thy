@@ -1262,7 +1262,6 @@ lemma pt_flip_t_p: "(Pt (flip_t_p p)) = prfun_of_rvfun (pt_flip_t_p_alt p)"
   defer
   apply (smt (verit, best) coin_t_state.surjective infsum_0 mult_eq_0_iff time.ext_inject time.update_convs(1))
   apply (meson Tcoin.exhaust)
-  apply (meson Tcoin.exhaust)
 proof -
   fix t::\<nat>
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::coin_t_state.

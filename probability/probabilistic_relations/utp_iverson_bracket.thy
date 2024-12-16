@@ -13,8 +13,8 @@ bundle no_UTP_lattice_syntax
 begin
 
 no_notation
-  bot ("\<top>") and
-  top ("\<bottom>") and
+  Orderings.bot ("\<top>") and
+  Orderings.top ("\<bottom>") and
   inf  (infixl "\<squnion>" 70) and
   sup  (infixl "\<sqinter>" 65) and
   Inf  ("\<Squnion> _" [900] 900) and
@@ -26,6 +26,7 @@ no_syntax
   "_SUP1"     :: "pttrns \<Rightarrow> 'b \<Rightarrow> 'b"           ("(3\<Sqinter>_./ _)" [0, 10] 10)
   "_SUP"      :: "pttrn \<Rightarrow> 'a set \<Rightarrow> 'b \<Rightarrow> 'b"  ("(3\<Sqinter>_\<in>_./ _)" [0, 0, 10] 10)
 end
+
 unbundle no_UTP_lattice_syntax
 (* unbundle no_lattice_syntax *)
 print_bundles
@@ -33,8 +34,31 @@ print_bundles
 (* This wouldn't be parsed correctly
 term "\<bottom>"
 *)
+(*
+bundle ProbURel_syntax
+begin
+(*
+no_notation
+  Orderings.bot ("\<top>") and
+  Orderings.top ("\<bottom>") and
+  inf  (infixl "\<squnion>" 70) and
+  sup  (infixl "\<sqinter>" 65) and
+  Inf  ("\<Squnion> _" [900] 900) and
+  Sup  ("\<Sqinter> _" [900] 900)
 
+no_syntax
+  "_INF1"     :: "pttrns \<Rightarrow> 'b \<Rightarrow> 'b"           ("(3\<Squnion>_./ _)" [0, 10] 10)
+  "_INF"      :: "pttrn \<Rightarrow> 'a set \<Rightarrow> 'b \<Rightarrow> 'b"  ("(3\<Squnion>_\<in>_./ _)" [0, 0, 10] 10)
+  "_SUP1"     :: "pttrns \<Rightarrow> 'b \<Rightarrow> 'b"           ("(3\<Sqinter>_./ _)" [0, 10] 10)
+  "_SUP"      :: "pttrn \<Rightarrow> 'a set \<Rightarrow> 'b \<Rightarrow> 'b"  ("(3\<Sqinter>_\<in>_./ _)" [0, 0, 10] 10)
+*)
+notation 
+  Orderings.top ("\<top>") and
+  Orderings.bot ("\<bottom>")
+end 
+*)
 (* Switch on lattice syntax from HOL *)
+(* unbundle ProbURel_syntax *)
 unbundle lattice_syntax
 term "\<bottom>"
 

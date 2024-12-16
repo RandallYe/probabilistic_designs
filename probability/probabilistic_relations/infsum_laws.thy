@@ -67,7 +67,7 @@ lemma conditional_cmult_1: "\<forall>s. (if b\<^sub>1 s then (1::\<real>) else (
 subsection \<open> Laws of @{term infsum} \<close>
 lemma infset_0_not_summable_or_sum_to_zero:
   assumes "infsum f A = 0"
-  shows "(f summable_on A \<and> has_sum f A 0) \<or> \<not> f summable_on A"
+  shows "(f summable_on A \<and> HAS_SUM f A 0) \<or> \<not> f summable_on A"
   by (simp add: assms summable_iff_has_sum_infsum)
 
 lemma infset_0_not_summable_or_zero:
@@ -102,8 +102,8 @@ qed
 
 lemma has_sum_cdiv_left:
   fixes f :: "'a \<Rightarrow> \<real>"
-  assumes \<open>has_sum f A a\<close>
-  shows "has_sum (\<lambda>x. f x / c) A (a / c)"
+  assumes \<open>HAS_SUM f A a\<close>
+  shows "HAS_SUM (\<lambda>x. f x / c) A (a / c)"
   apply (simp only : divide_inverse)
   using assms has_sum_cmult_left by blast
 

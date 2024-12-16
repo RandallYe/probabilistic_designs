@@ -162,6 +162,7 @@ lemma dwta_attack_by_C: "rvfun_of_prfun dwta ;\<^sub>f (\<lbrakk>r\<^sup>< = C\<
   apply (subst sum_nonneg_eq_0_iff)
   using dwta_state_finite apply blast
   apply auto[1]
+  apply (metis (full_types) Attacker.exhaust DWTA_state.cases Status.exhaust)
   by (smt (z3) Attacker.exhaust DWTA_state.surjective DiffD2 Status.exhaust insertCI old.unit.exhaust)
 
 lemma dwta_successful_attack: "rvfun_of_prfun dwta ;\<^sub>f (\<lbrakk>a\<^sup>< = S\<rbrakk>\<^sub>\<I>\<^sub>e) = (21/50)\<^sub>e"
@@ -176,6 +177,7 @@ lemma dwta_successful_attack: "rvfun_of_prfun dwta ;\<^sub>f (\<lbrakk>a\<^sup><
   apply (subst sum_nonneg_eq_0_iff)
   using dwta_state_finite apply blast
   apply auto[1]
+  apply (metis (full_types) Attacker.exhaust DWTA_state.cases Status.exhaust)
   by (smt (z3) Attacker.exhaust DWTA_state.surjective DiffD2 Status.exhaust insertCI old.unit.exhaust)
 
 lemma dwta_successful_attack_by_D: "rvfun_of_prfun dwta ;\<^sub>f (\<lbrakk>r\<^sup>< = D \<and> a\<^sup>< = S\<rbrakk>\<^sub>\<I>\<^sub>e) = (3/25)\<^sub>e"
@@ -190,6 +192,7 @@ lemma dwta_successful_attack_by_D: "rvfun_of_prfun dwta ;\<^sub>f (\<lbrakk>r\<^
   apply (subst sum_nonneg_eq_0_iff)
   using dwta_state_finite apply blast
   apply auto[1]
+  apply (metis (full_types) Attacker.exhaust DWTA_state.cases Status.exhaust)
   by (smt (z3) Attacker.exhaust DWTA_state.surjective DiffD2 Status.exhaust insertCI old.unit.exhaust)
 
 end
