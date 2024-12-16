@@ -642,7 +642,7 @@ lemma rvfun_infsum_1_finite_subset:
 proof -
   have "(\<Sum>\<^sub>\<infinity>s::'a. p (s\<^sub>1, s)) = (1::\<real>)"
     by (simp add: assms(1) rvfun_prob_sum1_summable(2))
-  then have "has_sum (\<lambda>s::'a. p (s\<^sub>1, s)) UNIV (1::\<real>)"
+  then have "HAS_SUM (\<lambda>s::'a. p (s\<^sub>1, s)) UNIV (1::\<real>)"
     by (metis has_sum_infsum infsum_not_exists zero_neq_one)
   then have "(sum (\<lambda>s::'a. p (s\<^sub>1, s)) \<longlongrightarrow> (1::\<real>)) (finite_subsets_at_top UNIV)"
     using has_sum_def by blast
@@ -829,7 +829,7 @@ proof -
   \<comment> \<open>How to improve this proof? Forward proof. Focus on the goal f0 9 lines below \<close>
   have "(\<Sum>\<^sub>\<infinity>s::'a. rvfun_of_prfun P (s\<^sub>1, s)) = (1::\<real>)"
     by (simp add: pdrfun_prob_sum1_summable' assms)
-  then have "has_sum (\<lambda>s::'a. rvfun_of_prfun P (s\<^sub>1, s)) UNIV (1::\<real>)"
+  then have "HAS_SUM (\<lambda>s::'a. rvfun_of_prfun P (s\<^sub>1, s)) UNIV (1::\<real>)"
     by (metis has_sum_infsum infsum_not_exists zero_neq_one)
   then have "(sum (\<lambda>s::'a. rvfun_of_prfun P (s\<^sub>1, s)) \<longlongrightarrow> (1::\<real>)) (finite_subsets_at_top UNIV)"
     using has_sum_def by blast
@@ -2685,14 +2685,14 @@ proof -
       from T_pq F_qr assms(1) have "(\<Sum>\<^sub>\<infinity>v\<^sub>0. ?pqr v\<^sub>0) = 0"
         by blast
       then have F_qr_summable: 
-        "((?pqr summable_on UNIV) \<and> has_sum ?pqr UNIV 0) \<or> \<not> ?pqr summable_on UNIV"
+        "((?pqr summable_on UNIV) \<and> HAS_SUM ?pqr UNIV 0) \<or> \<not> ?pqr summable_on UNIV"
         apply (subst infset_0_not_summable_or_sum_to_zero)
         by simp+
       then show ?thesis 
       (* 3: pqr *)
-      proof (cases "((?pqr summable_on UNIV) \<and> has_sum ?pqr UNIV 0)")
+      proof (cases "((?pqr summable_on UNIV) \<and> HAS_SUM ?pqr UNIV 0)")
         case True
-        then have "has_sum (\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) UNIV (0 / ?rhs_qr)"
+        then have "HAS_SUM (\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) UNIV (0 / ?rhs_qr)"
           using has_sum_cdiv_left by fastforce
         then have sum_rhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?rhs_qr) = 0"
           by (simp add: infsumI)
@@ -2728,14 +2728,14 @@ proof -
       from T_qr F_pq assms(2) have "(\<Sum>\<^sub>\<infinity>v\<^sub>0. ?pqr v\<^sub>0) = 0"
         by blast
       then have F_pq_summable: 
-        "((?pqr summable_on UNIV) \<and> has_sum ?pqr UNIV 0) \<or> \<not> ?pqr summable_on UNIV"
+        "((?pqr summable_on UNIV) \<and> HAS_SUM ?pqr UNIV 0) \<or> \<not> ?pqr summable_on UNIV"
         apply (subst infset_0_not_summable_or_sum_to_zero)
         by simp+
       then show ?thesis 
       (* 3: pqr *)
-      proof (cases "((?pqr summable_on UNIV) \<and> has_sum ?pqr UNIV 0)")
+      proof (cases "((?pqr summable_on UNIV) \<and> HAS_SUM ?pqr UNIV 0)")
         case True
-        then have "has_sum (\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) UNIV (0 / ?lhs_pq)"
+        then have "HAS_SUM (\<lambda>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) UNIV (0 / ?lhs_pq)"
           using has_sum_cdiv_left by fastforce
         then have sum_lhs_pqr_0: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'b. ?pqr v\<^sub>0 / ?lhs_pq) = 0"
           by (simp add: infsumI)

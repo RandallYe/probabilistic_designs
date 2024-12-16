@@ -20,87 +20,19 @@ unbundle UTP_Syntax
 declare [[show_types]]
 subsection \<open> Knuth and Yao's algorithm to simulate six-sided die using a fair coin \<close>
 
-subsubsection \<open> Type for outcomes: @{text "Tdice"} \<close>
-(*
-typedef Tdice = "{v::nat. v \<le> 6 \<and> v \<ge> 1}"
-morphisms td2nat nat2td
-  apply (rule_tac x = "1" in exI)
-  by auto
-*)
-
-typedef Tdice = "{1..(6::nat)}"
-morphisms td2nat nat2td
-  apply (rule_tac x = "1" in exI)
-  by auto
-
-find_theorems name: "Tdice"
-
-text \<open> We use @{term "Tdice"} as the type for dice outcome, a type definition for natural numbers 
-between 1 and 6. \<close>
-
-abbreviation "outcomes \<equiv> {1..(6::nat)}"
-
-abbreviation "outcomes1 \<equiv> {nat2td 1, nat2td 2, nat2td 3, nat2td 4, nat2td 5, nat2td 6}"
-
-lemma Tdice_UNIV_eq: "{x::Tdice. True} = outcomes1"
-  apply (subst set_eq_iff, auto)
-proof -
-  fix x
-  assume a1: "\<not> x = nat2td (Suc (0::\<nat>))"
-  assume a2: "\<not> x = nat2td (2::\<nat>)"
-  assume a3: "\<not> x = nat2td (3::\<nat>)"
-  assume a4: "\<not> x = nat2td (4::\<nat>)"
-  assume a6: "\<not> x = nat2td (6::\<nat>)"
-  show "x = nat2td (5::\<nat>)"
-  proof (rule ccontr)
-    assume a5: "\<not> x = nat2td (5::\<nat>)"
-    then have f1: "td2nat x \<noteq> (Suc (0)) \<and> td2nat x \<noteq> 2 \<and> td2nat x \<noteq> 3 \<and> td2nat x \<noteq> 4 \<and> td2nat x \<noteq> 5 \<and> td2nat x \<noteq> 6"
-      by (metis a1 a2 a3 a4 a6 td2nat_inverse)
-    also have f2: "td2nat x \<in> outcomes"
-      using td2nat by blast
-    from f1 f2 show "False"
-      by (auto)
-  qed
-qed
-  
-lemma Tdice_UNIV_finite: "finite (UNIV::Tdice set)"
-  apply (simp only: UNIV_def)
-  apply (simp only: Tdice_UNIV_eq)
-  by force
-
-lemma outcomes1_card: "card outcomes1 = 6"
-  by (smt (verit, best) One_nat_def Suc_eq_numeral Suc_numeral Tdice_UNIV_eq atLeastAtMost_iff 
-      card.empty card.insert finite.emptyI finite.insertI finite_insert insertE insert_absorb 
-      insert_not_empty le_Suc_numeral n_not_Suc_n nat2td_inject numeral_1_eq_Suc_0 numeral_2_eq_2 
-      numeral_3_eq_3 numeral_eq_iff numeral_eq_one_iff one_le_numeral order.refl plus_1_eq_Suc 
-      pred_numeral_simps(2) pred_numeral_simps(3) semiring_norm(8) semiring_norm(84) singletonD)
-
-lemma outcomes1'_card: "card {nat2td (Suc 0), nat2td 2, nat2td 3, nat2td 4, nat2td 5, nat2td 6} = 6"
-  using One_nat_def outcomes1_card by presburger
-
-lemma Tdice_card: "card (UNIV::Tdice set) = 6"
-  apply (simp only: UNIV_def)
-  apply (simp only: Tdice_UNIV_eq)
-  by (rule outcomes1_card)
-
-lemma Tdice_mem: "(a::Tdice) \<in> outcomes1"
-  using Tdice_UNIV_eq by auto
-
-lemma td2nat_in_1_6: "td2nat (a::Tdice) \<le> 6 \<and> td2nat (a::Tdice) \<ge> 1"
-  using td2nat by force
-
-datatype S = s0 | s1 | s2 | s3 | s4 | s5 | s6
+datatype S = s1 | s2 | s3 | s4
+datatype O = o0 | o1 | o2 | o3
 
 subsubsection \<open> State space \<close>
 alphabet state = time +
   c   :: bool
   s   :: S
-  d   :: Tdice
+  d   :: O
 
 term "if"
 
-definition step1:: "state prhfun" where
-"step1 = if\<^sub>p 0.5 then (s := s2) else (s := s3) ; t := t + 1"
+definition step1:: "ureal \<Rightarrow> state prhfun" where
+"step1 p  = if\<^sub>p \<guillemotleft>p\<guillemotright> then (s := s2) else (s := s3) ; t := t + 1"
 
 definition step2:: "state prhfun" where
 "step2 = if\<^sub>p 0.5 then (s := s1) else (s := s4) ; t := t + 1"
