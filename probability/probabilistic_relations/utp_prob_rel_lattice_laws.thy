@@ -1867,6 +1867,40 @@ theorem prfun_passign_comp:
   apply simp
   by (smt (verit, best) infsum_0 mult_cancel_left1 mult_cancel_right1)
 
+(*
+term "put\<^bsub>y\<^esub> (put\<^bsub>x\<^esub> a (get\<^bsub>x\<^esub> b)) (get\<^bsub>y\<^esub> b)"
+theorem prfun_passign_comp: 
+  (* assumes "$x \<sharp> f" "x \<bowtie> y" *)
+  assumes "vwb_lens x" "vwb_lens y" "x \<bowtie> y"
+  shows "(x := \<guillemotleft>e\<guillemotright>) ; (y := \<guillemotleft>f\<guillemotright>) = prfun_of_rvfun (\<lbrakk> $x\<^sup>> = \<guillemotleft>e\<guillemotright> \<and> $y\<^sup>> = \<guillemotleft>f\<guillemotright> \<rbrakk>\<^sub>\<I>\<^sub>e)"
+  apply (simp add: pseqcomp_def passigns_def)
+  apply (simp add: rvfun_assignment_inverse)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (pred_auto)
+  apply (subst infsum_mult_singleton_left)
+  apply simp
+  apply (subst lens_indep_comm)
+     apply (simp add: assms(3) lens_indep_sym)
+  sledgehammer
+  by (smt (verit, best) infsum_0 mult_cancel_left1 mult_cancel_right1)
+*)
+(*
+term "$x\<^sup>< \<sharp> f"
+term "x \<bowtie> y"
+term "\<lbrakk> x\<^sup>> = e \<and> y\<^sup>> = f \<rbrakk>\<^sub>\<I>\<^sub>e"
+term "((x,x) := (v,u)) :: 's hrel"
+theorem prfun_passign_comp: 
+  (* assumes "$x\<^sup>< \<sharp> f" "x \<bowtie> y" *)
+  shows "(x := e) ; (y := f) = prfun_of_rvfun (\<lbrakk> $x\<^sup>> = e \<and> $y\<^sup>> = f \<rbrakk>\<^sub>\<I>\<^sub>e)"
+  apply (simp add: pseqcomp_def passigns_def)
+  apply (simp add: rvfun_assignment_inverse)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (pred_auto)
+  apply (subst infsum_mult_singleton_left)
+  apply simp
+  by (smt (verit, best) infsum_0 mult_cancel_left1 mult_cancel_right1)
+*)
+
 lemma prfun_prob_choice_is_sum_1:
   assumes "0 \<le> r \<and> r \<le> 1"
   assumes "is_final_distribution (rvfun_of_prfun (P::'a prhfun))"
@@ -2179,6 +2213,51 @@ proof -
       (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba)))"
     apply (subst infsum_cong[where g = "\<lambda>v\<^sub>0. (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (fst \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)) + 
       (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (fst \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba))"])
+     apply (simp add: f1 f2)
+    by simp
+  show "?lhs = ?rhs_1 + ?rhs_2"
+    apply (simp add: f3)
+    apply (subst infsum_add)
+    apply (subst rvfun_product_summable_subdist)
+    using assms apply force
+    using ureal_is_prob apply blast
+    apply simp
+    apply (subst rvfun_product_summable_subdist)
+    using assms apply force
+    using ureal_is_prob apply blast
+     apply simp
+    by simp
+qed
+
+theorem prfun_seqcomp_pcond_subdist':
+  fixes Q R ::"'a prhfun"
+  assumes "is_final_sub_dist (rvfun_of_prfun (P::'a prhfun))"
+  shows "P ; (if\<^sub>c b then Q else R) = prfun_of_rvfun (
+        @(pseqcomp_f (rvfun_of_prfun P) (rvfun_of_prfun (\<lbrakk>b\<rbrakk>\<^sub>\<I> * Q)\<^sub>e)) + 
+        @(pseqcomp_f (rvfun_of_prfun P) (rvfun_of_prfun (\<lbrakk>\<not>((b))\<rbrakk>\<^sub>\<I>\<^sub>e * R)\<^sub>e)))\<^sub>e"
+  apply (simp add: pchoice_def pseqcomp_def pcond_def)
+  apply (subst rvfun_pcond_inverse)
+  using ureal_is_prob apply blast+
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (subst fun_eq_iff)
+  apply (pred_auto)
+proof -
+  fix a ba
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rvfun_of_prfun P (a, v\<^sub>0) * (if b (v\<^sub>0, ba) then rvfun_of_prfun Q (v\<^sub>0, snd (a, ba)) else rvfun_of_prfun R (v\<^sub>0, snd (a, ba))))"
+  let ?rhs_1 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b \<s> then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba))"
+  let ?rhs_2 = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b \<s> then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba))"
+  have f1: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b \<s> then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)
+    = (if b (v\<^sub>0, ba) then rvfun_of_prfun Q (v\<^sub>0, ba) else 0)"
+    by (smt (verit) SEXP_def fst_conv lambda_one lambda_zero o_def one_ereal_def one_ureal_def 
+        real_of_ereal_0 rvfun_of_prfun_def ureal2real_def zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
+  have f2: "\<forall>v\<^sub>0. rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b \<s> then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba)
+    = (if b (v\<^sub>0, ba)  then 0 else rvfun_of_prfun R (v\<^sub>0, ba))"
+    by (smt (verit, best) SEXP_def fst_conv lambda_one lambda_zero o_def one_ereal_def one_ureal_def real_of_ereal_0 rvfun_of_prfun_def ureal2real_def zero_ereal_def zero_ureal.rep_eq zero_ureal_def)
+  have f3: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. 
+      (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b ( \<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)) + 
+      (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b ( \<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba)))"
+    apply (subst infsum_cong[where g = "\<lambda>v\<^sub>0. (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if b (\<s>) then 1::\<real> else (0::\<real>))) * Q \<s>) (v\<^sub>0, ba)) + 
+      (rvfun_of_prfun P (a, v\<^sub>0) * rvfun_of_prfun (\<lambda>\<s>::'a \<times> 'a. ereal2ureal (ereal (if \<not> b (\<s>) then 1::\<real> else (0::\<real>))) * R \<s>) (v\<^sub>0, ba))"])
      apply (simp add: f1 f2)
     by simp
   show "?lhs = ?rhs_1 + ?rhs_2"

@@ -289,6 +289,12 @@ abbreviation pcond_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>
 definition pcond :: "('s\<^sub>1, 's\<^sub>2) urel \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where 
 [pfun_defs]: "pcond b P Q \<equiv> prfun_of_rvfun (pcond_f (rvfun_of_prfun P) b (rvfun_of_prfun Q))"
 
+abbreviation pcond1_f :: "('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1) pred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) rvfun" where 
+"pcond1_f P b Q \<equiv> (if b\<^sup>< then P else Q)\<^sub>e"
+
+definition pcond1 :: "('s\<^sub>1) pred \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun \<Rightarrow> ('s\<^sub>1, 's\<^sub>2) prfun" where 
+[pfun_defs]: "pcond1 b P Q \<equiv> prfun_of_rvfun (pcond1_f (rvfun_of_prfun P) b (rvfun_of_prfun Q))"
+
 syntax 
   "_pcond" :: "logic \<Rightarrow> logic \<Rightarrow> logic \<Rightarrow> logic" ("(if\<^sub>c (_)/ then (_)/ else (_))" [0, 61, 60] 60) 
 
