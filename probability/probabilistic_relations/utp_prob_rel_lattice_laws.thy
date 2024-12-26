@@ -22,6 +22,12 @@ method expr_simp_1 uses add =
      (simp add: expr_defs lens_defs add)?))
 
 subsection \<open> @{type "ureal"} laws \<close>
+lemma ureal2real_0: "ureal2real 0 = 0"
+  by (simp add: ureal2real_def zero_ureal.rep_eq)
+
+lemma ureal2real_1: "ureal2real 1 = 1"
+  by (simp add: ureal2real_def one_ureal.rep_eq)
+
 lemma real_1: "real_of_ereal (ureal2ereal (ereal2ureal' (ereal (1::\<real>)))) = 1"
   by (simp add: ereal2ureal'_inverse)
 
@@ -620,6 +626,13 @@ lemma prfun_inverse:
 
 lemma rvfun_inverse_ibracket: "rvfun_of_prfun (prfun_of_rvfun (\<lbrakk>p\<rbrakk>\<^sub>\<I>)) = \<lbrakk>p\<rbrakk>\<^sub>\<I>"
   by (simp add: is_prob_def iverson_bracket_def rvfun_inverse)
+
+lemma rvfun_to_prfun:
+  assumes Pp: "rvfun_of_prfun (P) = p"
+  shows "P = prfun_of_rvfun p"
+  apply (subgoal_tac "prfun_of_rvfun (rvfun_of_prfun (P)) = prfun_of_rvfun p")
+  apply (simp add: prfun_inverse)
+  by (simp add: Pp)
 
 subsection \<open> @{type rvfun} laws \<close>
 lemma Sigma_Un_distrib2:

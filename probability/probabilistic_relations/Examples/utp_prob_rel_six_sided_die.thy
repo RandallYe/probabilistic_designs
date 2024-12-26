@@ -47,12 +47,11 @@ abbreviation "step3 p \<equiv> step p s4 s4 o2 o3"
 definition loop_body :: "ureal \<Rightarrow> state prhfun" where 
 "loop_body p = (step1 p ; (if\<^sub>c s\<^sup>< = s2 then step2 p else step3 p))"
 
+definition dice_loop :: "ureal \<Rightarrow> state prhfun" where 
+"dice_loop p = while\<^sub>p (\<not> s\<^sup>< = s4)\<^sub>e do  loop_body p od"
+
 definition dice :: "ureal \<Rightarrow> state prhfun" where 
-"dice p = 
-  s := s1 ; d := o0; t := 0;
-  while\<^sub>p (\<not> s\<^sup>< = s4)\<^sub>e do 
-    loop_body p
-  od"
+"dice p = s := s1 ; d := o0; t := 0; dice_loop p"
 
 definition Ht :: "ureal \<Rightarrow> state rvhfun" where 
 "Ht p = (
@@ -209,6 +208,9 @@ qed
 
 lemma singleton_set_simp: "{s::state. s\<^sub>v s = s\<^sub>1 \<and> d\<^sub>v s = d\<^sub>1 \<and> t\<^sub>v s = t\<^sub>1} = {\<lparr>t\<^sub>v = t\<^sub>1, s\<^sub>v = s\<^sub>1, d\<^sub>v = d\<^sub>1\<rparr>}"
   by auto
+
+lemma singleton_set_finite': "finite {s::state. s\<^sub>v s = s\<^sub>1 \<and> d\<^sub>v s = d\<^sub>1 \<and> t\<^sub>v s = t\<^sub>1}"
+  by (simp add: singleton_set_simp)
 
 lemma singleton_set_finite: "finite {s::state. s\<^sub>v s = s\<^sub>1 \<and> d\<^sub>v s = d\<^sub>1 \<and> t\<^sub>v s = t\<^sub>1 \<and> P}"
   apply (rule rev_finite_subset[where B="{s::state. s\<^sub>v s = s\<^sub>1 \<and> d\<^sub>v s = d\<^sub>1 \<and> t\<^sub>v s = t\<^sub>1}"])
@@ -399,6 +401,14 @@ proof -
           (if s\<^sub>v s = s4 \<and> d\<^sub>v s = o3 \<and> t\<^sub>v s = Suc (Suc t) then 1::\<real> else (0::\<real>)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)) = 1"
     by (metis (no_types, lifting) infsum_cong mult.assoc)
 qed
+
+lemma loop_body_altdef': "(loop_body p) = prfun_of_rvfun (
+    \<lbrakk>s\<^sup>> = \<guillemotleft>s1\<guillemotright> \<and> d\<^sup>> = \<guillemotleft>o0\<guillemotright> \<and> t\<^sup>> = t\<^sup>< + 2\<rbrakk>\<^sub>\<I>\<^sub>e * ureal2real \<guillemotleft>p\<guillemotright> * ureal2real \<guillemotleft>p\<guillemotright> +
+    \<lbrakk>s\<^sup>> = \<guillemotleft>s4\<guillemotright> \<and> d\<^sup>> = \<guillemotleft>o1\<guillemotright> \<and> t\<^sup>> = t\<^sup>< + 2\<rbrakk>\<^sub>\<I>\<^sub>e * ureal2real \<guillemotleft>p\<guillemotright> * (1- ureal2real \<guillemotleft>p\<guillemotright>) +
+    \<lbrakk>s\<^sup>> = \<guillemotleft>s4\<guillemotright> \<and> d\<^sup>> = \<guillemotleft>o2\<guillemotright> \<and> t\<^sup>> = t\<^sup>< + 2\<rbrakk>\<^sub>\<I>\<^sub>e * (1- ureal2real \<guillemotleft>p\<guillemotright>) * ureal2real \<guillemotleft>p\<guillemotright> +
+    \<lbrakk>s\<^sup>> = \<guillemotleft>s4\<guillemotright> \<and> d\<^sup>> = \<guillemotleft>o3\<guillemotright> \<and> t\<^sup>> = t\<^sup>< + 2\<rbrakk>\<^sub>\<I>\<^sub>e * (1- ureal2real \<guillemotleft>p\<guillemotright>) * (1- ureal2real \<guillemotleft>p\<guillemotright>)
+  )\<^sub>e"
+  by (metis loop_body_altdef prfun_inverse)
 
 lemma Ht_is_fp: "\<F> (\<not> s\<^sup>< = \<guillemotleft>s4\<guillemotright>)\<^sub>e (loop_body p) (prfun_of_rvfun (Ht p)) = prfun_of_rvfun (Ht p)"
   apply (simp add: Ht_def loopfunc_def pskip_def)
@@ -732,6 +742,185 @@ lemma Ht_is_fp: "\<F> (\<not> s\<^sup>< = \<guillemotleft>s4\<guillemotright>)\<
           real2ureal (0::\<real>)"
           using f51 f52 f53 f54 f55 f56 by presburger
       qed
+    qed
+
+lemma loop_body_iterdiff_simp:
+  shows "(iter\<^sub>d 0 (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p) = 1\<^sub>p"
+        "(iter\<^sub>d (n+1) (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>\<not> s\<^sup>< = s4\<rbrakk>\<^sub>\<I>\<^sub>e * 
+            (ureal2real \<guillemotleft>p\<guillemotright>)^\<guillemotleft>2*n\<guillemotright>)\<^sub>e)"
+proof -
+  show "(iter\<^sub>d 0 (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p) = 1\<^sub>p"
+    by auto
+  show "(iter\<^sub>d (n+1) (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p) =  prfun_of_rvfun ((\<lbrakk>\<not> s\<^sup>< = s4\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real \<guillemotleft>p\<guillemotright>)^\<guillemotleft>2*n\<guillemotright>)\<^sub>e)"
+    apply (induction n)
+    apply (simp)
+    apply (subst prfun_seqcomp_one)
+    using loop_body_is_dist apply auto[1]
+    apply (simp add: pfun_defs)
+    apply (subst ureal_zero)
+    apply (subst ureal_one)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (pred_auto)
+    apply (simp only: add_Suc)
+    apply (simp only: iterdiff.simps(2))
+    apply (simp only: pcond_def)
+    apply (simp only: pseqcomp_def)
+    apply (subst rvfun_seqcomp_inverse)
+    using loop_body_is_dist apply auto[1]
+    apply (simp add: ureal_is_prob)
+    apply (subst rvfun_inverse)
+    apply (expr_auto add: dist_defs)
+    apply (simp add: mult_le_one power_le_one ureal_lower_bound ureal_upper_bound)
+    apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+    apply (simp only: loop_body_altdef)
+    apply (expr_auto)
+    defer
+    apply (simp add: pzero_def rvfun_of_prfun_def ureal2real_0)
+  proof -
+    fix n::"\<nat>" and t::"\<nat>" and s::"S"
+    let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((if s\<^sub>v v\<^sub>0 = s1 \<and> d\<^sub>v v\<^sub>0 = o0 \<and> t\<^sub>v v\<^sub>0 = Suc (Suc t) then 1::\<real> else (0::\<real>)) * ureal2real p * ureal2real p +
+           (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> t\<^sub>v v\<^sub>0 = Suc (Suc t) then 1::\<real> else (0::\<real>)) * ureal2real p *
+           ((1::\<real>) - ureal2real p) +
+           (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> t\<^sub>v v\<^sub>0 = Suc (Suc t) then 1::\<real> else (0::\<real>)) * ((1::\<real>) - ureal2real p) *
+           ureal2real p +
+           (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o3 \<and> t\<^sub>v v\<^sub>0 = Suc (Suc t) then 1::\<real> else (0::\<real>)) * ((1::\<real>) - ureal2real p) *
+           ((1::\<real>) - ureal2real p)) *
+          ((if \<not> s\<^sub>v v\<^sub>0 = s4 then 1::\<real> else (0::\<real>)) * (ureal2real p) ^ ((2::\<nat>) * n)))"
+    have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state. ((if s\<^sub>v v\<^sub>0 = s1 \<and> d\<^sub>v v\<^sub>0 = o0 \<and> t\<^sub>v v\<^sub>0 = Suc (Suc t) then 1::\<real> else (0::\<real>)) * 
+            (ureal2real p *ureal2real p * (ureal2real p) ^ ((2::\<nat>) * n))))"
+      apply (rule infsum_cong)
+      by auto
+    then have f2: "... = (ureal2real p * ureal2real p * (ureal2real p) ^ ((2::\<nat>) * n))"
+      apply (subst infsum_constant_finite_states_cmult_1)
+      using singleton_set_finite' apply blast
+      by (simp add: singleton_set_simp)
+    show "?lhs = ureal2real p * (ureal2real p * ureal2real p ^ ((2::\<nat>) * n))"
+      by (simp only: f1 f2)
   qed
+qed
+
+lemma loop_body_iterdiff_tendsto_0:
+  assumes "p < 1"
+  shows "\<forall>s::state \<times> state. (\<lambda>n::\<nat>. ureal2real (iter\<^sub>d n (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+proof 
+  fix s
+  have "(\<lambda>n::\<nat>. ureal2real (iterdiff (n+1) (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    apply (subst loop_body_iterdiff_simp)
+    apply (simp add: prfun_of_rvfun_def)
+    apply (expr_auto)
+    apply (subst real2ureal_inverse)
+    apply (simp add: ureal_upper_bound)
+    apply (simp add: power_le_one ureal_lower_bound ureal_upper_bound)
+    apply (subgoal_tac "(\<lambda>n::\<nat>. (ureal2real p ^ 2) ^ n) \<longlonglongrightarrow> (0::\<real>)")
+    apply (simp add: power_mult)
+    apply (subst LIMSEQ_realpow_zero)
+    using zero_le_power2 apply blast
+    using assms
+    apply (metis abs_square_less_1 less_eq_real_def linorder_not_less real_sqrt_abs real_sqrt_unique ureal2real_mono_strict ureal_lower_bound ureal_upper_bound)
+    apply (simp)
+    by (simp add: real2ureal_inverse)
+  then show "(\<lambda>n::\<nat>. ureal2real (iter\<^sub>d n (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    by (rule LIMSEQ_offset[where k = 1])
+qed
+
+theorem dice_loop_simp: 
+  assumes "p < 1"
+  shows "dice_loop p = prfun_of_rvfun (Ht p)"
+  apply (simp add: dice_loop_def)
+  apply (subst unique_fixed_point_lfp_gfp_finite_final'[where fp = "prfun_of_rvfun (Ht p)"])
+  apply (simp add: loop_body_is_dist)
+  apply (simp add: loop_body_altdef')
+  apply (simp add: rvfun_ge_zero)
+  apply pred_auto
+  prefer 3
+  using Ht_is_fp apply presburger
+  prefer 3
+  apply simp
+  defer
+  using assms loop_body_iterdiff_tendsto_0 apply blast
+proof -
+  fix t :: "nat"
+  let ?lhs = "{s'::state.
+         (s\<^sub>v s' = s1 \<and> d\<^sub>v s' = o0 \<and> t\<^sub>v s' = Suc (Suc t) \<longrightarrow> (0::\<real>) < ureal2real p * ureal2real p) \<and>
+         (
+            (d\<^sub>v s' = o0 \<longrightarrow> s\<^sub>v s' = s1 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+            (s\<^sub>v s' = s4 \<and> d\<^sub>v s' = o1 \<and> t\<^sub>v s' = Suc (Suc t) \<longrightarrow> (0::\<real>) < ureal2real p * ((1::\<real>) - ureal2real p)) \<and>
+            (
+              (d\<^sub>v s' = o1 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+              (s\<^sub>v s' = s4 \<and> d\<^sub>v s' = o2 \<and> t\<^sub>v s' = Suc (Suc t) \<longrightarrow> (0::\<real>) < ((1::\<real>) - ureal2real p) * ureal2real p) \<and>
+              (
+                (d\<^sub>v s' = o2 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+                (s\<^sub>v s' = s4 \<and> d\<^sub>v s' = o3 \<and> t\<^sub>v s' = Suc (Suc t) \<longrightarrow> (0::\<real>) < ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)) 
+                \<and> d\<^sub>v s' = o3 \<and> s\<^sub>v s' = s4 \<and> t\<^sub>v s' = Suc (Suc t)
+              )
+            )
+        )
+       }"
+  have set_p_0: "{s'::state.
+    (d\<^sub>v s' = o0 \<longrightarrow> s\<^sub>v s' = s1 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<and>
+    ((d\<^sub>v s' = o0 \<longrightarrow> s\<^sub>v s' = s1 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+     (d\<^sub>v s' = o1 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<and>
+     ((d\<^sub>v s' = o1 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+      (d\<^sub>v s' = o2 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<and>
+      ((d\<^sub>v s' = o2 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow> d\<^sub>v s' = o3 \<and> s\<^sub>v s' = s4 \<and> t\<^sub>v s' = Suc (Suc t))))}
+    = {s'::state.  d\<^sub>v s' = o3 \<and> s\<^sub>v s' = s4 \<and> t\<^sub>v s' = Suc (Suc t)}"
+    by fastforce
+  have set_p_1: "{s'::state.
+      (d\<^sub>v s' = o0 \<longrightarrow> s\<^sub>v s' = s1 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+      (d\<^sub>v s' = o1 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<and>
+      ((d\<^sub>v s' = o1 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+       (d\<^sub>v s' = o2 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<and>
+       ((d\<^sub>v s' = o2 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+        (d\<^sub>v s' = o3 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<and> d\<^sub>v s' = o3 \<and> s\<^sub>v s' = s4 \<and> t\<^sub>v s' = Suc (Suc t)))} 
+    =  {s'::state. d\<^sub>v s' = o0 \<and> s\<^sub>v s' = s1 \<and> t\<^sub>v s' = Suc (Suc t)}"
+    by auto
+  have set_p_0_1: "{s'::state.
+      (d\<^sub>v s' = o0 \<longrightarrow> s\<^sub>v s' = s1 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+      (d\<^sub>v s' = o1 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow>
+      (d\<^sub>v s' = o2 \<longrightarrow> s\<^sub>v s' = s4 \<longrightarrow> \<not> t\<^sub>v s' = Suc (Suc t)) \<longrightarrow> d\<^sub>v s' = o3 \<and> s\<^sub>v s' = s4 \<and> t\<^sub>v s' = Suc (Suc t)}
+    = {s'::state. (d\<^sub>v s' = o0 \<and> s\<^sub>v s' = s1 \<and> t\<^sub>v s' = Suc (Suc t)) \<or>
+        (d\<^sub>v s' = o1 \<and> s\<^sub>v s' = s4 \<and> t\<^sub>v s' = Suc (Suc t)) \<or>
+        (d\<^sub>v s' = o2 \<and> s\<^sub>v s' = s4 \<and> t\<^sub>v s' = Suc (Suc t)) \<or> 
+         d\<^sub>v s' = o3 \<and> s\<^sub>v s' = s4 \<and> t\<^sub>v s' = Suc (Suc t)}"
+    by fastforce
+  have set_p_0_1': "... = {\<lparr>t\<^sub>v = Suc (Suc t), s\<^sub>v = s1, d\<^sub>v = o0\<rparr>, \<lparr>t\<^sub>v = Suc (Suc t), s\<^sub>v = s4, d\<^sub>v = o1\<rparr>, 
+               \<lparr>t\<^sub>v = Suc (Suc t), s\<^sub>v = s4, d\<^sub>v = o2\<rparr>, \<lparr>t\<^sub>v = Suc (Suc t), s\<^sub>v = s4, d\<^sub>v = o3\<rparr>}"
+    apply (simp add: Collect_disj_eq)
+    by (smt (verit, ccfv_SIG) Collect_cong Set.empty_def Suc_n_not_le_n Un_empty Un_insert_left 
+        Un_insert_right card.empty card_1_singleton_iff finite.simps finite_insert mem_Collect_eq 
+        not_less_eq_eq set_p_1 singletonD singleton_conv singleton_conv2 singleton_set_simp sup_bot_left)
+  show "finite ?lhs"
+    proof (cases "p = 0")
+      case True
+      then show ?thesis 
+        apply (simp add: ureal2real_0 set_p_0)
+        by (metis (no_types, lifting) Collect_cong singleton_set_finite')
+    next
+      assume False: "\<not> p = (0::ureal)"
+      then show ?thesis 
+        proof (cases "p = 1")
+          case True
+          then show ?thesis 
+          apply (simp add: ureal2real_1 set_p_1)
+          by (metis (no_types, lifting) Collect_cong singleton_set_finite')
+        next
+          assume FFalse: "\<not> p = (1::ureal)"
+          from False FFalse have f1: "((0::\<real>) < ureal2real p * ureal2real p)"
+            by (metis not_real_square_gt_zero ureal2real_0 ureal2real_inverse)
+          from False FFalse have f2: "(0::\<real>) < ureal2real p * ((1::\<real>) - ureal2real p)"
+            by (metis diff_gt_0_iff_gt dual_order.eq_iff f1 linorder_not_le ureal2real_1 ureal2real_inverse ureal_lower_bound ureal_upper_bound zero_less_mult_iff)
+          from False FFalse have f3: "(0::\<real>) < ((1::\<real>) - ureal2real p) * ureal2real p"
+            by (metis diff_gt_0_iff_gt dual_order.eq_iff f1 linorder_not_le ureal2real_1 ureal2real_inverse ureal_lower_bound ureal_upper_bound zero_less_mult_iff)
+          from False FFalse have f4: "(0::\<real>) < ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)"
+            by (metis f2 zero_less_mult_iff)
+          from f1 f2 f3 f4 show ?thesis
+            apply (auto)
+            by (simp add: set_p_0_1 set_p_0_1')
+        qed
+    qed
+  qed
+
+  term "((s,d) := (s1,o0)):: state prhfun"
 
 end
