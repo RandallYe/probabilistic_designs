@@ -595,10 +595,10 @@ subsection \<open> Series \<close>
 
 lemma summable_n_2_power_n: 
   "summable (\<lambda>n::\<nat>. (n / (2::\<real>)^n))" (is "summable ?f")
-  (* n:                   0, 1,   2,   3,   4 *)
-  (* n/2^n                0, 1/2, 2/4, 3/8, 4/16 *)
-  (* (n+1)/(2^(n+1)):   1/2, 2/4, 3/8, 4/6, 5/8, ... *)
-  (* ratio ((n+1)/2*n):   x, 1,   3/4, 4/6, 5/8, ... *)
+  (* n:                             0, 1,   2,   3,   4 *)
+  (* a(n)   = n/2^n                 0, 1/2, 2/4, 3/8, 4/16 *)
+  (* a(n+1) = (n+1)/(2^(n+1)):    1/2, 2/4, 3/8, 4/6, 5/8, ... *)
+  (* ratio a(n+1)/a(n) = (n+1)/2n:  x, 1,   3/4, 4/6, 5/8, ... *)
   apply (subst summable_ratio_test[where c="3/4" and N="3"])
   apply auto
 proof -
@@ -676,6 +676,125 @@ proof -
     apply (simp add: power_divide)
     using summable_n_2_power_n apply blast
     by simp
+qed
+
+lemma summable_n_r_power_n: 
+  (* n:                                0, 1,    2,   3,   4 *)
+  (* a(n)   = n/r^n                    0, 1/r, 2/r^2, 3/r^3, 4/16 *)
+  (* a(n+1) = (n+1)/r^(n+1):              1/r, 2/r^2, 3/r^3, 4/r^4, 5/8, ... *)
+  (* ratio r(n) = a(n+1)/a(n) = (n+1)/rn:   -,  2/r,    3/2r, 4/3r, 5/8, ... *)
+  fixes r :: real
+  assumes "r > 1"
+  shows "summable (\<lambda>n::\<nat>. ((real n) / (r)^n))" (is "summable ?f")
+  apply (subst summable_ratio_test[where c = "((nat \<lfloor>(2.0 * r - 1)/(r - 1)\<rfloor>) + 1) / (r * (nat \<lfloor>(2 * r - 1)/(r - 1)\<rfloor>)) " 
+         and N="nat \<lfloor>(2*r-1)/(r-1)\<rfloor>"])
+  apply auto
+proof -
+  have N_lg_0: "(nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>) > 0"
+    using assms by force
+  have N_1: "(2 * r - 1) / (r - 1) = 1 + r / (r - 1)"
+    by (smt (verit, best) assms diff_divide_distrib right_inverse_eq)
+  have N_2: "(nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>) > r / (r - 1)"
+    using N_1 by linarith
+  have c_1: "(1 + real (nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>)) - (r * real (nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>))
+    = (1 - (r - 1) * real (nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>))"
+    by (simp add: left_diff_distrib)
+  have c_2: "... < 0"
+    by (smt (verit, ccfv_SIG) N_2 assms diff_divide_distrib divide_less_eq_1_pos nonzero_mult_div_cancel_left)
+  show "(1 + real (nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>)) / (r * real (nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>)) < 1"
+    using c_1 c_2 by force
+next
+  fix n::\<nat>
+  let ?n = "nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>"
+  assume a1: "?n \<le> n"
+  (* (1 + real n) / \<bar>r * r ^ n\<bar> \<le> (1 + real ?n) * real n / (r * real (?n) * \<bar>r ^ n\<bar>) 
+  = (1 + real n) * (r * real (?n) * r ^ n)  \<le> (1 + real ?n) * real n * (r * r ^ n)
+  = (1 + real n) * r * real ?n * r ^n \<le> (1+real ?n) * real n * r * r ^ n
+  = (1 + real n) * real ?n \<le> (1+real ?n) * real n
+  *)
+  have f0: "?n \<ge> 1"
+    using assms le_nat_floor by fastforce
+  then have f0': "(r * real (?n) * r ^ n) \<ge> 1"
+    by (smt (verit, ccfv_SIG) assms divide_less_eq_1 nonzero_mult_div_cancel_left of_nat_1 of_nat_mono one_le_power)
+  from a1 have f1: "real ?n \<le> real n"
+    using of_nat_le_iff by blast
+  then have f2: "real ?n + real n * real ?n \<le> real n +real ?n * real n"
+    by auto
+  then have f3: "(1 + real n) * real ?n \<le> (1+real ?n) * real n"
+    by (metis (mono_tags, opaque_lifting) of_nat_Suc of_nat_add of_nat_mult times_nat.simps(2))
+  then have f4: "(1 + real n) * real ?n * r *  r ^n \<le> (1+real ?n) * real n * r * r ^ n"
+    using assms by auto
+  then have f5: "(1 + real n) * (r * real (?n) * r ^ n)  \<le> (1 + real ?n) * real n * (r * r ^ n)"
+    by (simp add: mult.assoc mult.left_commute)
+  then have f6: "(1 + real n) * (r * real (?n) * r ^ n) / (r * r ^ n) \<le> (1 + real ?n) * real n"
+    using assms by force
+  then have f7: "((1 + real n) * (r * real (?n) * r ^ n) / (r * r ^ n)) / (r * real (?n) * r ^ n) 
+               \<le> (1 + real ?n) * real n / (r * real (?n) * r ^ n) "
+    using f0 f0' assms by (smt (verit, best) divide_less_cancel)
+  then have f8: "((1 + real n) / (r * r ^ n)) \<le> (1 + real ?n) * real n / (r * real (?n) * r ^ n) "
+    by (smt (verit) f0' mult.commute nonzero_mult_div_cancel_left times_divide_eq_right)
+  show "(1 + real n) / \<bar>r * r ^ n\<bar> \<le> (1 + real ?n) * real n / (r * real (?n) * \<bar>r ^ n\<bar>)"
+    apply (subst abs_of_nonneg)
+    using assms apply force
+    apply (subst abs_of_nonneg)
+    using assms apply force
+    using f8 by blast
+qed
+
+lemma summable_n_r_power_n_mult: 
+  fixes r :: real
+  assumes "r > 1"
+  shows "summable (\<lambda>n::\<nat>. ((real n) * (1/r)^n))" (is "summable ?f")
+  apply (subgoal_tac "summable (\<lambda>n::\<nat>. ((real n) / (r)^n))")
+  apply (subst summable_cong[where g="(\<lambda>n::\<nat>. ((real n) / (r)^n))"])
+  apply (metis (mono_tags, lifting) always_eventually divide_inverse mult_1 power_one_over)
+  apply simp
+  apply (rule summable_n_r_power_n)
+  using assms by simp
+
+lemma summable_n_r_power_n_add_c: 
+  fixes r :: real
+  assumes "r > 1"
+  shows "summable (\<lambda>n::\<nat>. ((real n + c) / (r)^n))" (is "summable ?f")
+  apply (subgoal_tac "summable (\<lambda>n::\<nat>. ((real n) / (r)^n) + c / (r ^ n))")
+  apply (subst summable_cong[where g="(\<lambda>n::\<nat>. ((real n) / (r)^n) + c / (r ^ n))"])
+  apply (simp add: add_divide_distrib)
+  apply simp
+  apply (rule summable_add)
+  apply (simp add: assms summable_n_r_power_n)
+  apply (subgoal_tac "summable (\<lambda>n. c * (1/r) ^ n)")
+  apply (subst summable_cong[where g="(\<lambda>n. c * (1/r) ^ n)"])
+  apply (metis (mono_tags, lifting) divide_inverse eventually_at_top_dense mult_1 power_one_over)
+  apply simp
+  apply (subst summable_mult)
+  using assms summable_geometric by auto
+
+lemma summable_n_r_power_n_add_c_mult: 
+  fixes r :: real
+  assumes "r > 1"
+  shows "summable (\<lambda>n::\<nat>. ((real n + c) * (1/r)^n))" (is "summable ?f")
+  apply (subgoal_tac "summable (\<lambda>n::\<nat>. ((real n + c) / (r)^n))")
+  apply (subst summable_cong[where g="(\<lambda>n::\<nat>. ((real n + c) / (r)^n))"])
+  apply (simp add: power_one_over)
+  apply simp
+  by (simp add: assms summable_n_r_power_n_add_c)
+
+lemma summable_n_r_power_n_add_c_mult': 
+  fixes r :: real
+  assumes "r \<ge> 0" "r < 1"
+  shows "summable (\<lambda>n::\<nat>. ((real n + c) * r^n))" (is "summable ?f")
+proof (cases "r = 0")
+  case True
+  then show ?thesis by simp
+next
+  case False
+  then show ?thesis 
+    apply (subgoal_tac "summable (\<lambda>n::\<nat>. ((real n + c) / (1/r)^n))")
+    apply (subst summable_cong[where g="(\<lambda>n::\<nat>. ((real n + c) / (1/r)^n))"])
+    apply (simp add: power_one_over)
+    apply simp
+    apply (subst summable_n_r_power_n_add_c)
+    using assms by simp+
 qed
 
 end

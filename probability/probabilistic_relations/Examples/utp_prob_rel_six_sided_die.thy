@@ -51,7 +51,7 @@ definition dice_loop :: "ureal \<Rightarrow> state prhfun" where
 "dice_loop p = while\<^sub>p (\<not> s\<^sup>< = s4)\<^sub>e do  loop_body p od"
 
 definition dice :: "ureal \<Rightarrow> state prhfun" where 
-"dice p = s := s1 ; d := o0; t := 0; dice_loop p"
+"dice p = ((s,d,t) := (s1, o0, 0)) ; dice_loop p"
 
 definition Ht :: "ureal \<Rightarrow> state rvhfun" where 
 "Ht p = (
@@ -921,6 +921,451 @@ proof -
     qed
   qed
 
-  term "((s,d) := (s1,o0)):: state prhfun"
+lemma "((s,d) := (s1, o0)) = ((s := s1; d := o0):: state prhfun)"
+  apply (simp add: prfun_seqcomp_left_one_point)
+  apply (expr_simp_1 add: pfun_defs)
+  apply (subst rvfun_inverse)
+  apply (metis (no_types) SEXP_def is_prob_ibracket iverson_bracket_def)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"]) 
+  by (pred_auto)
+
+text \<open> From the semantics below, we observe that the distributions for @{text "o1"} and @{text "o2"} are the same, but 
+that of @{text "o3"} is different. \<close>
+theorem dice_simp:
+  assumes "p < 1"
+  shows "(dice p) =  prfun_of_rvfun (
+      \<lbrakk>s\<^sup>> = \<guillemotleft>s4\<guillemotright> \<and> d\<^sup>> = \<guillemotleft>o1\<guillemotright> \<and> t\<^sup>> \<ge> 2 \<and> (t\<^sup>>) mod 2 = 0\<rbrakk>\<^sub>\<I>\<^sub>e * 
+        (ureal2real \<guillemotleft>p\<guillemotright>) ^ ((t\<^sup>> - 2)) * ureal2real \<guillemotleft>p\<guillemotright> * (1 - ureal2real \<guillemotleft>p\<guillemotright>) +
+      \<lbrakk>s\<^sup>> = \<guillemotleft>s4\<guillemotright> \<and> d\<^sup>> = \<guillemotleft>o2\<guillemotright> \<and> t\<^sup>> \<ge> 2 \<and> (t\<^sup>>) mod 2 = 0\<rbrakk>\<^sub>\<I>\<^sub>e * 
+        (ureal2real \<guillemotleft>p\<guillemotright>) ^ ((t\<^sup>> - 2)) * (1 - ureal2real \<guillemotleft>p\<guillemotright>) * ureal2real \<guillemotleft>p\<guillemotright> +
+      \<lbrakk>s\<^sup>> = \<guillemotleft>s4\<guillemotright> \<and> d\<^sup>> = \<guillemotleft>o3\<guillemotright> \<and> t\<^sup>> \<ge> 2 \<and> (t\<^sup>>) mod 2 = 0\<rbrakk>\<^sub>\<I>\<^sub>e * 
+        (ureal2real \<guillemotleft>p\<guillemotright>) ^ ((t\<^sup>> - 2)) * (1 - ureal2real \<guillemotleft>p\<guillemotright>) * (1 - ureal2real \<guillemotleft>p\<guillemotright>)
+    )\<^sub>e"
+  apply (simp add: dice_def dice_loop_simp assms)
+  apply (simp add: pseqcomp_def)
+  apply (subst rvfun_inverse)
+  apply (simp add: Ht_def)
+  apply (expr_auto)
+  apply (simp only: is_prob_def taut_def SEXP_def, rule allI, rule conjI)
+  apply (smt (verit, del_insts) mult_nonneg_nonneg ureal_lower_bound ureal_upper_bound zero_le_power)
+  apply (smt (verit) D.distinct(11) D.distinct(7) D.distinct(9) SEXP_def mult_eq_0_iff mult_le_one mult_nonneg_nonneg ureal2real_power_dist ureal_lower_bound ureal_upper_bound)
+  apply (simp add: Ht_def)
+  apply (expr_simp_1 add: rvfun_of_prfun_def passigns_def)
+  apply (rule HOL.arg_cong[where f="prfun_of_rvfun"])
+  apply (simp add: prfun_of_rvfun_def)
+  apply (simp add: assigns_r_def)
+  apply (subst real2ureal_inverse)
+  apply simp+
+  apply (subst fun_eq_iff)
+  apply (rule allI)
+proof -
+  fix x::"state \<times> state"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          (if v\<^sub>0 = put\<^bsub>s\<^esub> (put\<^bsub>d\<^esub> (put\<^bsub>t\<^esub> (fst x) (0::\<nat>)) o0) s1 then 1::\<real> else (0::\<real>)) *
+          ((if \<not> get\<^bsub>s\<^esub> v\<^sub>0 = s4 then 1::\<real> else (0::\<real>)) *
+           ((if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o1 \<and> Suc (Suc (get\<^bsub>t\<^esub> v\<^sub>0)) \<le> get\<^bsub>t\<^esub> (snd x) \<and> (get\<^bsub>t\<^esub> (snd x) - get\<^bsub>t\<^esub> v\<^sub>0) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+            ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - Suc (Suc (get\<^bsub>t\<^esub> v\<^sub>0))) *  ureal2real p * ((1::\<real>) - ureal2real p) +
+            (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o2 \<and> Suc (Suc (get\<^bsub>t\<^esub> v\<^sub>0)) \<le> get\<^bsub>t\<^esub> (snd x) \<and> (get\<^bsub>t\<^esub> (snd x) - get\<^bsub>t\<^esub> v\<^sub>0) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+            ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - Suc (Suc (get\<^bsub>t\<^esub> v\<^sub>0))) * ((1::\<real>) - ureal2real p) * ureal2real p +
+            (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o3 \<and> Suc (Suc (get\<^bsub>t\<^esub> v\<^sub>0)) \<le> get\<^bsub>t\<^esub> (snd x) \<and> (get\<^bsub>t\<^esub> (snd x) - get\<^bsub>t\<^esub> v\<^sub>0) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+            ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - Suc (Suc (get\<^bsub>t\<^esub> v\<^sub>0))) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)) +
+           (if get\<^bsub>s\<^esub> v\<^sub>0 = s4 \<and> get\<^bsub>s\<^esub> (snd x) = get\<^bsub>s\<^esub> v\<^sub>0 \<and> get\<^bsub>d\<^esub> (snd x) = get\<^bsub>d\<^esub> v\<^sub>0 \<and> get\<^bsub>t\<^esub> (snd x) = get\<^bsub>t\<^esub> v\<^sub>0 then 1::\<real> else (0::\<real>))))"
+
+  let ?rhs = " (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o1 \<and> (2::\<nat>) \<le> get\<^bsub>t\<^esub> (snd x) \<and> get\<^bsub>t\<^esub> (snd x) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+       ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - (2::\<nat>)) * ureal2real p *  ((1::\<real>) - ureal2real p) +
+       (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o2 \<and> (2::\<nat>) \<le> get\<^bsub>t\<^esub> (snd x) \<and> get\<^bsub>t\<^esub> (snd x) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+       ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ureal2real p +
+       (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o3 \<and> (2::\<nat>) \<le> get\<^bsub>t\<^esub> (snd x) \<and> get\<^bsub>t\<^esub> (snd x) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+       ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)"
+  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          (if v\<^sub>0 = put\<^bsub>s\<^esub> (put\<^bsub>d\<^esub> (put\<^bsub>t\<^esub> (fst x) (0::\<nat>)) o0) s1 then 1::\<real> else (0::\<real>)) *
+          (((if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o1 \<and> Suc (Suc 0) \<le> get\<^bsub>t\<^esub> (snd x) \<and> (get\<^bsub>t\<^esub> (snd x) - 0) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+            ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - Suc (Suc 0)) *  ureal2real p * ((1::\<real>) - ureal2real p) +
+            (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o2 \<and> Suc (Suc 0) \<le> get\<^bsub>t\<^esub> (snd x) \<and> (get\<^bsub>t\<^esub> (snd x) - 0) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+            ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - Suc (Suc 0)) * ((1::\<real>) - ureal2real p) * ureal2real p +
+            (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o3 \<and> Suc (Suc 0) \<le> get\<^bsub>t\<^esub> (snd x) \<and> (get\<^bsub>t\<^esub> (snd x) - 0) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+            ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - Suc (Suc 0)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p))))"
+    apply (rule infsum_cong)
+    by (pred_auto)
+  have f2: "... = (((if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o1 \<and> Suc (Suc 0) \<le> get\<^bsub>t\<^esub> (snd x) \<and> (get\<^bsub>t\<^esub> (snd x) - 0) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+            ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - Suc (Suc 0)) *  ureal2real p * ((1::\<real>) - ureal2real p) +
+            (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o2 \<and> Suc (Suc 0) \<le> get\<^bsub>t\<^esub> (snd x) \<and> (get\<^bsub>t\<^esub> (snd x) - 0) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+            ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - Suc (Suc 0)) * ((1::\<real>) - ureal2real p) * ureal2real p +
+            (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o3 \<and> Suc (Suc 0) \<le> get\<^bsub>t\<^esub> (snd x) \<and> (get\<^bsub>t\<^esub> (snd x) - 0) mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+            ureal2real p ^ (get\<^bsub>t\<^esub> (snd x) - Suc (Suc 0)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)))"
+    apply (subst infsum_constant_finite_states_cmult_1)
+    apply (pred_auto)
+    by (pred_auto)
+  show "?lhs = ?rhs"
+    apply (simp only: f1 f2)
+    apply (simp only: numeral_2_eq_2)
+    by (auto)
+qed
+
+theorem dice_correctness_o1:
+  assumes "p < 1"
+  shows "(rvfun_of_prfun (dice p)) ; \<lbrakk>d\<^sup>< = o1\<rbrakk>\<^sub>\<I>\<^sub>e = 
+    (ureal2real \<guillemotleft>p\<guillemotright> * ((1::\<real>) - ureal2real \<guillemotleft>p\<guillemotright>) / (1 - (ureal2real \<guillemotleft>p\<guillemotright>)^2))\<^sub>e"
+  apply (simp only: assms dice_simp)
+  apply (subst rvfun_inverse)
+  apply (simp add: dist_defs)
+  apply (expr_simp_1)
+  apply (simp add: mult_le_one power_le_one_iff ureal_lower_bound ureal_upper_bound)
+  apply (expr_auto)
+proof -
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+       ((if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ureal2real p * ((1::\<real>) - ureal2real p) +
+        (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ureal2real p +
+        (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o3 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)) *
+       (if d\<^sub>v v\<^sub>0 = o1 then 1::\<real> else (0::\<real>)))"
+  have f1: "(\<lambda>n::\<nat>. \<bar>(ureal2real p)\<^sup>2 ^ n * ureal2real p * ((1::\<real>) - ureal2real p)\<bar>) = 
+            (\<lambda>n::\<nat>. (ureal2real p)\<^sup>2 ^ n * ureal2real p * ((1::\<real>) - ureal2real p))"
+    by (meson abs_of_nonneg ge_iff_diff_ge_0 mult_nonneg_nonneg ureal_lower_bound ureal_upper_bound zero_le_power)
+
+  have f2: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+        ((if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ureal2real p * ((1::\<real>) - ureal2real p)))"
+    apply (rule infsum_cong)
+    by force
+  have f3: "... = infsum (\<lambda>v\<^sub>0::state. ureal2real p ^ (t\<^sub>v v\<^sub>0 - 2) * ureal2real p * ((1::\<real>) - ureal2real p))
+    ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = s4, d\<^sub>v = o1\<rparr>) ` UNIV)"
+    apply (rule infsum_cong_neutral)
+    apply blast
+    defer
+    apply (pred_auto)
+    apply (pred_auto add: image_def)
+    by (metis One_nat_def Suc_1 Suc_leD Suc_le_eq even_Suc gr0_conv_Suc odd_Suc_minus_one odd_two_times_div_two_nat)
+  have f4: "... = infsum (\<lambda>n::\<nat>. ((ureal2real p ^ 2) ^ n) * ureal2real p * ((1::\<real>) - ureal2real p)) UNIV"
+    apply (subst infsum_reindex)
+     apply (simp add: inj_def)
+    by (metis comp_apply diff_add_inverse2 power_mult time.select_convs(1))
+  have f5: "... = ureal2real p * ((1::\<real>) - ureal2real p) / (1 - (ureal2real p)^2)"
+    apply (subst infsetsum_infsum[symmetric])
+    apply (simp add: abs_summable_on_nat_iff')
+    apply (simp only: f1)
+    apply (simp add: mult.commute)
+    apply (meson linorder_not_less nle_le power2_nonneg_ge_1_iff ureal_lower_bound ureal_upper_bound)
+    apply (subst infsetsum_nat)
+    apply (simp add: abs_summable_on_nat_iff')
+    apply (simp only: f1)
+    apply (simp add: mult.commute)
+    apply (meson linorder_not_less nle_le power2_nonneg_ge_1_iff ureal_lower_bound ureal_upper_bound)
+    apply (auto)
+    apply (simp only: mult.commute)
+    apply (subst suminf_mult)
+    apply (subst summable_mult)
+    apply (subst summable_geometric)
+    apply (metis abs_of_nonneg abs_square_less_1 assms norm_power real_norm_def ureal2real_1 ureal2real_mono_strict ureal_lower_bound)
+    apply (simp)+
+    apply (subst suminf_mult)
+    apply (subst summable_geometric)
+    apply (metis abs_of_nonneg abs_square_less_1 assms norm_power real_norm_def ureal2real_1 ureal2real_mono_strict ureal_lower_bound)
+    apply (simp)
+    apply (subst suminf_geometric)
+    apply (metis abs_of_nonneg abs_square_less_1 assms norm_power real_norm_def ureal2real_1 ureal2real_mono_strict ureal_lower_bound)
+    by simp
+  show "?lhs = ureal2real p * ((1::\<real>) - ureal2real p) / ((1::\<real>) - (ureal2real p)\<^sup>2)"
+    using f2 f3 f4 f5 by presburger
+qed
+
+theorem dice_correctness_o2:
+  assumes "p < 1"
+  shows "(rvfun_of_prfun (dice p)) ; \<lbrakk>d\<^sup>< = o2\<rbrakk>\<^sub>\<I>\<^sub>e = 
+    (ureal2real \<guillemotleft>p\<guillemotright> * ((1::\<real>) - ureal2real \<guillemotleft>p\<guillemotright>) / (1 - (ureal2real \<guillemotleft>p\<guillemotright>)^2))\<^sub>e"
+  apply (simp only: assms dice_simp)
+  apply (subst rvfun_inverse)
+  apply (simp add: dist_defs)
+  apply (expr_simp_1)
+  apply (simp add: mult_le_one power_le_one_iff ureal_lower_bound ureal_upper_bound)
+  apply (expr_auto)
+proof -
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+       ((if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ureal2real p * ((1::\<real>) - ureal2real p) +
+        (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ureal2real p +
+        (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o3 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)) *
+       (if d\<^sub>v v\<^sub>0 = o2 then 1::\<real> else (0::\<real>)))"
+  have f1: "(\<lambda>n::\<nat>. \<bar>(ureal2real p)\<^sup>2 ^ n * ureal2real p * ((1::\<real>) - ureal2real p)\<bar>) = 
+            (\<lambda>n::\<nat>. (ureal2real p)\<^sup>2 ^ n * ureal2real p * ((1::\<real>) - ureal2real p))"
+    by (meson abs_of_nonneg ge_iff_diff_ge_0 mult_nonneg_nonneg ureal_lower_bound ureal_upper_bound zero_le_power)
+
+  have f2: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+        ((if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ureal2real p * ((1::\<real>) - ureal2real p)))"
+    apply (rule infsum_cong)
+    by force
+  have f3: "... = infsum (\<lambda>v\<^sub>0::state. ureal2real p ^ (t\<^sub>v v\<^sub>0 - 2) * ureal2real p * ((1::\<real>) - ureal2real p))
+    ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = s4, d\<^sub>v = o2\<rparr>) ` UNIV)"
+    apply (rule infsum_cong_neutral)
+    apply blast
+    defer
+    apply (pred_auto)
+    apply (pred_auto add: image_def)
+    by (metis One_nat_def Suc_1 Suc_leD Suc_le_eq even_Suc gr0_conv_Suc odd_Suc_minus_one odd_two_times_div_two_nat)
+  have f4: "... = infsum (\<lambda>n::\<nat>. ((ureal2real p ^ 2) ^ n) * ureal2real p * ((1::\<real>) - ureal2real p)) UNIV"
+    apply (subst infsum_reindex)
+     apply (simp add: inj_def)
+    by (metis comp_apply diff_add_inverse2 power_mult time.select_convs(1))
+  have f5: "... = ureal2real p * ((1::\<real>) - ureal2real p) / (1 - (ureal2real p)^2)"
+    apply (subst infsetsum_infsum[symmetric])
+    apply (simp add: abs_summable_on_nat_iff')
+    apply (simp only: f1)
+    apply (simp add: mult.commute)
+    apply (meson linorder_not_less nle_le power2_nonneg_ge_1_iff ureal_lower_bound ureal_upper_bound)
+    apply (subst infsetsum_nat)
+    apply (simp add: abs_summable_on_nat_iff')
+    apply (simp only: f1)
+    apply (simp add: mult.commute)
+    apply (meson linorder_not_less nle_le power2_nonneg_ge_1_iff ureal_lower_bound ureal_upper_bound)
+    apply (auto)
+    apply (simp only: mult.commute)
+    apply (subst suminf_mult)
+    apply (subst summable_mult)
+    apply (subst summable_geometric)
+    apply (metis abs_of_nonneg abs_square_less_1 assms norm_power real_norm_def ureal2real_1 ureal2real_mono_strict ureal_lower_bound)
+    apply (simp)+
+    apply (subst suminf_mult)
+    apply (subst summable_geometric)
+    apply (metis abs_of_nonneg abs_square_less_1 assms norm_power real_norm_def ureal2real_1 ureal2real_mono_strict ureal_lower_bound)
+    apply (simp)
+    apply (subst suminf_geometric)
+    apply (metis abs_of_nonneg abs_square_less_1 assms norm_power real_norm_def ureal2real_1 ureal2real_mono_strict ureal_lower_bound)
+    by simp
+  show "?lhs = ureal2real p * ((1::\<real>) - ureal2real p) / ((1::\<real>) - (ureal2real p)\<^sup>2)"
+    using f2 f3 f4 f5 by presburger
+qed
+
+theorem dice_correctness_o3:
+  assumes "p < 1"
+  shows "(rvfun_of_prfun (dice p)) ; \<lbrakk>d\<^sup>< = o3\<rbrakk>\<^sub>\<I>\<^sub>e = 
+    (((1::\<real>) - ureal2real \<guillemotleft>p\<guillemotright>)^2 / (1 - (ureal2real \<guillemotleft>p\<guillemotright>)^2))\<^sub>e"
+  apply (simp only: assms dice_simp)
+  apply (subst rvfun_inverse)
+  apply (simp add: dist_defs)
+  apply (expr_simp_1)
+  apply (simp add: mult_le_one power_le_one_iff ureal_lower_bound ureal_upper_bound)
+  apply (expr_auto)
+proof -
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+       ((if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ureal2real p * ((1::\<real>) - ureal2real p) +
+        (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ureal2real p +
+        (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o3 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)) *
+       (if d\<^sub>v v\<^sub>0 = o3 then 1::\<real> else (0::\<real>)))"
+  have f1: "(\<lambda>n::\<nat>. \<bar>(ureal2real p)\<^sup>2 ^ n * ((1::\<real>) - ureal2real p)^2\<bar>) = 
+            (\<lambda>n::\<nat>. (ureal2real p)\<^sup>2 ^ n * ((1::\<real>) - ureal2real p)^2)"
+    by (meson abs_of_nonneg ge_iff_diff_ge_0 mult_nonneg_nonneg ureal_lower_bound ureal_upper_bound zero_le_power)
+
+  have f2: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+        ((if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o3 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+        ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)))"
+    apply (rule infsum_cong)
+    by force
+  have f3: "... = infsum (\<lambda>v\<^sub>0::state. ureal2real p ^ (t\<^sub>v v\<^sub>0 - 2) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p))
+    ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = s4, d\<^sub>v = o3\<rparr>) ` UNIV)"
+    apply (rule infsum_cong_neutral)
+    apply blast
+    defer
+    apply (pred_auto)
+    apply (pred_auto add: image_def)
+    by (metis One_nat_def Suc_1 Suc_leD Suc_le_eq even_Suc gr0_conv_Suc odd_Suc_minus_one odd_two_times_div_two_nat)
+  have f4: "... = infsum (\<lambda>n::\<nat>. ((ureal2real p ^ 2) ^ n) * ((1::\<real>) - ureal2real p)^2) UNIV"
+    apply (subst infsum_reindex)
+    apply (simp add: inj_def)
+    by (metis (no_types, lifting) comp_apply diff_add_inverse2 mult.assoc power2_eq_square power_mult time.select_convs(1))
+  have f5: "... = ((1::\<real>) - ureal2real p)^2 / (1 - (ureal2real p)^2)"
+    apply (subst infsetsum_infsum[symmetric])
+    apply (simp add: abs_summable_on_nat_iff')
+    apply (simp add: mult.commute)
+    apply (meson linorder_not_less nle_le power2_nonneg_ge_1_iff ureal_lower_bound ureal_upper_bound)
+    apply (subst infsetsum_nat)
+    apply (simp add: abs_summable_on_nat_iff')
+    apply (simp add: mult.commute)
+    apply (meson linorder_not_less nle_le power2_nonneg_ge_1_iff ureal_lower_bound ureal_upper_bound)
+    apply (auto)
+    apply (simp only: mult.commute)
+    apply (subst suminf_mult)
+    apply (subst summable_geometric)
+    apply (metis abs_of_nonneg abs_square_less_1 assms norm_power real_norm_def ureal2real_1 ureal2real_mono_strict ureal_lower_bound)
+    apply (simp)
+    apply (subst suminf_geometric)
+    apply (metis abs_of_nonneg abs_square_less_1 assms norm_power real_norm_def ureal2real_1 ureal2real_mono_strict ureal_lower_bound)
+    by simp
+  show "?lhs = ((1::\<real>) - ureal2real p)^2 / ((1::\<real>) - (ureal2real p)\<^sup>2)"
+    using f2 f3 f4 f5 by presburger
+qed
+
+lemma summable_p_power_n_mult_n:
+  assumes "p \<ge> 0" "p < 1"
+  shows "(\<lambda>v\<^sub>0::state. 
+    (if s\<^sub>v v\<^sub>0 = sx \<and> d\<^sub>v v\<^sub>0 = ox \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) 
+    * p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0)
+  ) summable_on UNIV"
+proof -
+  let ?lhs_1 = "(\<lambda>v\<^sub>0::state. 
+    (if s\<^sub>v v\<^sub>0 = sx \<and> d\<^sub>v v\<^sub>0 = ox \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) 
+    * p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0))"
+  have f1: "((\<lambda>v\<^sub>0::state. ?lhs_1 v\<^sub>0) summable_on UNIV) = 
+    ((\<lambda>v\<^sub>0::state. p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0)) summable_on ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = sx, d\<^sub>v = ox\<rparr>) ` UNIV))"
+    apply (rule summable_on_cong_neutral)
+    apply blast
+    apply (pred_auto add: image_def)
+    apply (metis Suc_le_D evenE even_Suc numeral_2_eq_2 odd_Suc_minus_one)
+    apply (simp add: image_def)
+    by (auto)
+  have f2: "... = ((\<lambda>n::\<nat>. (p ^ (2*n) * real (2*n+2))) summable_on UNIV)"
+    apply (subst summable_on_reindex[where h="(\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = sx, d\<^sub>v = ox\<rparr>)"])
+    apply (simp add: inj_on_def)
+    by (metis (mono_tags, lifting) comp_apply diff_add_inverse2 summable_on_cong time.select_convs(1))
+  have f3: "((\<lambda>n::\<nat>. (p ^ (2*n) * real (2*n+2))) summable_on UNIV) = 
+    ((\<lambda>n::\<nat>. (p ^ n * real (n+2))) summable_on ((\<lambda>n::\<nat>. 2*n) `UNIV))"
+    apply (subst summable_on_reindex[where h="(\<lambda>n::\<nat>. 2*n)"])
+    apply (simp add: inj_on_mult)
+    by (metis (mono_tags, lifting) comp_apply summable_on_cong)
+  have f4: "(Infinite_Sum.abs_summable_on (\<lambda>n::\<nat>. (p ^ n * real (n+2))) ((\<lambda>n::\<nat>. 2*n) `UNIV))
+    \<longrightarrow> ((\<lambda>n::\<nat>. (p ^ n * real (n+2))) summable_on ((\<lambda>n::\<nat>. 2*n) `UNIV))"
+    using abs_summable_summable by force
+  have f5: "(Infinite_Sum.abs_summable_on (\<lambda>n::\<nat>. (p ^ n * real (n+2))) ((\<lambda>n::\<nat>. 2*n) `UNIV))"
+    apply (subst abs_summable_equivalent)
+    apply (subst abs_summable_on_subset[where B="UNIV"])
+    defer
+    apply simp+
+    apply (simp add: abs_summable_on_nat_iff')
+    apply (subst abs_of_nonneg)
+    apply (simp add: assms)
+    apply (simp add: add.commute)
+    apply (subst mult.commute)
+    apply (subst summable_n_r_power_n_add_c_mult')
+    using assms by simp+
+  show ?thesis
+    using f1 f2 f3 f4 f5 by presburger
+qed
+
+lemma summable_p_power_n_mult_n_cmult:
+  assumes "p \<ge> 0" "p < 1"
+  shows "(\<lambda>v\<^sub>0::state. 
+    (if s\<^sub>v v\<^sub>0 = sx \<and> d\<^sub>v v\<^sub>0 = ox \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) 
+    * p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (q)
+  ) summable_on UNIV"
+  apply (rule summable_on_cmult_left)
+  using summable_p_power_n_mult_n assms(1) assms(2) by presburger
+
+
+lemma  
+  fixes r :: real
+  assumes "r < 1" "r \<ge> 0"
+  shows "(\<Sum>\<^sub>\<infinity>n::nat. r^n * (real n)) = 1"
+proof -
+  have "summable (\<lambda>n::nat. r^n * (real n))"
+    sledgehammer
+
+lemma 
+  assumes "p \<ge> 0" "p < 1"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state. (if s\<^sub>v v\<^sub>0 = sx \<and> d\<^sub>v v\<^sub>0 = ox \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) 
+          then 1::\<real> else (0::\<real>)) * p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * q) = 1"
+proof -
+  let ?lhs_1 = "(\<lambda>v\<^sub>0::state. 
+    (if s\<^sub>v v\<^sub>0 = sx \<and> d\<^sub>v v\<^sub>0 = ox \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) 
+    * p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0))"
+  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state. ?lhs_1 v\<^sub>0) = 
+      infsum (\<lambda>v\<^sub>0::state. p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0)) ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = sx, d\<^sub>v = ox\<rparr>) ` UNIV)"
+    apply (rule infsum_cong_neutral)
+    apply blast
+    apply (pred_auto add: image_def)
+    apply (metis Suc_le_D evenE even_Suc numeral_2_eq_2 odd_Suc_minus_one)
+    apply (simp add: image_def)
+    by (auto)
+  have f2: "... = infsum (\<lambda>n::\<nat>. (p ^ (2*n) * real (2*n+2))) UNIV"
+    apply (subst infsum_reindex[where h="(\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = sx, d\<^sub>v = ox\<rparr>)"])
+    apply (simp add: inj_on_def)
+    by (metis (no_types, lifting) comp_apply diff_add_inverse2 time.select_convs(1))
+  have f3: "... = infsum (\<lambda>n::\<nat>. (p ^ n * real (n+2))) ((\<lambda>n::\<nat>. 2*n) `UNIV)"
+    apply (subst infsum_reindex[where h="(\<lambda>n::\<nat>. 2*n)"])
+    apply (simp add: inj_on_mult)
+    by (metis (no_types, lifting) comp_apply)
+  have f4: "... = 1"
+    apply (subst infsetsum_infsum[symmetric])
+    apply (subst abs_summable_on_subset[where B="UNIV"])
+    apply (simp add: abs_summable_on_nat_iff')
+    apply (subst abs_of_nonneg)
+    apply (simp add: assms)
+    defer
+    apply simp+
+    defer
+    apply (simp add: add.commute)
+    apply (subst mult.commute)
+    apply (subst summable_n_r_power_n_add_c_mult')
+    using assms apply simp+
+    
+  show ?thesis
+    apply (subst infsum_cmult_left)
+    using assms(1) assms(2) summable_p_power_n_mult_n apply blast
+  qed
+
+(*
+(\<lambda>v\<^sub>0::state. ureal2real p ^ (t\<^sub>v v\<^sub>0 - 2) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p))
+    ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = s4, d\<^sub>v = o3\<rparr>) ` UNIV)
+*)
+
+theorem dice_expected_runtime: 
+  assumes "p < 1"
+  shows "rvfun_of_prfun (dice p) ; (\<guillemotleft>real\<guillemotright> (t\<^sup><))\<^sub>e = ((t\<^sup>< + 1/ureal2real \<guillemotleft>p\<guillemotright>))\<^sub>e"
+  apply (simp only: assms dice_simp)
+  apply (subst rvfun_inverse)
+  apply (simp add: dist_defs)
+  apply (expr_simp_1)
+  apply (simp add: mult_le_one power_le_one_iff ureal_lower_bound ureal_upper_bound)
+  apply (expr_auto)
+proof - 
+  fix t :: "nat"
+  let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+           ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ureal2real p * ((1::\<real>) - ureal2real p) +
+           (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+           ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ureal2real p +
+           (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o3 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+           ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)) * real (t\<^sub>v v\<^sub>0))"
+  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          ((if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+           ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (ureal2real p * ((1::\<real>) - ureal2real p)) +
+           (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+           ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (((1::\<real>) - ureal2real p) * ureal2real p) +
+           (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o3 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+           ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p))))"
+    apply (rule infsum_cong)
+    by force
+  have f2: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+          (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+           ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (ureal2real p * ((1::\<real>) - ureal2real p))) +
+     (\<Sum>\<^sub>\<infinity>v\<^sub>0::state. (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+     ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (((1::\<real>) - ureal2real p) * ureal2real p)) +
+     (\<Sum>\<^sub>\<infinity>v\<^sub>0::state. (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o3 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
+     ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)))"
+    apply (subst infsum_add)
+    apply (subst summable_on_add)
+    apply (subst summable_p_power_n_mult_n_cmult)
+    using assms apply (simp add: ureal_lower_bound)
+    using assms ureal2real_1 ureal2real_mono_strict apply fastforce+
+    apply (subst summable_p_power_n_mult_n_cmult)
+    using assms apply (simp add: ureal_lower_bound)
+    using assms ureal2real_1 ureal2real_mono_strict apply fastforce+
+    apply (subst summable_p_power_n_mult_n_cmult)
+    using assms apply (simp add: ureal_lower_bound)
+    using assms ureal2real_1 ureal2real_mono_strict apply fastforce+
+    apply (subst infsum_add)
+    apply (subst summable_p_power_n_mult_n_cmult)
+    using assms apply (simp add: ureal_lower_bound)
+    using assms ureal2real_1 ureal2real_mono_strict apply fastforce+
+    apply (subst summable_p_power_n_mult_n_cmult)
+    using assms apply (simp add: ureal_lower_bound)
+    using assms ureal2real_1 ureal2real_mono_strict by fastforce+
+qed
 
 end
