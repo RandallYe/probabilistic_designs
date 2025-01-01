@@ -1257,15 +1257,6 @@ lemma summable_p_power_n_mult_n_cmult:
   apply (rule summable_on_cmult_left)
   using summable_p_power_n_mult_n assms(1) assms(2) by presburger
 
-
-lemma  
-  fixes r :: real
-  assumes "r < 1" "r \<ge> 0"
-  shows "(\<Sum>\<^sub>\<infinity>n::nat. r^n * (real n)) = 1"
-proof -
-  have "summable (\<lambda>n::nat. r^n * (real n))"
-    sledgehammer
-
 lemma 
   assumes "p \<ge> 0" "p < 1"
   shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state. (if s\<^sub>v v\<^sub>0 = sx \<and> d\<^sub>v v\<^sub>0 = ox \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) 
