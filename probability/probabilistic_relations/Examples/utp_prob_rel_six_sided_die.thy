@@ -12,6 +12,7 @@ The probability for non-termination is @{text "\<lbrakk>u' \<noteq> v'\<rbrakk>\
 theory utp_prob_rel_six_sided_die
   imports 
     "UTP_prob_relations.utp_prob_rel" 
+    "UTP_prob_relations.infsum_power_series"
     "HOL-Analysis.Infinite_Set_Sum"
 begin 
 

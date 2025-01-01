@@ -3,6 +3,7 @@ section \<open> (Parametric) Coin flip_t \<close>
 theory utp_prob_rel_lattice_coin
   imports 
     "UTP_prob_relations.utp_prob_rel" 
+    "UTP_prob_relations.infsum_power_series"
     "HOL-Analysis.Infinite_Set_Sum"
 begin 
 
