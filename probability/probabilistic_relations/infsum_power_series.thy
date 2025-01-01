@@ -3,17 +3,11 @@ section \<open> Laws related to @{text "infsum"} for power series \<close>
 theory infsum_power_series
   imports 
     "HOL-Analysis.Infinite_Set_Sum"
-    "UTP2.utp" (* This is not necessary for this theory. The only reason for importing it here is
-      because there is a syntax error without unbundle UTP_Syntax. For example, (0::\<nat>) cannot be
-      correctly parsed. Please comment this line to see effect. This should be fixed. *)
-    (* "utp_distribution" *)
 begin 
-unbundle UTP_Syntax
-
 subsection \<open> Series \<close>
 
 lemma summable_n_2_power_n: 
-  "summable (\<lambda>n::\<nat>. (n / (2::\<real>)^n))" (is "summable ?f")
+  "summable (\<lambda>n::nat. (n / (2::real)^n))" (is "summable ?f")
   (* n:                             0, 1,   2,   3,   4 *)
   (* a(n)   = n/2^n                 0, 1/2, 2/4, 3/8, 4/16 *)
   (* a(n+1) = (n+1)/(2^(n+1)):    1/2, 2/4, 3/8, 4/6, 5/8, ... *)
@@ -21,24 +15,24 @@ lemma summable_n_2_power_n:
   apply (subst summable_ratio_test[where c="3/4" and N="3"])
   apply auto
 proof -
-  fix n::\<nat>
+  fix n::nat
   assume a1: "3 \<le> n"
-  have f1: "((1::\<real>) + real n) / ((2::\<real>) * (2::\<real>) ^ n) = ((n+1) / (2* n)) * (?f n)"
+  have f1: "((1::real) + real n) / ((2::real) * (2::real) ^ n) = ((n+1) / (2* n)) * (?f n)"
     using a1 by auto
-  have f2: "((1::\<real>) + real n) / 1 \<le> (3::\<real>) * real n / ((2::\<real>))"
+  have f2: "((1::real) + real n) / 1 \<le> (3::real) * real n / ((2::real))"
     using a1 by force
-  have f3: "((1::\<real>) + real n) / ((2::\<real>) * (2::\<real>) ^ n) \<le> (3::\<real>) * real n / (2) / ((2::\<real>) * (2::\<real>) ^ n)"
-    apply (subst divide_right_mono[where c="((2::\<real>) * (2::\<real>) ^ n)"])
+  have f3: "((1::real) + real n) / ((2::real) * (2::real) ^ n) \<le> (3::real) * real n / (2) / ((2::real) * (2::real) ^ n)"
+    apply (subst divide_right_mono[where c="((2::real) * (2::real) ^ n)"])
     using f2 apply force
     apply force
     by simp
-  show "((1::\<real>) + real n) / ((2::\<real>) * (2::\<real>) ^ n) \<le> (3::\<real>) * real n / ((4::\<real>) * (2::\<real>) ^ n)"
+  show "((1::real) + real n) / ((2::real) * (2::real) ^ n) \<le> (3::real) * real n / ((4::real) * (2::real) ^ n)"
     apply (simp only: f1)
     apply (auto)
     using f3 by force
 qed
 
-lemma summable_2_power_n: "summable (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n / (2::\<real>))"
+lemma summable_2_power_n: "summable (\<lambda>n::nat. ((1::real) / (2::real)) ^ n / (2::real))"
   apply (rule summable_divide)
   apply (rule summable_geometric)
   by simp
@@ -46,29 +40,29 @@ lemma summable_2_power_n: "summable (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<r
 (*
 lemma summable_n_a_power_n: 
   assumes "a \<ge> 2"
-  shows "summable (\<lambda>n::\<nat>. (n / (a::\<real>)^n))" (is "summable ?f")
+  shows "summable (\<lambda>n::nat. (n / (a::real)^n))" (is "summable ?f")
   (* n:           0, 1,   2,      3,    4 *)
   (*              0, 1/a, 2/a^2, 3/a^3, 4/a^4 *)
   (* (n+1)/(a*n): x, 2/a, 3/a*2, 4/a*3, 5/a*4, ... *)
   apply (subst summable_ratio_test[where c="3/4" and N="3"])
   apply auto
 proof -
-  fix n::\<nat>
+  fix n::nat
   assume a1: "3 \<le> n"
   have f0: "\<bar>a * a ^ n\<bar> = a * a ^ n"
     using assms by auto
   have f1: "\<bar>a ^ n\<bar> = a ^ n"
     using assms by auto
-  have f1: "((1::\<real>) + real n) / ((a::\<real>) * (a::\<real>) ^ n) = ((n+1) / (a* n)) * (?f n)"
+  have f1: "((1::real) + real n) / ((a::real) * (a::real) ^ n) = ((n+1) / (a* n)) * (?f n)"
     using a1 by auto
-  have f2: "((1::\<real>) + real n) / 1 \<le> (3::\<real>) * real n / (4/a)"
+  have f2: "((1::real) + real n) / 1 \<le> (3::real) * real n / (4/a)"
     apply auto
-  have f3: "((1::\<real>) + real n) / ((2::\<real>) * (2::\<real>) ^ n) \<le> (3::\<real>) * real n / (2) / ((2::\<real>) * (2::\<real>) ^ n)"
-    apply (subst divide_right_mono[where c="((2::\<real>) * (2::\<real>) ^ n)"])
+  have f3: "((1::real) + real n) / ((2::real) * (2::real) ^ n) \<le> (3::real) * real n / (2) / ((2::real) * (2::real) ^ n)"
+    apply (subst divide_right_mono[where c="((2::real) * (2::real) ^ n)"])
     using f2 apply force
     apply force
     by simp
-  show "((1::\<real>) + real n) / \<bar>a * a ^ n\<bar> \<le> (3::\<real>) * real n / ((4::\<real>) * \<bar>a ^ n\<bar>)"
+  show "((1::real) + real n) / \<bar>a * a ^ n\<bar> \<le> (3::real) * real n / ((4::real) * \<bar>a ^ n\<bar>)"
     apply (simp only: f0)
     apply (simp only: f1)
     apply (auto)
@@ -77,13 +71,13 @@ qed
 *)
 
 lemma summable_1_2_power_n_t_n: 
-  "summable (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ (n) * ((real (t::\<nat>) + real n)))" (is "summable ?f")
+  "summable (\<lambda>n::nat. ((1::real) / (2::real)) ^ (n) * ((real (t::nat) + real n)))" (is "summable ?f")
 proof -
-  have f1: "(\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * ((real t + real n))) = 
-        (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * (real t)  + ((1::\<real>) / (2::\<real>)) ^ n * (real n))"
+  have f1: "(\<lambda>n::nat. ((1::real) / (2::real)) ^ n * ((real t + real n))) = 
+        (\<lambda>n::nat. ((1::real) / (2::real)) ^ n * (real t)  + ((1::real) / (2::real)) ^ n * (real n))"
     by (metis (mono_tags, opaque_lifting) mult_of_nat_commute of_nat_add ring_class.ring_distribs(2))
 
-  have f2: "(\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * real n) = (\<lambda>n::\<nat>. ((1::\<real>) / (2::\<real>)) ^ n * n)"
+  have f2: "(\<lambda>n::nat. ((1::real) / (2::real)) ^ n * real n) = (\<lambda>n::nat. ((1::real) / (2::real)) ^ n * n)"
     by simp
   show "summable ?f"
     apply (simp add: f1)
@@ -91,7 +85,7 @@ proof -
     apply (rule summable_mult2)
     apply (rule summable_geometric)
     apply simp
-    apply (subst summable_cong[where g = "(\<lambda>n::\<nat>. (n / (2::\<real>)^n))"])
+    apply (subst summable_cong[where g = "(\<lambda>n::nat. (n / (2::real)^n))"])
     apply (simp add: power_divide)
     using summable_n_2_power_n apply blast
     by simp
@@ -104,7 +98,7 @@ lemma summable_n_r_power_n:
   (* ratio r(n) = a(n+1)/a(n) = (n+1)/rn:   -,  2/r,    3/2r, 4/3r, 5/8, ... *)
   fixes r :: real
   assumes "r > 1"
-  shows "summable (\<lambda>n::\<nat>. ((real n) / (r)^n))" (is "summable ?f")
+  shows "summable (\<lambda>n::nat. ((real n) / (r)^n))" (is "summable ?f")
   apply (subst summable_ratio_test[where c = "((nat \<lfloor>(2.0 * r - 1)/(r - 1)\<rfloor>) + 1) / (r * (nat \<lfloor>(2 * r - 1)/(r - 1)\<rfloor>)) " 
          and N="nat \<lfloor>(2*r-1)/(r-1)\<rfloor>"])
   apply auto
@@ -123,7 +117,7 @@ proof -
   show "(1 + real (nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>)) / (r * real (nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>)) < 1"
     using c_1 c_2 by force
 next
-  fix n::\<nat>
+  fix n::nat
   let ?n = "nat \<lfloor>(2 * r - 1) / (r - 1)\<rfloor>"
   assume a1: "?n \<le> n"
   (* (1 + real n) / \<bar>r * r ^ n\<bar> \<le> (1 + real ?n) * real n / (r * real (?n) * \<bar>r ^ n\<bar>) 
@@ -163,15 +157,15 @@ qed
 lemma summable_n_r_power_n_mult: 
   fixes r :: real
   assumes "r \<ge> 0" "r < 1" 
-  shows "summable (\<lambda>n::\<nat>. ((real n) * r^n))" (is "summable ?f")
+  shows "summable (\<lambda>n::nat. ((real n) * r^n))" (is "summable ?f")
 proof (cases "r = 0")
   case True
   then show ?thesis by simp
 next
   case False
   then show ?thesis
-    apply (subgoal_tac "summable (\<lambda>n::\<nat>. ((real n) / (1/r)^n))")
-    apply (subst summable_cong[where g="(\<lambda>n::\<nat>. ((real n) / (1/r)^n))"])
+    apply (subgoal_tac "summable (\<lambda>n::nat. ((real n) / (1/r)^n))")
+    apply (subst summable_cong[where g="(\<lambda>n::nat. ((real n) / (1/r)^n))"])
     apply (simp add: power_one_over)
     apply simp
     apply (rule summable_n_r_power_n)
@@ -181,7 +175,7 @@ qed
 lemma summable_on_n_r_power_n_mult: 
   fixes r :: real
   assumes "r \<ge> 0" "r < 1" 
-  shows "(\<lambda>n::\<nat>. ((real n) * r^n)) summable_on UNIV"
+  shows "(\<lambda>n::nat. ((real n) * r^n)) summable_on UNIV"
   (*
   apply (subst summable_on_UNIV_nonneg_real_iff)
   using assms(1) apply force
@@ -194,9 +188,9 @@ lemma summable_on_n_r_power_n_mult:
 lemma summable_n_r_power_n_add_c: 
   fixes r :: real
   assumes "r > 1"
-  shows "summable (\<lambda>n::\<nat>. ((real n + c) / (r)^n))" (is "summable ?f")
-  apply (subgoal_tac "summable (\<lambda>n::\<nat>. ((real n) / (r)^n) + c / (r ^ n))")
-  apply (subst summable_cong[where g="(\<lambda>n::\<nat>. ((real n) / (r)^n) + c / (r ^ n))"])
+  shows "summable (\<lambda>n::nat. ((real n + c) / (r)^n))" (is "summable ?f")
+  apply (subgoal_tac "summable (\<lambda>n::nat. ((real n) / (r)^n) + c / (r ^ n))")
+  apply (subst summable_cong[where g="(\<lambda>n::nat. ((real n) / (r)^n) + c / (r ^ n))"])
   apply (simp add: add_divide_distrib)
   apply simp
   apply (rule summable_add)
@@ -211,9 +205,9 @@ lemma summable_n_r_power_n_add_c:
 lemma summable_n_r_power_n_add_c_mult: 
   fixes r :: real
   assumes "r > 1"
-  shows "summable (\<lambda>n::\<nat>. ((real n + c) * (1/r)^n))" (is "summable ?f")
-  apply (subgoal_tac "summable (\<lambda>n::\<nat>. ((real n + c) / (r)^n))")
-  apply (subst summable_cong[where g="(\<lambda>n::\<nat>. ((real n + c) / (r)^n))"])
+  shows "summable (\<lambda>n::nat. ((real n + c) * (1/r)^n))" (is "summable ?f")
+  apply (subgoal_tac "summable (\<lambda>n::nat. ((real n + c) / (r)^n))")
+  apply (subst summable_cong[where g="(\<lambda>n::nat. ((real n + c) / (r)^n))"])
   apply (simp add: power_one_over)
   apply simp
   by (simp add: assms summable_n_r_power_n_add_c)
@@ -221,15 +215,15 @@ lemma summable_n_r_power_n_add_c_mult:
 lemma summable_n_r_power_n_add_c_mult': 
   fixes r :: real
   assumes "r \<ge> 0" "r < 1"
-  shows "summable (\<lambda>n::\<nat>. ((real n + c) * r^n))" (is "summable ?f")
+  shows "summable (\<lambda>n::nat. ((real n + c) * r^n))" (is "summable ?f")
 proof (cases "r = 0")
   case True
   then show ?thesis by simp
 next
   case False
   then show ?thesis 
-    apply (subgoal_tac "summable (\<lambda>n::\<nat>. ((real n + c) / (1/r)^n))")
-    apply (subst summable_cong[where g="(\<lambda>n::\<nat>. ((real n + c) / (1/r)^n))"])
+    apply (subgoal_tac "summable (\<lambda>n::nat. ((real n + c) / (1/r)^n))")
+    apply (subst summable_cong[where g="(\<lambda>n::nat. ((real n + c) / (1/r)^n))"])
     apply (simp add: power_one_over)
     apply simp
     apply (subst summable_n_r_power_n_add_c)
@@ -437,6 +431,29 @@ lemma infsum_Suc_iff:
   apply (simp add: sums_Suc_iff)
   by (smt (z3) f_summable summable_sums_iff sums_unique theI_unique)
 
+lemma infsum_geometric:
+  assumes "r > 0" "(r::real) < 1"
+  shows "(\<Sum>\<^sub>\<infinity>n. r ^ n) = 1 / (1 - r)"
+  apply (subst infsumI[where x = "1/(1-r)"])
+  apply (rule norm_summable_imp_has_sum)
+  using assms(1) assms(2) apply force
+  apply (simp add: assms(1) assms(2) geometric_sums less_eq_real_def)
+  by auto
+
+lemma infsum_geometric_cmult_right:
+  assumes "r > 0" "(r::real) < 1"
+  shows "(\<Sum>\<^sub>\<infinity>n. c * r ^ n) = c / (1 - r)"
+  apply (subst infsum_cmult_right)
+  using assms(1) assms(2) summable_on_UNIV_nonneg_real_iff apply auto[1]
+  by (simp add: assms infsum_geometric) 
+
+lemma infsum_geometric_cmult_left:
+  assumes "r > 0" "(r::real) < 1"
+  shows "(\<Sum>\<^sub>\<infinity>n. r ^ n * c) = c / (1 - r)"
+  apply (subst infsum_cmult_left)
+  using assms(1) assms(2) summable_on_UNIV_nonneg_real_iff apply auto[1]
+  by (simp add: assms infsum_geometric) 
+
 lemma arithmetico_geometric_seq_sum:
   fixes r :: real
   assumes "r \<ge> 0" "r < 1" 
@@ -488,5 +505,18 @@ proof -
   then show ?thesis
     using P_l by blast
 qed
+
+lemma arithmetico_geometric_seq_sum_offset_const:
+  fixes r :: real
+  assumes "r > 0" "r < 1" 
+  shows "(\<Sum>\<^sub>\<infinity>n::nat. (real n + c) * r^n) = r / (1-r)^2 + c/(1-r)" (is "infsum ?f UNIV = _")
+  apply (simp add: Rings.ring_class.ring_distribs(2))
+  apply (subst infsum_add)
+  apply (simp add: assms(1) assms(2) less_eq_real_def summable_on_n_r_power_n_mult)
+  apply (simp add: assms(1) assms(2) less_eq_real_def summable_on_UNIV_nonneg_real_iff summable_on_cmult_right)
+  apply (simp add: assms less_eq_real_def arithmetico_geometric_seq_sum)
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(1) assms(2) less_eq_real_def summable_on_UNIV_nonneg_real_iff)
+  by (simp add: assms(1) assms(2) infsum_geometric)
 
 end

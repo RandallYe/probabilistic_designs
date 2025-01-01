@@ -3,6 +3,7 @@ session "UTP_prob_relations" = "UTP2" +
   options [document  = pdf, document_output = "output", timeout = 1000]
   theories
     utp_prob_rel
+    infsum_power_series
   document_files
     "root.bib"
     "root.tex"
