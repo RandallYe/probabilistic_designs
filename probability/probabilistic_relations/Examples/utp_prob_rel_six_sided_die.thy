@@ -1258,15 +1258,17 @@ lemma summable_p_power_n_mult_n_cmult:
   apply (rule summable_on_cmult_left)
   using summable_p_power_n_mult_n assms(1) assms(2) by presburger
 
-lemma 
+lemma expected_runtime_simp: 
   assumes "p \<ge> 0" "p < 1"
   shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state. (if s\<^sub>v v\<^sub>0 = sx \<and> d\<^sub>v v\<^sub>0 = ox \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) 
-          then 1::\<real> else (0::\<real>)) * p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * q) = 1"
+          then 1::\<real> else (0::\<real>)) * p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * q) 
+    = (if p = 0 then 2 else (2 / (1 - p^2)^2)) * q"
 proof -
   let ?lhs_1 = "(\<lambda>v\<^sub>0::state. 
     (if s\<^sub>v v\<^sub>0 = sx \<and> d\<^sub>v v\<^sub>0 = ox \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) 
     * p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0))"
-  have f1: "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state. ?lhs_1 v\<^sub>0) = 
+
+  have "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state. ?lhs_1 v\<^sub>0) = 
       infsum (\<lambda>v\<^sub>0::state. p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0)) ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = sx, d\<^sub>v = ox\<rparr>) ` UNIV)"
     apply (rule infsum_cong_neutral)
     apply blast
@@ -1274,47 +1276,55 @@ proof -
     apply (metis Suc_le_D evenE even_Suc numeral_2_eq_2 odd_Suc_minus_one)
     apply (simp add: image_def)
     by (auto)
-  have f2: "... = infsum (\<lambda>n::\<nat>. (p ^ (2*n) * real (2*n+2))) UNIV"
+  also have "... = infsum (\<lambda>n::\<nat>. (p ^ (2*n) * real (2*n+2))) UNIV"
     apply (subst infsum_reindex[where h="(\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = sx, d\<^sub>v = ox\<rparr>)"])
     apply (simp add: inj_on_def)
     by (metis (no_types, lifting) comp_apply diff_add_inverse2 time.select_convs(1))
-  have f3: "... = infsum (\<lambda>n::\<nat>. (p ^ n * real (n+2))) ((\<lambda>n::\<nat>. 2*n) `UNIV)"
-    apply (subst infsum_reindex[where h="(\<lambda>n::\<nat>. 2*n)"])
-    apply (simp add: inj_on_mult)
-    by (metis (no_types, lifting) comp_apply)
-  have f4: "... = 1"
-    apply (subst infsetsum_infsum[symmetric])
-    apply (subst abs_summable_on_subset[where B="UNIV"])
-    apply (simp add: abs_summable_on_nat_iff')
-    apply (subst abs_of_nonneg)
+  also have "... = infsum (\<lambda>n::\<nat>. 2 * (real n * (p^2)^n) + 2 * (p^2)^n) UNIV"
+    apply (rule infsum_cong)
+    apply (simp add: power_mult)
+    proof -
+      fix x :: "\<nat>"
+      have "\<And>r ra rb rc. (r::\<real>) * ra + rb * (rc * ra) = (r + rb * rc) * ra"
+        by (simp add: ring_class.ring_distribs(2))
+      then have "2 * p\<^sup>2 ^ x + real x * (2 * p\<^sup>2 ^ x) = p\<^sup>2 ^ x * (2 + real x * 2)"
+        by force
+      then show "p\<^sup>2 ^ x * (2 + 2 * real x) = 2 * (real x * p\<^sup>2 ^ x ) + 2 * p\<^sup>2 ^ x"
+        by (simp add: mult.commute)
+    qed
+  also have "... = (if p = 0 then 2 else (2 / (1 - p\<^sup>2)\<^sup>2))"
+    apply (subst infsum_add)
+    apply (subst summable_on_cmult_right)
+    apply (subst summable_on_n_r_power_n_mult)
+    apply simp
+    using assms(1) assms(2) power2_nonneg_ge_1_iff apply fastforce+
+    apply (subst summable_on_cmult_right)
+    apply (metis abs_of_nonneg assms(1) assms(2) linorder_not_le power2_nonneg_ge_1_iff real_norm_def summable_geometric summable_on_UNIV_nonneg_real_iff zero_le_power)
+    apply simp
+    apply (subst arithmetico_geometric_seq_sum_cmult_right)
     apply (simp add: assms)
-    defer
-    apply simp+
-    defer
-    apply (simp add: add.commute)
-    apply (subst mult.commute)
-    apply (subst summable_n_r_power_n_add_c_mult')
-    using assms apply simp+
-    
-  show ?thesis
+    using assms(1) assms(2) power_strict_mono apply fastforce
+    apply (cases "p = 0")
+    apply (subst infsum_f_at_0_gt_0)
+    apply simp
+    apply (simp)
+    apply auto[1]
+    apply simp
+    apply (subst infsum_geometric_cmult_right)
+    apply simp
+    using assms(1) assms(2) power_strict_mono apply fastforce
+    by (smt (verit, del_insts) assms(1) assms(2) diff_divide_distrib nonzero_divide_mult_cancel_left power2_eq_square power2_nonneg_ge_1_iff)
+
+  then show ?thesis
     apply (subst infsum_cmult_left)
     using assms(1) assms(2) summable_p_power_n_mult_n apply blast
+    using calculation by presburger
   qed
-
-(*
-(\<lambda>v\<^sub>0::state. ureal2real p ^ (t\<^sub>v v\<^sub>0 - 2) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p))
-    ((\<lambda>n::\<nat>. \<lparr>t\<^sub>v = 2*n + 2, s\<^sub>v = s4, d\<^sub>v = o3\<rparr>) ` UNIV)
-*)
 
 theorem dice_expected_runtime: 
   assumes "p < 1"
-  shows "rvfun_of_prfun (dice p) ; (\<guillemotleft>real\<guillemotright> (t\<^sup><))\<^sub>e = ((t\<^sup>< + 1/ureal2real \<guillemotleft>p\<guillemotright>))\<^sub>e"
-  apply (simp only: assms dice_simp)
-  apply (subst rvfun_inverse)
-  apply (simp add: dist_defs)
-  apply (expr_simp_1)
-  apply (simp add: mult_le_one power_le_one_iff ureal_lower_bound ureal_upper_bound)
-  apply (expr_auto)
+  shows "rvfun_of_prfun (dice p) ; (\<guillemotleft>real\<guillemotright> (t\<^sup><))\<^sub>e 
+      = ((if \<guillemotleft>p\<guillemotright> = 0 then 2 else (2 / (1 - (ureal2real \<guillemotleft>p\<guillemotright>)^2))))\<^sub>e"
 proof - 
   fix t :: "nat"
   let ?lhs = "(\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
@@ -1324,7 +1334,7 @@ proof -
            ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ureal2real p +
            (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o3 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
            ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)) * real (t\<^sub>v v\<^sub>0))"
-  have f1: "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+  have "?lhs = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
           ((if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
            ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (ureal2real p * ((1::\<real>) - ureal2real p)) +
            (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
@@ -1333,7 +1343,7 @@ proof -
            ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p))))"
     apply (rule infsum_cong)
     by force
-  have f2: "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
+  also have "... = (\<Sum>\<^sub>\<infinity>v\<^sub>0::state.
           (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o1 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
            ureal2real p ^ (t\<^sub>v v\<^sub>0 - (2::\<nat>)) * real (t\<^sub>v v\<^sub>0) * (ureal2real p * ((1::\<real>) - ureal2real p))) +
      (\<Sum>\<^sub>\<infinity>v\<^sub>0::state. (if s\<^sub>v v\<^sub>0 = s4 \<and> d\<^sub>v v\<^sub>0 = o2 \<and> (2::\<nat>) \<le> t\<^sub>v v\<^sub>0 \<and> t\<^sub>v v\<^sub>0 mod (2::\<nat>) = (0::\<nat>) then 1::\<real> else (0::\<real>)) *
@@ -1358,6 +1368,34 @@ proof -
     apply (subst summable_p_power_n_mult_n_cmult)
     using assms apply (simp add: ureal_lower_bound)
     using assms ureal2real_1 ureal2real_mono_strict by fastforce+
+  also have "... = 
+    (if ureal2real p = 0 then 2 else (2 / (1 - (ureal2real p)^2)^2)) * (ureal2real p * ((1::\<real>) - ureal2real p)) + 
+    (if ureal2real p = 0 then 2 else (2 / (1 - (ureal2real p)^2)^2)) * (((1::\<real>) - ureal2real p) * ureal2real p) + 
+    (if ureal2real p = 0 then 2 else (2 / (1 - (ureal2real p)^2)^2)) * (((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p))"
+    apply (subst expected_runtime_simp)
+    apply (simp add: ureal_lower_bound)
+    apply (metis assms ureal2real_1 ureal2real_mono_strict)
+    apply (subst expected_runtime_simp)
+    apply (simp add: ureal_lower_bound)
+    apply (metis assms ureal2real_1 ureal2real_mono_strict)
+    apply (subst expected_runtime_simp)
+    apply (simp add: ureal_lower_bound)
+    apply (metis assms ureal2real_1 ureal2real_mono_strict)
+    by simp
+  also have "... = (if ureal2real p = 0 then 2 else (2 / (1 - (ureal2real p)^2)^2)) * (1 - (ureal2real p)^2)"
+    by (smt (verit) left_diff_distrib' one_power2 power2_eq_square vector_space_over_itself.scale_right_diff_distrib)
+  also have "... = (if ureal2real p = 0 then 2 else (2 / (1 - (ureal2real p)^2)))"
+    apply simp
+    by (smt (verit, best) divide_cancel_right left_diff_distrib mult_cancel_right1 nonzero_mult_divide_mult_cancel_right2 power2_eq_square)
+  then show ?thesis
+    apply (simp only: assms dice_simp)
+    apply (subst rvfun_inverse)
+    apply (simp add: dist_defs)
+    apply (expr_simp_1)
+    apply (simp add: mult_le_one power_le_one_iff ureal_lower_bound ureal_upper_bound)
+    apply (expr_auto)
+    using calculation ureal2real_0 apply presburger
+    by (simp add: calculation)
 qed
 
 end

@@ -185,6 +185,13 @@ lemma summable_on_n_r_power_n_mult:
   apply (simp add: assms)
   by (simp add: assms(1) assms(2) summable_n_r_power_n_mult)
 
+lemma summable_on_n_r_power_n_mult': 
+  fixes r :: real
+  assumes "r \<ge> 0" "r < 1" 
+  shows "(\<lambda>n::nat. (r^n) * (real n)) summable_on UNIV"
+  apply (simp add: mult.commute)  
+  by (simp add: assms summable_on_n_r_power_n_mult)
+
 lemma summable_n_r_power_n_add_c: 
   fixes r :: real
   assumes "r > 1"
@@ -414,8 +421,7 @@ proof -
 *)
 
 lemma infsum_Suc_iff:
-  fixes r :: "real" and f::"nat \<Rightarrow> real"
-  assumes r_0_1: "r \<ge> 0" "r < 1"
+  fixes  f::"nat \<Rightarrow> real"
   assumes f_nonneg: "\<forall>n. f n \<ge> 0"
   assumes f_summable: "summable f"
   shows "(\<Sum>\<^sub>\<infinity>n::nat. f (n)) = (\<Sum>\<^sub>\<infinity>n::nat. f (Suc n)) + f 0" (is "infsum ?f UNIV = ?g")
@@ -431,6 +437,18 @@ lemma infsum_Suc_iff:
   apply (simp add: sums_Suc_iff)
   by (smt (z3) f_summable summable_sums_iff sums_unique theI_unique)
 
+lemma infsum_f_at_0_gt_0:
+  fixes  f::"nat \<Rightarrow> real"
+  assumes f_0_gt_0: "\<forall>n > 0. f n = 0"
+  assumes f_nonneg: "\<forall>n. f n \<ge> 0"
+  assumes f_summable: "summable f"
+  shows "(\<Sum>\<^sub>\<infinity>n::nat. f (n)) = f 0"
+  apply (subst infsum_Suc_iff)
+  apply (metis f_nonneg)
+  apply (simp add: f_summable)
+  apply (subst infsum_0)
+  by (simp add: f_0_gt_0)+
+  
 lemma infsum_geometric:
   assumes "r > 0" "(r::real) < 1"
   shows "(\<Sum>\<^sub>\<infinity>n. r ^ n) = 1 / (1 - r)"
@@ -454,6 +472,13 @@ lemma infsum_geometric_cmult_left:
   using assms(1) assms(2) summable_on_UNIV_nonneg_real_iff apply auto[1]
   by (simp add: assms infsum_geometric) 
 
+text \<open> The idea to calculate the sum of an arithmetico geometric sequence is to condition 
+@{text "(\<Sum>\<^sub>\<infinity>n::nat. ?f (Suc n))"} through two different ways: 
+(1). @{text "(\<Sum>\<^sub>\<infinity>n::nat. ?f (Suc n)) = (\<Sum>\<^sub>\<infinity>n::nat. ?f n) - ?f 0"}
+(2). expand @{text "?f (Suc n) = r * (real n * r ^ n) + (r * r^n))"}
+
+Then we can establish an equation in terms of the sum and solve the equation to give us the result.
+\<close>
 lemma arithmetico_geometric_seq_sum:
   fixes r :: real
   assumes "r \<ge> 0" "r < 1" 
@@ -505,6 +530,22 @@ proof -
   then show ?thesis
     using P_l by blast
 qed
+
+lemma arithmetico_geometric_seq_sum_cmult_right:
+  fixes r :: real
+  assumes "r \<ge> 0" "r < 1" 
+  shows "(\<Sum>\<^sub>\<infinity>n::nat. c * ((real n) * r^n)) = c*r / (1-r)^2"
+  apply (subst infsum_cmult_right)
+  apply (simp add: assms(1) assms(2) summable_on_n_r_power_n_mult)
+  by (simp add: arithmetico_geometric_seq_sum assms(1) assms(2))
+
+lemma arithmetico_geometric_seq_sum_cmult_left:
+  fixes r :: real
+  assumes "r \<ge> 0" "r < 1" 
+  shows "(\<Sum>\<^sub>\<infinity>n::nat. ((real n) * r^n) * c) = c*r / (1-r)^2"
+  apply (subst infsum_cmult_left)
+  apply (simp add: assms(1) assms(2) summable_on_n_r_power_n_mult)
+  by (simp add: arithmetico_geometric_seq_sum assms(1) assms(2))
 
 lemma arithmetico_geometric_seq_sum_offset_const:
   fixes r :: real
