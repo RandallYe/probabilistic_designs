@@ -417,7 +417,7 @@ lemma infsum_constant_finite_states_summable_cmult_4:
   apply (rule summable_on_cmult_left)
   by (simp add: assms(4) infsum_constant_finite_states_summable)+
 
-lemma infsum_constant_finite_states_4:
+lemma infsum_constant_finite_states_cmult_4:
   assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}" "finite {s. b\<^sub>3 s}" "finite {s. b\<^sub>4 s}"
   shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. 
           (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1 + 
@@ -432,6 +432,44 @@ lemma infsum_constant_finite_states_4:
   using assms(4) apply blast
   apply (subst infsum_constant_finite_states_cmult_3)
   using assms(1) assms(2) assms(3) by blast+
+
+lemma infsum_constant_finite_states_summable_cmult_5:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}" "finite {s. b\<^sub>3 s}" "finite {s. b\<^sub>4 s}" "finite {s. b\<^sub>5 s}"
+  shows "(\<lambda>v\<^sub>0::'a. (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1 + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0) * c\<^sub>2 + 
+          (if b\<^sub>3 v\<^sub>0 then (p::\<real>) else 0) * c\<^sub>3 + 
+          (if b\<^sub>4 v\<^sub>0 then (q::\<real>) else 0) * c\<^sub>4 + 
+          (if b\<^sub>5 v\<^sub>0 then (r::\<real>) else 0) * c\<^sub>5 
+    ) summable_on UNIV"
+  apply (subst summable_on_add)+
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(1) infsum_constant_finite_states_summable)
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(2) infsum_constant_finite_states_summable)+
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(3) infsum_constant_finite_states_summable)+
+  apply (rule summable_on_cmult_left)
+  apply (simp add: assms(4) infsum_constant_finite_states_summable)+
+  apply (rule summable_on_cmult_left)
+  by (simp add: assms(5) infsum_constant_finite_states_summable)+
+
+lemma infsum_constant_finite_states_cmult_5:
+  assumes "finite {s. b\<^sub>1 s}" "finite {s. b\<^sub>2 s}" "finite {s. b\<^sub>3 s}" "finite {s. b\<^sub>4 s}" "finite {s. b\<^sub>5 s}"
+  shows "(\<Sum>\<^sub>\<infinity>v\<^sub>0::'a. 
+          (if b\<^sub>1 v\<^sub>0 then (m::\<real>) else 0) * c\<^sub>1 + 
+          (if b\<^sub>2 v\<^sub>0 then (n::\<real>) else 0) * c\<^sub>2 + 
+          (if b\<^sub>3 v\<^sub>0 then (p::\<real>) else 0) * c\<^sub>3 + 
+          (if b\<^sub>4 v\<^sub>0 then (q::\<real>) else 0) * c\<^sub>4 + 
+          (if b\<^sub>5 v\<^sub>0 then (r::\<real>) else 0) * c\<^sub>5 ) 
+    = m * card {s. b\<^sub>1 s} * c\<^sub>1 + n * card {s. b\<^sub>2 s} * c\<^sub>2 + p * card {s. b\<^sub>3 s} * c\<^sub>3 + 
+      q * card {s. b\<^sub>4 s} * c\<^sub>4 + r * card {s. b\<^sub>5 s} * c\<^sub>5"
+  apply (subst infsum_add)
+  using assms(1) assms(2) assms(3) assms(4) apply (rule infsum_constant_finite_states_summable_cmult_4)
+  using assms(5) apply (rule infsum_constant_finite_states_summable_cmult_1)
+  apply (subst infsum_constant_finite_states_cmult_1)
+  using assms(5) apply blast
+  apply (subst infsum_constant_finite_states_cmult_4)
+  using assms(1) assms(2) assms(3) assms(4) by blast+
 
 lemma infsum_singleton_cond_unique:
   assumes "\<exists>! v. b v"

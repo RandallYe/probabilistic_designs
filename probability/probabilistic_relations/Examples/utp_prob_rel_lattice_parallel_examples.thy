@@ -91,7 +91,7 @@ proof -
    also have sum_3: "... = (if b\<^sub>v (fst x) then 5 else 4) / 9"
      apply (subst conditional_conds_conj)+
      apply (simp only: divide_inverse)
-     apply (subst infsum_constant_finite_states_4)
+     apply (subst infsum_constant_finite_states_cmult_4)
      using card_1 not_finite_existsD apply force
      using card_2 not_finite_existsD apply force
      using card_3 not_finite_existsD apply force

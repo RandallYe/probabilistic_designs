@@ -1008,6 +1008,16 @@ lemma rvfun_assignment_is_dist: "is_final_distribution (passigns_f \<sigma>)"
 lemma rvfun_assignment_inverse: "rvfun_of_prfun (prfun_of_rvfun (passigns_f \<sigma>)) = (passigns_f \<sigma>)"
   by (simp add: is_prob_def iverson_bracket_def rvfun_inverse)
 
+lemma pvfun_assignment_inverse: "rvfun_of_prfun ((x := e)::'s prhfun) = \<lbrakk> ((x := e) ::'s hrel) \<rbrakk>\<^sub>\<I>"
+  apply (simp add: pfun_defs)
+  by (simp add: rvfun_assignment_inverse)
+
+lemma pvfun_assignment_is_dist: "is_final_distribution (rvfun_of_prfun ((s := e)::'s prhfun))"
+  apply (simp add: passigns_def)
+  apply (subst rvfun_assignment_inverse)
+  by (simp add: rvfun_assignment_is_dist)
+
+
 subsubsection \<open> Probabilistic choice \<close>
 term "(rvfun_of_prfun r)\<^sup>\<Up>"
 lemma rvfun_pchoice_is_prob: 
@@ -1161,6 +1171,23 @@ theorem prfun_pchoice_altdef:
   "if\<^sub>p r then P else Q 
     = prfun_of_rvfun (@(rvfun_of_prfun r) * @(rvfun_of_prfun P) + (1 - @(rvfun_of_prfun (r))) * @(rvfun_of_prfun Q))\<^sub>e"
   by (simp add: pfun_defs ureal_defs)
+
+lemma pvfun_pchoice_is_dist: 
+  assumes "is_final_distribution (rvfun_of_prfun P)" "is_final_distribution (rvfun_of_prfun Q)"
+  shows "is_final_distribution (rvfun_of_prfun (if\<^sub>p \<guillemotleft>r\<guillemotright> then P else Q))"
+  apply (simp only: pchoice_def)
+  apply (subst rvfun_pchoice_inverse)
+  apply (simp add: ureal_is_prob)+
+  proof -
+    { fix aa :: 'a
+      obtain aaa :: "('a \<times> 'b \<Rightarrow> \<real>) \<Rightarrow> 'a" and aab :: "('a \<times> 'b \<Rightarrow> \<real>) \<Rightarrow> 'a" where
+        "\<And>f fa r a. \<not> is_dist (curry f (aaa f)) \<or> \<not> is_dist (curry fa (aab fa)) \<or> \<not> r \<le> 1 \<or> \<not> 0 \<le> r \<or> is_dist (curry (fa \<oplus>\<^sub>f\<^bsub>[\<lambda>p. r]\<^sub>e\<^esub> f) a)"
+        by (metis (no_types) rvfun_pchoice_is_dist_c')
+      then have "is_dist (curry (rvfun_of_prfun P \<oplus>\<^sub>f\<^bsub>rvfun_of_prfun [\<lambda>p. r]\<^sub>e\<^esub> rvfun_of_prfun Q) aa)"
+        by (simp add: assms(1) assms(2) rvfun2ureal ureal_lower_bound ureal_upper_bound) }
+    then show "is_final_distribution (rvfun_of_prfun P \<oplus>\<^sub>f\<^bsub>rvfun_of_prfun [\<lambda>p. r]\<^sub>e\<^esub> rvfun_of_prfun Q)"
+      by fastforce
+  qed
 
 theorem prfun_pchoice_commute: "if\<^sub>p r then P else Q = if\<^sub>p 1 - r then Q else P"
   apply (simp add: pfun_defs)

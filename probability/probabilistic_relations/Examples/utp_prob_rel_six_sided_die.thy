@@ -363,7 +363,7 @@ proof -
        (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o2 \<and> get\<^bsub>t\<^esub> (snd x) = Suc (Suc (get\<^bsub>t\<^esub> (fst x))) then 1::\<real> else (0::\<real>)) * ((1::\<real>) - ureal2real p) * ureal2real p +
        (if get\<^bsub>s\<^esub> (snd x) = s4 \<and> get\<^bsub>d\<^esub> (snd x) = o3 \<and> get\<^bsub>t\<^esub> (snd x) = Suc (Suc (get\<^bsub>t\<^esub> (fst x))) then 1::\<real> else (0::\<real>)) * ((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p)"
     apply (simp only: f1)
-    apply (subst infsum_constant_finite_states_4)
+    apply (subst infsum_constant_finite_states_cmult_4)
     apply (simp add: set1)
     apply (simp add: set2)
     apply (simp add: set3)
@@ -392,7 +392,7 @@ proof -
           (if s\<^sub>v s = s4 \<and> d\<^sub>v s = o1 \<and> t\<^sub>v s = Suc (Suc t) then 1::\<real> else (0::\<real>)) * (ureal2real p * ((1::\<real>) - ureal2real p)) +
           (if s\<^sub>v s = s4 \<and> d\<^sub>v s = o2 \<and> t\<^sub>v s = Suc (Suc t) then 1::\<real> else (0::\<real>)) * (((1::\<real>) - ureal2real p) * ureal2real p) +
           (if s\<^sub>v s = s4 \<and> d\<^sub>v s = o3 \<and> t\<^sub>v s = Suc (Suc t) then 1::\<real> else (0::\<real>)) * (((1::\<real>) - ureal2real p) * ((1::\<real>) - ureal2real p))) = 1"
-    apply (subst infsum_constant_finite_states_4)
+    apply (subst infsum_constant_finite_states_cmult_4)
     apply (simp add: singleton_set_simp)+
     by (smt (verit, ccfv_SIG) distrib_left mult.commute mult_cancel_left1)
   then show "(\<Sum>\<^sub>\<infinity>s::state.

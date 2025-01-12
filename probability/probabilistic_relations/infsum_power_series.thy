@@ -493,7 +493,7 @@ proof -
     using summable_on_n_r_power_n_mult by blast
 
   have f_suc_n_by_Suc_iff: "infsum (\<lambda>n. ?f (Suc n)) UNIV = infsum ?f UNIV - ?f 0"
-    apply (subst infsum_Suc_iff[where r = "r" and f = "?f"])
+    apply (subst infsum_Suc_iff[where f = "?f"])
     apply (simp add: assms)+
     apply (simp add: assms(1) assms(2) summable_n_r_power_n_mult)
     by linarith
