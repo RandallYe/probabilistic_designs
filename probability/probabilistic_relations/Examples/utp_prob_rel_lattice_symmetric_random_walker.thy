@@ -959,6 +959,46 @@ lemma pdiff_7_2_simps:
     then show ?case by (simp add: pdiff_1)
   qed
 
+  thm "eventually_mono"
+lemma 
+  assumes "m > 0" 
+  assumes "(p::real) \<ge> 0" "(p::real) \<le> 1"
+  shows "(\<lambda>n::\<nat>. pdiff p m (Suc n)) \<longlonglongrightarrow> (0::\<real>)"
+  apply (rule decreasing_tendsto)
+  apply (simp add: assms(2) assms(3) pdiff_geq_0)
+  apply (subst eventually_sequentially)
+proof -
+  fix x :: "real"
+  assume a1: "(0::\<real>) < x"
+
+  show "\<exists>N::\<nat>. \<forall>n::\<nat>. N \<le> n \<longrightarrow> pdiff p m (Suc n) < x"
+    using assms a1
+    proof (induct p m xa rule: pdiff.induct)
+      case (1 p uu)
+      then show ?case by auto
+    next
+      case (2 p v)
+      then show ?case by auto
+    next
+      case (3 p v)
+      then show ?case by auto
+    next
+      case (4 p)
+      then show ?case by auto
+    next
+      case (5 p v)
+      then show ?case sorry
+    next
+      case (6 p va)
+      then show ?case sorry
+    next
+      case ("7_1" p va vb)
+      then show ?case sorry
+    next
+      case ("7_2" p v va)
+      then show ?case sorry
+    qed
+
 (*
 (x\<^sup>< > 0) * ((\<lbrakk>x\<^sup>> = x\<^sup>< - 1 \<and> $t\<^sup>> = $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real \<guillemotleft>p\<guillemotright>) + \<lbrakk>x\<^sup>> = x\<^sup>< + 1 \<and> $t\<^sup>> = $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1 - ureal2real \<guillemotleft>p\<guillemotright>))
 ; 1)
@@ -968,7 +1008,6 @@ lemma pdiff_7_2_simps:
 (x\<^sup>< > 0) * ((\<lbrakk>x\<^sup>> = x\<^sup>< - 1 \<and> $t\<^sup>> = $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (ureal2real \<guillemotleft>p\<guillemotright>) + \<lbrakk>x\<^sup>> = x\<^sup>< + 1 \<and> $t\<^sup>> = $t\<^sup>< + 1\<rbrakk>\<^sub>\<I>\<^sub>e * (1 - ureal2real \<guillemotleft>p\<guillemotright>))
 ; [])()
 *)
-find_theorems name: "pdiff"
 lemma loop_body_iterdiff_simp:
   shows "(iter\<^sub>d 0 (x\<^sup>< > 0)\<^sub>e (Pt (step p)) 1\<^sub>p) = 1\<^sub>p"
         "(iter\<^sub>d (Suc n) (x\<^sup>< > 0)\<^sub>e (Pt (step p)) 1\<^sub>p) = prfun_of_rvfun ((\<lbrakk>x\<^sup>< > 0\<rbrakk>\<^sub>\<I>\<^sub>e * pdiff (ureal2real \<guillemotleft>p\<guillemotright>) ($x\<^sup><) (\<guillemotleft>n\<guillemotright>+1))\<^sub>e)"
@@ -1061,27 +1100,61 @@ qed
 
 lemma loop_body_iterdiff_tendsto_0:
   assumes "p < 1"
-  shows "\<forall>s::state \<times> state. (\<lambda>n::\<nat>. ureal2real (iter\<^sub>d n (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+  shows "\<forall>s::state \<times> state. (\<lambda>n::\<nat>. ureal2real (iter\<^sub>d n (x\<^sup>< > 0)\<^sub>e (Pt (step p)) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
 proof 
   fix s
-  have "(\<lambda>n::\<nat>. ureal2real (iterdiff (n+1) (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+  have f1: "(\<lambda>n::\<nat>. ureal2real (iterdiff (Suc n) (x\<^sup>< > 0)\<^sub>e (Pt (step p)) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
     apply (subst loop_body_iterdiff_simp)
     apply (simp add: prfun_of_rvfun_def)
     apply (expr_auto)
     apply (subst real2ureal_inverse)
-    apply (simp add: ureal_upper_bound)
-    apply (simp add: power_le_one ureal_lower_bound ureal_upper_bound)
-    apply (subgoal_tac "(\<lambda>n::\<nat>. (ureal2real p ^ 2) ^ n) \<longlonglongrightarrow> (0::\<real>)")
-    apply (simp add: power_mult)
-    apply (subst LIMSEQ_realpow_zero)
-    using zero_le_power2 apply blast
-    using assms
-    apply (metis abs_square_less_1 less_eq_real_def linorder_not_less real_sqrt_abs real_sqrt_unique ureal2real_mono_strict ureal_lower_bound ureal_upper_bound)
-    apply (simp)
-    by (simp add: real2ureal_inverse)
-  then show "(\<lambda>n::\<nat>. ureal2real (iter\<^sub>d n (\<not> s\<^sup>< = s4)\<^sub>e (loop_body p) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    using pdiff_geq_0 ureal_lower_bound ureal_upper_bound apply presburger
+    apply (simp add: pdiff_leq_1 ureal_lower_bound ureal_upper_bound)
+    defer
+    apply (simp add: real2ureal_inverse)
+    sledgehammer
+    sorry
+  then show "(\<lambda>n::\<nat>. ureal2real (iter\<^sub>d n (x\<^sup>< > 0)\<^sub>e (Pt (step p)) 1\<^sub>p s)) \<longlonglongrightarrow> (0::\<real>)"
+    apply (subst (asm) Suc_eq_plus1)
     by (rule LIMSEQ_offset[where k = 1])
 qed
 
+(*
+while\<^sub>p\<^sub>t (x\<^sup>< > 0)\<^sub>e do 
+  if c = F then (c := F \<oplus>\<^bsub>pFF\<^esub> c := B) else (c := F \<oplus>\<^bsub>pBF\<^esub> c := B);
+  if c = F then (o := H \<oplus>\<^bsub>pFH\<^esub> o := T) else (o := H \<oplus>\<^bsub>pBH\<^esub> o := T);
+od
+
+(\<lbrakk>c = F \<and> c' = F \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFF * pFH +
+\<lbrakk>c = F \<and> c' = F \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFF * pFT +
+\<lbrakk>c = F \<and> c' = B \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFB * pBH +
+\<lbrakk>c = F \<and> c' = B \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFB * pBT +
+\<lbrakk>c = B \<and> c' = F \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBF * pFH +
+\<lbrakk>c = B \<and> c' = F \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBF * pFT +
+\<lbrakk>c = B \<and> c' = B \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBB * pBH +
+\<lbrakk>c = B \<and> c' = B \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBB * pBT) 
+
+(
+\<lbrakk>c = F \<and> c0 = F \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFF * pFH +
+\<lbrakk>c = F \<and> c0 = F \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFF * pFT +
+\<lbrakk>c = F \<and> c0 = B \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFB * pBH +
+\<lbrakk>c = F \<and> c0 = B \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFB * pBT +
+\<lbrakk>c = B \<and> c0 = F \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBF * pFH +
+\<lbrakk>c = B \<and> c0 = F \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBF * pFT +
+\<lbrakk>c = B \<and> c0 = B \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBB * pBH +
+\<lbrakk>c = B \<and> c0 = B \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBB * pBT
+) * 
+ (
+\<lbrakk>c = F \<and> c' = F \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFF * pFH +
+\<lbrakk>c = F \<and> c' = F \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFF * pFT +
+\<lbrakk>c = F \<and> c' = B \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFB * pBH +
+\<lbrakk>c = F \<and> c' = B \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pFB * pBT +
+\<lbrakk>c = B \<and> c' = F \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBF * pFH +
+\<lbrakk>c = B \<and> c' = F \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBF * pFT +
+\<lbrakk>c = B \<and> c' = B \<and> o' = H \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBB * pBH +
+\<lbrakk>c = B \<and> c' = B \<and> o' = T \<and> t' = t + 1\<rbrakk>\<^sub>\<I> * pBB * pBT
+)
+
+*)
 
 end

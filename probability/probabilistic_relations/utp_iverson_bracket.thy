@@ -88,6 +88,14 @@ lemma iverson_bracket_false: "\<lbrakk>false\<rbrakk>\<^sub>\<I> = (0)\<^sub>e"
   apply (simp add: iverson_bracket_def)
   by (simp add: false_pred_def)
 
+lemma iverson_bracket_leq_1: "((iverson_bracket P) s) \<le> 1"
+  by (simp add: iverson_bracket_def)
+
+lemma iverson_bracket_leq_1': 
+  assumes "p \<ge> 0"
+  shows "((iverson_bracket P) s) * p \<le> p"
+  using assms by (simp add: iverson_bracket_def)
+
 lemma iverson_bracket_mono: "\<lbrakk> (P) \<sqsupseteq> (Q) \<rbrakk> \<Longrightarrow> \<lbrakk>P\<rbrakk>\<^sub>\<I> \<le> \<lbrakk>Q\<rbrakk>\<^sub>\<I>"
   apply (simp add: ref_by_pred_is_leq)
   apply (simp add: iverson_bracket_def)
